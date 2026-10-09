@@ -147,6 +147,25 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
                     android:minWidth="240dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdminPanel"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:minWidth="240dp"
+                    android:text="Acceso Administrador"
+                    android:textColor="@color/white"
+                    app:strokeColor="@color/yalaza_lime" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLogout"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Cerrar Sesión"
+                    android:textColor="@color/yalaza_pink" />
             </LinearLayout>
         </FrameLayout>
     </LinearLayout>

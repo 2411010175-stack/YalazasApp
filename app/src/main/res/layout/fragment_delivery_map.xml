@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A140F">
+
+    <!-- OpenStreetMap MapView -->
+    <org.osmdroid.views.MapView
+        android:id="@+id/deliveryMapView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Top Overlay Header -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardMapHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        app:cardBackgroundColor="#E6102018"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:strokeColor="#2A4838"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🗺️"
+                android:textSize="22sp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ruta y Mapa de Entregas"
+                    android:textColor="@color/white"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvMapActiveDeliveriesCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#00E676"
+                    android:textSize="12sp"
+                    tools:text="📍 3 destinos en ruta optimizada" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMapRefresh"
+                style="@style/Widget.Material3.Button.IconButton.Filled"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:backgroundTint="#1B3828"
+                app:cornerRadius="10dp"
+                app:icon="@drawable/ic_admin_daily_sales"
+                app:iconSize="18dp"
+                app:iconTint="#00E676" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Floating Map Control Buttons (Right Side) -->
+    <LinearLayout
+        android:id="@+id/layoutMapControls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@id/cardSelectedOrderPreview"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Center Store Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabCenterStore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:contentDescription="Centrar Yalazas"
+            app:backgroundTint="#14241C"
+            app:fabCustomSize="46dp"
+            app:maxImageSize="22dp"
+            app:rippleColor="#2A4838"
+            app:srcCompat="@drawable/ic_delivery_pin_yalaza"
+            app:tint="#00E676" />
+
+        <!-- Zoom In Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabZoomIn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="Zoom In"
+            app:backgroundTint="#14241C"
+            app:fabCustomSize="42dp"
+            app:maxImageSize="20dp"
+            app:rippleColor="#2A4838"
+            app:srcCompat="@drawable/ic_add"
+            app:tint="@color/white" />
+
+        <!-- Zoom Out Button -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabZoomOut"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="Zoom Out"
+            app:backgroundTint="#14241C"
+            app:fabCustomSize="42dp"
+            app:maxImageSize="20dp"
+            app:rippleColor="#2A4838"
+            app:srcCompat="@drawable/ic_remove"
+            app:tint="@color/white" />
+    </LinearLayout>
+
+    <!-- Bottom Selected Order Preview Bottom Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardSelectedOrderPreview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="90dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="#F2102018"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:strokeColor="#00E676"
+        app:strokeWidth="1.2dp"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Top Order Number, Stop Badge and Total -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvPreviewOrderNumber"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#00E676"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="Pedido #00124" />
+
+                <!-- Route Stop Badge -->
+                <TextView
+                    android:id="@+id/tvPreviewStopBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="#2E4A1E"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:textColor="#AEEA00"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="Parada #1 🥇" />
+
+                <TextView
+                    android:id="@+id/tvPreviewOrderTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="S/ 38.50" />
+            </LinearLayout>
+
+            <!-- Customer & Phone -->
+            <TextView
+                android:id="@+id/tvPreviewCustomer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                tools:text="👤 Carlos Mendoza • 📞 987 654 321" />
+
+            <!-- Address & Distance/Fee -->
+            <TextView
+                android:id="@+id/tvPreviewAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="#A0B3A8"
+                android:textSize="12sp"
+                tools:text="📍 Av. Mariscal Benavides 450 (Ref: Frente al parque)" />
+
+            <TextView
+                android:id="@+id/tvPreviewDistanceFee"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#00E676"
+                android:textSize="12sp"
+                tools:text="📏 2.3 km • Envío: S/ 4.00" />
+
+            <!-- Quick Contact Pill Buttons (Llamar & WhatsApp) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPreviewCall"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="#1D3E2B"
+                    android:text="Llamar"
+                    android:textColor="#00E676"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="10dp"
+                    app:icon="@drawable/ic_admin_call"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp"
+                    app:iconSize="16dp"
+                    app:iconTint="#00E676"
+                    app:strokeColor="#2A593E"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPreviewWhatsApp"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="#143D23"
+                    android:text="WhatsApp"
+                    android:textColor="#25D366"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="10dp"
+                    app:icon="@drawable/ic_admin_whatsapp"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp"
+                    app:iconSize="16dp"
+                    app:iconTint="#25D366"
+                    app:strokeColor="#20693B"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
+
+            <!-- Action Buttons Row (GPS & Go to Orders List) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPreviewGps"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="#1D3E2B"
+                    android:text="Navegar GPS"
+                    android:textColor="#00E676"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="10dp"
+                    app:icon="@drawable/ic_navigation_gps"
+                    app:iconSize="16dp"
+                    app:iconTint="#00E676" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPreviewGoToOrders"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="#00C853"
+                    android:text="Ver en Entregas 🛵"
+                    android:textColor="#0A1810"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="10dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -14,63 +14,146 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="14dp">
+        android:orientation="horizontal">
 
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/featuredImage"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:scaleType="centerCrop"
-            tools:srcCompat="@drawable/img_alitas_combo" />
+        <FrameLayout
+            android:layout_width="118dp"
+            android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/featuredTitle"
-            android:layout_width="match_parent"
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/featuredImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                tools:srcCompat="@drawable/img_alitas_combo" />
+
+            <TextView
+                android:id="@+id/tvOfferBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_margin="6dp"
+                android:background="@drawable/bg_offer_badge"
+                android:fontFamily="sans-serif-black"
+                android:paddingStart="7dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="3dp"
+                android:textColor="@color/white"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="🔥 25% OFF"
+                tools:visibility="visible" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:fontFamily="sans-serif-black"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            tools:text="ACEVICHADAS"
-            tools:textColor="@color/yalaza_lime" />
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="11dp">
 
-        <TextView
-            android:id="@+id/featuredTagline"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif-medium"
-            android:textSize="14sp"
-            tools:text="¡LA FIRMA DE LA CASA!"
-            tools:textColor="@color/yalaza_lime" />
+            <TextView
+                android:id="@+id/featuredTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                tools:text="ACEVICHADAS"
+                tools:textColor="@color/yalaza_lime" />
 
-        <TextView
-            android:id="@+id/featuredDescription"
-            style="@style/Yalaza.Body"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:lineSpacingExtra="2dp"
-            android:textColor="@color/white"
-            tools:text="Bañadas en leche de tigre cremosa, toque de ají limo y culantro." />
+            <TextView
+                android:id="@+id/featuredTagline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-medium"
+                android:textSize="12sp"
+                tools:text="¡LA FIRMA DE LA CASA!"
+                tools:textColor="@color/yalaza_lime" />
 
-        <TextView
-            android:id="@+id/featuredPrice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:fontFamily="sans-serif-black"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            tools:text="S/ 16.00"
-            tools:textColor="@color/yalaza_lime" />
+            <TextView
+                android:id="@+id/featuredDescription"
+                style="@style/Yalaza.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:lineSpacingExtra="2dp"
+                android:maxLines="2"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                tools:text="Bañadas en leche de tigre cremosa, toque de ají limo y culantro." />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFeaturedWhatsApp"
-            style="@style/Yalaza.Button.WhatsApp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/featuredOriginalPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:singleLine="true"
+                        android:maxLines="1"
+                        android:textColor="#9EADA4"
+                        android:textSize="11sp"
+                        android:visibility="gone"
+                        tools:text="S/ 25.00"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/featuredPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:singleLine="true"
+                        android:maxLines="1"
+                        android:ellipsize="none"
+                        android:textSize="17sp"
+                        android:textStyle="bold"
+                        app:autoSizeTextType="uniform"
+                        app:autoSizeMinTextSize="12sp"
+                        app:autoSizeMaxTextSize="17sp"
+                        app:autoSizeStepGranularity="1sp"
+                        tools:text="S/ 16.00"
+                        tools:textColor="@color/yalaza_lime" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddToCart"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:backgroundTint="@color/whatsapp_green"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="0dp"
+                    android:text="Agregar"
+                    android:textColor="@color/white"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold"
+                    app:cornerRadius="18dp"
+                    app:icon="@android:drawable/ic_menu_add"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    app:iconSize="14dp"
+                    app:iconTint="@color/white" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

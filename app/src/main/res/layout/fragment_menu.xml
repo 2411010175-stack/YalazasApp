@@ -2,7 +2,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/yalaza_bg">
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -11,90 +12,346 @@
         android:overScrollMode="never"
         android:paddingHorizontal="16dp"
         android:paddingTop="16dp"
-        android:paddingBottom="88dp">
+        android:paddingBottom="24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                style="@style/Yalaza.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/menu_screen_title" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            <!-- User Profile Header & Delivery Pill Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardUserProfileHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeColor="@color/outline_lime"
-                app:boxStrokeWidth="2dp"
-                app:hintTextColor="@color/outline_lime"
-                app:startIconDrawable="@android:drawable/ic_menu_search"
-                app:startIconTint="@color/wf_lime_nav">
+                app:cardBackgroundColor="@color/yalaza_surface"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="2dp"
+                app:strokeColor="#381D27"
+                app:strokeWidth="1dp"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="18dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="14dp"
+                    android:background="@drawable/bg_gradient_greeting">
+
+                    <!-- Top row: Greeting & User Avatar -->
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:layout_toStartOf="@id/layoutMenuAvatar"
+                            android:layout_marginEnd="12dp"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvGreetingName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="¡Hola, Cliente! 👋"
+                                android:textColor="@color/white"
+                                android:textSize="20sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvGreetingSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="¿Qué alitas se te antojan hoy? 🍗"
+                                android:textColor="@color/yalaza_yellow"
+                                android:textSize="13sp"
+                                android:layout_marginTop="3dp" />
+                        </LinearLayout>
+
+                        <!-- Avatar with Gradient Ring -->
+                        <FrameLayout
+                            android:id="@+id/layoutMenuAvatar"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/bg_user_avatar_circle"
+                            android:padding="2dp">
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_admin_gear_btn">
+
+                                <TextView
+                                    android:id="@+id/tvMenuAvatarInitials"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:text="YA"
+                                    android:textColor="@color/white"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+
+                                <androidx.appcompat.widget.AppCompatImageView
+                                    android:id="@+id/ivMenuAvatarPhoto"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:scaleType="centerCrop"
+                                    android:visibility="gone" />
+                            </FrameLayout>
+                        </FrameLayout>
+                    </RelativeLayout>
+
+                    <!-- Bottom Delivery Address Pill -->
+                    <LinearLayout
+                        android:id="@+id/layoutMenuDeliveryPill"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_delivery_address_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="8dp">
+
+                        <androidx.appcompat.widget.AppCompatImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_location_pin"
+                            app:tint="@color/yalaza_lime" />
+
+                        <TextView
+                            android:id="@+id/tvMenuDeliveryAddress"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:layout_marginEnd="6dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="📍 Toca para fijar tu ubicación en el mapa 🛵"
+                            android:textColor="@color/white"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <androidx.appcompat.widget.AppCompatImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:src="@drawable/ic_chevron_right"
+                            app:tint="@color/yalaza_lime" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Search Bar -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="16dp"
+                app:boxBackgroundColor="#111111"
+                app:boxCornerRadiusBottomEnd="26dp"
+                app:boxCornerRadiusBottomStart="26dp"
+                app:boxCornerRadiusTopEnd="26dp"
+                app:boxCornerRadiusTopStart="26dp"
+                app:boxStrokeColor="@color/yalaza_border"
+                app:boxStrokeWidth="1dp"
+                app:hintEnabled="false">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/inputSearchMenu"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/menu_search_hint"
+                    android:layout_height="match_parent"
+                    android:hint="¿Qué buscas hoy? (ej. BBQ, Alitas, Dúo)..."
                     android:inputType="text"
+                    android:padding="0dp"
                     android:textColor="@color/white"
-                    android:textColorHint="@color/yalaza_dot_inactive" />
+                    android:textColorHint="@color/yalaza_text_secondary"
+                    android:textSize="14sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOpenCombo"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+            <!-- Category Filter Chips -->
+            <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/combo_config_title"
-                android:textAllCaps="false"
-                android:textColor="@color/wf_lime_nav"
-                app:cornerRadius="22dp"
-                app:strokeColor="@color/wf_magenta_nav"
-                app:strokeWidth="2dp" />
+                android:scrollbars="none"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:layout_marginBottom="18dp">
 
-            <TextView
-                style="@style/Yalaza.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/categories_title" />
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupMenuCategories"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleLine="true"
+                    app:singleSelection="true"
+                    app:selectionRequired="true"
+                    app:chipSpacingHorizontal="8dp">
 
-            <include layout="@layout/include_categories_row" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatAll"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="✨ Todos"
+                        android:checked="true"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
 
-            <TextView
-                style="@style/Yalaza.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/menu_products_title" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatAlitas"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="🍗 Alitas"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
 
-            <LinearLayout
-                android:id="@+id/menuFeaturedList"
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatCombos"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="🔥 Combos"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatBurgers"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="🍔 Hamburguesas"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatSalchipapas"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="🍟 Salchipapas"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatDrinks"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="🥤 Bebidas"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCatSides"
+                        style="@style/Widget.MaterialComponents.Chip.Choice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:text="🥟 Porciones"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/color_menu_chip_text"
+                        app:chipBackgroundColor="@color/color_menu_chip_bg"
+                        app:chipStrokeColor="@color/color_menu_chip_stroke"
+                        app:chipStrokeWidth="1dp"
+                        app:chipCornerRadius="20dp" />
+
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="vertical" />
+                android:layout_height="wrap_content">
+
+                <ProgressBar
+                    android:id="@+id/menuProgressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="@color/yalaza_lime"
+                    android:visibility="gone" />
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/tvEmptyMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="60dp"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔍"
+                        android:textSize="44sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="No se encontraron productos"
+                        android:textColor="@color/white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Prueba con otra categoría o término de búsqueda."
+                        android:textColor="@color/yalaza_text_secondary"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/menuRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </FrameLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabFilter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="20dp"
-        android:contentDescription="@string/menu_filter"
-        app:backgroundTint="@color/wf_magenta_nav"
-        app:srcCompat="@drawable/ic_filter"
-        app:tint="@color/white" />
 </FrameLayout>

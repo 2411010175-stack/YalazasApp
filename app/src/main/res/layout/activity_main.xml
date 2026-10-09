@@ -10,23 +10,56 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragmentContainer"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/nav_graph"
+        app:layout_constraintBottom_toTopOf="@id/navContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNav"
+    <FrameLayout
+        android:id="@+id/navContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/yalaza_pink"
-        app:itemIconTint="@color/white"
-        app:itemTextColor="@color/white"
-        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/bottom_nav_menu" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#141414"
+            app:itemIconTint="@color/nav_item_colors"
+            app:itemTextColor="@color/nav_item_colors"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu" />
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/adminBottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#050505"
+            android:visibility="gone"
+            app:itemIconTint="@color/admin_nav_item_colors"
+            app:itemTextColor="@color/admin_nav_text_colors"
+            app:itemIconSize="26dp"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/admin_bottom_nav_menu" />
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/deliveryBottomNav"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#0C1712"
+            android:visibility="gone"
+            app:itemIconTint="@color/delivery_nav_item_colors"
+            app:itemTextColor="@color/delivery_nav_text_colors"
+            app:itemIconSize="26dp"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/delivery_bottom_nav_menu" />
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

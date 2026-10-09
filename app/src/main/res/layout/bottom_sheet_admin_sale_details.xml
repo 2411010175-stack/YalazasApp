@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_admin_bottom_sheet"
+    android:clipToPadding="false"
+    android:paddingBottom="28dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="16dp">
+
+        <!-- Handle de arrastre -->
+        <View
+            android:layout_width="44dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_admin_drag_handle" />
+
+        <!-- 1. HEADER: N° Venta, Estado y Fecha -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_receipt"
+                    app:tint="@color/admin_border_gold" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvSheetSaleNumber"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        tools:text="Venta N° 00024" />
+
+                    <TextView
+                        android:id="@+id/tvSheetDateTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="#A0B2A6"
+                        android:textSize="12sp"
+                        tools:text="📅 25/09/2026 a las 20:45" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Badge de Estado -->
+            <TextView
+                android:id="@+id/tvSheetStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_admin_pill"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:textColor="@color/admin_kpi_yellow"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="🟡 PENDIENTE" />
+        </RelativeLayout>
+
+        <!-- Divider Fino -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="16dp"
+            android:background="#24332B" />
+
+        <!-- 2. CARD: DATOS DEL CLIENTE Y CONTACTO -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_admin_detail_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_client_user"
+                    app:tint="@color/admin_nav_orange" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:letterSpacing="0.05"
+                    android:text="INFORMACIÓN DEL CLIENTE"
+                    android:textColor="@color/admin_nav_orange"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Nombre -->
+            <TextView
+                android:id="@+id/tvSheetCustomerName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="Carlos Mendoza Morales" />
+
+            <!-- Fila Teléfono + Botones de Acción (Llamar / WhatsApp) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvSheetCustomerPhone"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="#C8D6CE"
+                    android:textSize="14sp"
+                    tools:text="📞 987 654 321" />
+
+                <!-- Botón Llamar -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSheetCall"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_admin_call_btn"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="Llamar"
+                    android:textColor="@color/admin_kpi_green"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    app:icon="@drawable/ic_phone_call"
+                    app:iconSize="14dp"
+                    app:iconTint="@color/admin_kpi_green" />
+
+                <!-- Botón WhatsApp -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSheetWhatsApp"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_admin_whatsapp_btn"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:text="WhatsApp"
+                    android:textColor="@color/whatsapp_green"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    app:icon="@drawable/ic_whatsapp"
+                    app:iconSize="16dp"
+                    app:iconTint="@color/whatsapp_green" />
+            </LinearLayout>
+
+            <!-- Dirección de Entrega -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="top|start"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="2dp"
+                    android:src="@drawable/ic_location_pin"
+                    app:tint="@color/yalaza_pink" />
+
+                <TextView
+                    android:id="@+id/tvSheetCustomerAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="#C8D6CE"
+                    android:textSize="13sp"
+                    tools:text="Av. Ramos 309, Imperial, Cañete" />
+            </LinearLayout>
+
+            <!-- Referencia -->
+            <TextView
+                android:id="@+id/tvSheetCustomerReference"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="3dp"
+                android:textColor="#8EA397"
+                android:textSize="12sp"
+                tools:text="🏢 Ref: Frente al parque central, casa de 2 pisos" />
+
+            <!-- Nota especial del cliente (si existe) -->
+            <LinearLayout
+                android:id="@+id/layoutSheetComment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_admin_note_card"
+                android:orientation="vertical"
+                android:padding="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:src="@drawable/ic_comment_note"
+                        app:tint="@color/admin_kpi_yellow" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="Nota del Cliente:"
+                        android:textColor="@color/admin_kpi_yellow"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvSheetComment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textStyle="italic"
+                    android:textColor="#E8EDEA"
+                    android:textSize="13sp"
+                    tools:text="“Por favor alitas bien crocantes y enviar tártara extra.”" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 3. CARD: DESGLOSE DE PRODUCTOS (TICKET) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_admin_detail_card"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:src="@drawable/ic_cat_wings"
+                    app:tint="@color/admin_border_gold" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:letterSpacing="0.05"
+                    android:text="DETALLE DEL PEDIDO"
+                    android:textColor="@color/admin_border_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSheetItemsCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#9EADA4"
+                    android:textSize="12sp"
+                    tools:text="3 productos" />
+            </LinearLayout>
+
+            <!-- Contenedor dinámico de filas de productos -->
+            <LinearLayout
+                android:id="@+id/containerSheetProducts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical" />
+
+        </LinearLayout>
+
+        <!-- 4. CARD: TOTAL A COBRAR -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/bg_admin_kpi_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="18dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.05"
+                    android:text="TOTAL A COBRAR"
+                    android:textColor="#A0B2A6"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Incluye productos y delivery"
+                    android:textColor="#66776F"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvSheetTotalAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/admin_kpi_yellow"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                tools:text="S/ 68.50" />
+        </LinearLayout>
+
+        <!-- 5. BOTONES DE ACCIÓN (Cambiar Estado / Cerrar) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSheetChangeStatus"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/admin_sale_btn_bg"
+                android:text="Cambiar Estado"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:cornerRadius="12dp"
+                app:icon="@android:drawable/ic_menu_rotate"
+                app:iconGravity="textStart"
+                app:iconTint="@color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSheetClose"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="52dp"
+                android:backgroundTint="#24332B"
+                android:minWidth="100dp"
+                android:text="Cerrar"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

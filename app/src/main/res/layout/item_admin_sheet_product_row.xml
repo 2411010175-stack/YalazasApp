@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <!-- Badge de Cantidad (Ej: 2x) -->
+    <TextView
+        android:id="@+id/tvRowQty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_admin_item_qty"
+        android:paddingStart="8dp"
+        android:paddingTop="3dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="3dp"
+        android:textColor="@color/yalaza_pink"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        tools:text="2x" />
+
+    <!-- Contenido del Producto: Nombre, Salsas y Notas -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvRowName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="Combo Yalaza Dúo (12 piezas)" />
+
+        <TextView
+            android:id="@+id/tvRowSauces"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/admin_border_gold"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="🍗 Salsas: BBQ Clásica, Acevichada"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvRowNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:textColor="#9EADA4"
+            android:textSize="11sp"
+            android:textStyle="italic"
+            android:visibility="gone"
+            tools:text="📝 Salsas aparte, por favor"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <!-- Subtotal -->
+    <TextView
+        android:id="@+id/tvRowSubtotal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:textColor="@color/admin_kpi_green"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        tools:text="S/ 38.00" />
+
+</LinearLayout>

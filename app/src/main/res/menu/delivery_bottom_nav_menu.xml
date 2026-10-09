@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_delivery_orders"
+        android:icon="@drawable/ic_delivery_scooter"
+        android:title="Entregas" />
+
+    <item
+        android:id="@+id/nav_delivery_map"
+        android:icon="@drawable/ic_delivery_map"
+        android:title="Mapa en Vivo" />
+
+    <item
+        android:id="@+id/nav_delivery_history"
+        android:icon="@drawable/ic_delivery_history"
+        android:title="Historial" />
+
+    <item
+        android:id="@+id/nav_delivery_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="Mi Perfil" />
+</menu>

@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="#18231E"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="#2C3B33"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 1. Cabecera: ID Pedido + Badge Estado -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvCustomerOrderCode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Orden #A7B2C" />
+
+                <TextView
+                    android:id="@+id/tvCustomerOrderDateTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#9EADA4"
+                    android:textSize="12sp"
+                    tools:text="📅 28/09/2026 - 20:30" />
+            </LinearLayout>
+
+            <!-- Badge de Estado -->
+            <TextView
+                android:id="@+id/tvCustomerOrderStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_admin_pill"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:textColor="@color/admin_kpi_yellow"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="🟡 PENDIENTE" />
+        </RelativeLayout>
+
+        <!-- Divider Fino -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="#24332B" />
+
+        <!-- 2. Línea de Progreso Visual (Stepper) -->
+        <LinearLayout
+            android:id="@+id/layoutTrackingStepper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp"
+            android:orientation="vertical">
+
+            <!-- Fila de Puntos e Iconos con Líneas -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp">
+
+                <!-- Paso 1: Recibido / Pendiente -->
+                <TextView
+                    android:id="@+id/iconStep1"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/bg_tracking_step_active"
+                    android:gravity="center"
+                    android:text="🟡"
+                    android:textSize="12sp" />
+
+                <!-- Línea 1 -> 2 -->
+                <View
+                    android:id="@+id/lineStep1to2"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#2A3830" />
+
+                <!-- Paso 2: Cocina -->
+                <TextView
+                    android:id="@+id/iconStep2"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/bg_tracking_step_inactive"
+                    android:gravity="center"
+                    android:text="👨‍🍳"
+                    android:textSize="12sp" />
+
+                <!-- Línea 2 -> 3 -->
+                <View
+                    android:id="@+id/lineStep2to3"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#2A3830" />
+
+                <!-- Paso 3: En Camino -->
+                <TextView
+                    android:id="@+id/iconStep3"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/bg_tracking_step_inactive"
+                    android:gravity="center"
+                    android:text="🛵"
+                    android:textSize="12sp" />
+
+                <!-- Línea 3 -> 4 -->
+                <View
+                    android:id="@+id/lineStep3to4"
+                    android:layout_width="0dp"
+                    android:layout_height="3dp"
+                    android:layout_weight="1"
+                    android:background="#2A3830" />
+
+                <!-- Paso 4: Entregado -->
+                <TextView
+                    android:id="@+id/iconStep4"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="@drawable/bg_tracking_step_inactive"
+                    android:gravity="center"
+                    android:text="✅"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Etiquetas de Pasos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvLabelStep1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Confirmado"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvLabelStep2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="En Cocina"
+                    android:textColor="#9EADA4"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvLabelStep3"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="En Camino"
+                    android:textColor="#9EADA4"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/tvLabelStep4"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Entregado"
+                    android:textColor="#9EADA4"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Banner de Cancelación (visible solo cuando el pedido fue cancelado) -->
+        <LinearLayout
+            android:id="@+id/layoutCancelledBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_tracking_cancel_box"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="❌"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Esta orden fue CANCELADA. Si requieres asistencia contáctanos."
+                android:textColor="#FF8A80"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 3. Dirección y Resumen de Productos -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Dirección -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍 "
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvCustomerOrderAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="#C8D6CE"
+                    android:textSize="12sp"
+                    tools:text="Av. Ramos 309, Imperial (Ref: Frente al parque central)" />
+            </LinearLayout>
+
+            <!-- Resumen de Productos -->
+            <TextView
+                android:id="@+id/tvCustomerOrderSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="#121A16"
+                android:padding="8dp"
+                android:textColor="#C5D92D"
+                android:textSize="12sp"
+                tools:text="2x Combo Yalaza (Alitas Crispy + Papas + Bebida)" />
+
+            <!-- Total -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Total del Pedido:"
+                    android:textColor="#9EADA4"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvCustomerOrderTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/yalaza_pink"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="S/ 38.50" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider Fino -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="#24332B" />
+
+        <!-- 4. SECCIÓN DE ACCIONES / POLÍTICA DE CANCELACIÓN -->
+
+        <!-- CASO A: Pedido PENDIENTE -> Permite Cancelar -->
+        <LinearLayout
+            android:id="@+id/layoutCancelActionSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_tracking_cancel_box"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="visible">
+
+            <TextView
+                android:id="@+id/tvCancelHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🟡 Tu orden está en espera. Puedes cancelarla antes de que cocina inicie la preparación."
+                android:textColor="#FFD54F"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelOrder"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="#3B1E22"
+                android:text="Cancelar Mi Pedido"
+                android:textColor="#FF5252"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                app:cornerRadius="10dp"
+                app:icon="@android:drawable/ic_delete"
+                app:iconGravity="textStart"
+                app:iconSize="16dp"
+                app:iconTint="#FF5252"
+                app:strokeColor="#7A3338"
+                app:strokeWidth="1dp" />
+        </LinearLayout>
+
+        <!-- CASO B: Pedido EN PROCESO, EN CAMINO, ENTREGADO o CANCELADO -> Muestra Mensaje Informativo -->
+        <LinearLayout
+            android:id="@+id/layoutInfoNoticeSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_tracking_notice_box"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvInfoNoticeIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👨‍🍳"
+                android:textSize="18sp" />
+
+            <TextView
+                android:id="@+id/tvInfoNoticeMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:textColor="#E0ECE4"
+                android:textSize="12sp"
+                tools:text="👨‍🍳 Tu pedido ya está preparándose en cocina. Ya no es posible cancelarlo." />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

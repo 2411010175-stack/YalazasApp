@@ -1,0 +1,1281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_admin_bottom_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Top Drag Handle & Title Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="18dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="10dp">
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="4dp"
+                android:background="@drawable/bg_admin_drag_handle" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_toStartOf="@id/btnCloseConfirmSheet"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Confirmar Pedido 🍗"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Revisa tus productos, pago y dirección"
+                        android:textColor="@color/yalaza_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnCloseConfirmSheet"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_admin_gear_btn"
+                    android:contentDescription="Cerrar"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    app:tint="@color/white" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- Scrollable Content -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="18dp"
+                android:paddingBottom="24dp">
+
+                <!-- 0. Delivery Mode Selector (Delivery vs In-Store Pickup) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#15211B"
+                    android:orientation="horizontal"
+                    android:padding="3dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTypeDelivery"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:backgroundTint="#244432"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="4dp"
+                        android:paddingVertical="0dp"
+                        android:text="🛵 Delivery a Casa"
+                        android:textColor="@color/yalaza_lime"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTypePickup"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="@android:color/transparent"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="4dp"
+                        android:paddingVertical="0dp"
+                        android:text="🏪 Recojo en Local"
+                        android:textColor="#8AA394"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="8dp" />
+                </LinearLayout>
+
+                <!-- 1. Delivery Address Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardConfirmDeliveryAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    app:cardBackgroundColor="#15211B"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#2C4436"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:id="@+id/ivConfirmAddressIcon"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:background="@drawable/bg_admin_gear_btn"
+                                android:padding="6dp"
+                                android:src="@drawable/ic_location_pin"
+                                app:tint="@color/yalaza_lime" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmAddressHeaderTitle"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:letterSpacing="0.04"
+                                android:text="DIRECCIÓN DE ENTREGA"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="10.5sp"
+                                android:textStyle="bold" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnConfirmEditMap"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="32dp"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="0dp"
+                                android:text="Cambiar 🗺️"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvConfirmAddressText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:textColor="@color/white"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold"
+                            tools:text="Av. Mariscal Benavides 450, San Vicente de Cañete" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmReferenceText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/yalaza_text_secondary"
+                            android:textSize="11.5sp"
+                            tools:text="Ref: Frente a la plaza principal, portón negro" />
+
+                        <!-- Distance & Estimated Time Badge -->
+                        <LinearLayout
+                            android:id="@+id/layoutConfirmDistanceBadge"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:background="#1B2E23"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="5dp">
+
+                            <TextView
+                                android:id="@+id/tvConfirmDistanceText"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                tools:text="📍 A 1.8 km de Local Central" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmEstimatedTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/white"
+                                android:textSize="11sp"
+                                tools:text="⏱️ ~25-35 min" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 2. Order Items Breakdown Card -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardBackgroundColor="#15211B"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#2C4436"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:background="@drawable/bg_admin_gear_btn"
+                                android:padding="6dp"
+                                android:src="@drawable/ic_shopping_bag_cart"
+                                app:tint="@color/yalaza_lime" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmItemsCountHeader"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:letterSpacing="0.04"
+                                android:text="RESUMEN DEL PEDIDO"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="10.5sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Dynamically Populated Order Items Container -->
+                        <LinearLayout
+                            android:id="@+id/layoutConfirmItemsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="vertical" />
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="8dp"
+                            android:background="#24332B" />
+
+                        <!-- Subtotal -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Subtotal"
+                                android:textColor="@color/yalaza_text_secondary"
+                                android:textSize="12.5sp" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmSubtotal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/white"
+                                android:textSize="12.5sp"
+                                tools:text="S/ 56.00" />
+                        </LinearLayout>
+
+                        <!-- Savings if any -->
+                        <LinearLayout
+                            android:id="@+id/layoutConfirmSavings"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:orientation="horizontal"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="🎉 Descuentos Yalaza"
+                                android:textColor="#4CAF50"
+                                android:textSize="12.5sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmSavings"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#4CAF50"
+                                android:textSize="12.5sp"
+                                android:textStyle="bold"
+                                tools:text="- S/ 8.00" />
+                        </LinearLayout>
+
+                        <!-- Delivery fee row -->
+                        <LinearLayout
+                            android:id="@+id/layoutConfirmDeliveryRow"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvConfirmDeliveryFeeLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Costo de Envío (Delivery)"
+                                android:textColor="@color/yalaza_text_secondary"
+                                android:textSize="12.5sp" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmDeliveryFeeValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                tools:text="S/ 3.00" />
+                        </LinearLayout>
+
+                        <!-- Total Row -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="TOTAL A PAGAR"
+                                android:textColor="@color/white"
+                                android:textSize="14.5sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvConfirmTotal"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="19sp"
+                                android:textStyle="bold"
+                                tools:text="S/ 56.00" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 3. Payment Method Selection Section -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPaymentMethodContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    app:cardBackgroundColor="#15211B"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#2C4436"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <androidx.appcompat.widget.AppCompatImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:background="@drawable/bg_admin_gear_btn"
+                                android:padding="6dp"
+                                android:src="@drawable/ic_cash"
+                                app:tint="@color/yalaza_lime" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:layout_weight="1"
+                                android:letterSpacing="0.04"
+                                android:text="MÉTODO DE PAGO"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="10.5sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvSelectedPaymentBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_admin_pill"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="3dp"
+                                android:text="Efectivo"
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <!-- Payment Method Toggle Grid (4 Options) -->
+                        <GridLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:columnCount="2"
+                            android:rowCount="2">
+
+                            <!-- Option 1: Efectivo -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/cardPayOptionCash"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_columnWeight="1"
+                                android:layout_marginEnd="4dp"
+                                android:layout_marginBottom="8dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                app:cardBackgroundColor="#1F3327"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:strokeColor="@color/yalaza_lime"
+                                app:strokeWidth="1.5dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="💵"
+                                        android:textSize="18sp" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Efectivo"
+                                            android:textColor="@color/white"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Con o sin vuelto"
+                                            android:textColor="@color/yalaza_text_secondary"
+                                            android:textSize="10sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <!-- Option 2: Yape -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/cardPayOptionYape"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_columnWeight="1"
+                                android:layout_marginStart="4dp"
+                                android:layout_marginBottom="8dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                app:cardBackgroundColor="#17221C"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:strokeColor="#2D3F33"
+                                app:strokeWidth="1dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="🟣"
+                                        android:textSize="18sp" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Yape"
+                                            android:textColor="@color/white"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Pago móvil directo"
+                                            android:textColor="@color/yalaza_text_secondary"
+                                            android:textSize="10sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <!-- Option 3: Plin -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/cardPayOptionPlin"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_columnWeight="1"
+                                android:layout_marginEnd="4dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                app:cardBackgroundColor="#17221C"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:strokeColor="#2D3F33"
+                                app:strokeWidth="1dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="🔵"
+                                        android:textSize="18sp" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Plin"
+                                            android:textColor="@color/white"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Interbank/BBVA/Scotiabank"
+                                            android:textColor="@color/yalaza_text_secondary"
+                                            android:textSize="9sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </com.google.android.material.card.MaterialCardView>
+
+                            <!-- Option 4: Transferencia -->
+                            <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/cardPayOptionTransfer"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_columnWeight="1"
+                                android:layout_marginStart="4dp"
+                                android:clickable="true"
+                                android:focusable="true"
+                                app:cardBackgroundColor="#17221C"
+                                app:cardCornerRadius="10dp"
+                                app:cardElevation="0dp"
+                                app:strokeColor="#2D3F33"
+                                app:strokeWidth="1dp">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="10dp">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="🏦"
+                                        android:textSize="18sp" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="Transferencia"
+                                            android:textColor="@color/white"
+                                            android:textSize="13sp"
+                                            android:textStyle="bold" />
+
+                                        <TextView
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:text="BCP / Interbank / CCI"
+                                            android:textColor="@color/yalaza_text_secondary"
+                                            android:textSize="9.5sp" />
+                                    </LinearLayout>
+                                </LinearLayout>
+                            </com.google.android.material.card.MaterialCardView>
+                        </GridLayout>
+
+                        <!-- Sub-Panel 1: EFECTIVO Details & Change Calculator -->
+                        <LinearLayout
+                            android:id="@+id/layoutPaymentCashDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_admin_form_card"
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:visibility="visible">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="¿Con cuánto dinero vas a pagar?"
+                                android:textColor="@color/white"
+                                android:textSize="12.5sp"
+                                android:textStyle="bold" />
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:hint="Monto a entregar (S/)"
+                                app:boxBackgroundColor="#101914"
+                                app:boxCornerRadiusBottomEnd="10dp"
+                                app:boxCornerRadiusBottomStart="10dp"
+                                app:boxCornerRadiusTopEnd="10dp"
+                                app:boxCornerRadiusTopStart="10dp"
+                                app:boxStrokeColor="@color/yalaza_lime"
+                                app:boxStrokeWidth="1dp"
+                                app:prefixText="S/ "
+                                app:prefixTextColor="@color/yalaza_lime">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etCashPaymentAmount"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:inputType="numberDecimal"
+                                    android:maxLines="1"
+                                    android:textColor="@color/white"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Quick Amount Selection Chips -->
+                            <HorizontalScrollView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:overScrollMode="never"
+                                android:scrollbars="none">
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal">
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnQuickExactAmount"
+                                        style="@style/Widget.Material3.Button.OutlinedButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="32dp"
+                                        android:layout_marginEnd="6dp"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="10dp"
+                                        android:paddingVertical="0dp"
+                                        android:text="Monto Exacto"
+                                        android:textColor="@color/yalaza_lime"
+                                        android:textSize="11sp"
+                                        app:cornerRadius="16dp"
+                                        app:strokeColor="@color/yalaza_lime" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnQuick20"
+                                        style="@style/Widget.Material3.Button.OutlinedButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="32dp"
+                                        android:layout_marginEnd="6dp"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="10dp"
+                                        android:paddingVertical="0dp"
+                                        android:text="S/ 20"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp"
+                                        app:cornerRadius="16dp"
+                                        app:strokeColor="#3A5243" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnQuick50"
+                                        style="@style/Widget.Material3.Button.OutlinedButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="32dp"
+                                        android:layout_marginEnd="6dp"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="10dp"
+                                        android:paddingVertical="0dp"
+                                        android:text="S/ 50"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp"
+                                        app:cornerRadius="16dp"
+                                        app:strokeColor="#3A5243" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnQuick100"
+                                        style="@style/Widget.Material3.Button.OutlinedButton"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="32dp"
+                                        android:insetTop="0dp"
+                                        android:insetBottom="0dp"
+                                        android:paddingHorizontal="10dp"
+                                        android:paddingVertical="0dp"
+                                        android:text="S/ 100"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp"
+                                        app:cornerRadius="16dp"
+                                        app:strokeColor="#3A5243" />
+                                </LinearLayout>
+                            </HorizontalScrollView>
+
+                            <!-- Calculated Change Display Box -->
+                            <LinearLayout
+                                android:id="@+id/layoutCashChangeResult"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="#152B1E"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="8dp">
+
+                                <TextView
+                                    android:id="@+id/tvCashChangeIcon"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="💰"
+                                    android:textSize="16sp" />
+
+                                <TextView
+                                    android:id="@+id/tvCashChangeMessage"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:textColor="@color/yalaza_lime"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    tools:text="Vuelto a recibir: S/ 4.00" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Sub-Panel 2: YAPE Details Box -->
+                        <LinearLayout
+                            android:id="@+id/layoutPaymentYapeDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_admin_form_card"
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:visibility="gone"
+                            tools:visibility="visible">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="🟣"
+                                    android:textSize="18sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:text="Número oficial de Yape Yalazas:"
+                                    android:textColor="@color/white"
+                                    android:textSize="12.5sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Number & Copy Button Card -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="#152B1E"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="10dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tvYapePhoneNumber"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="922 385 572"
+                                        android:textColor="@color/yalaza_lime"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="1dp"
+                                        android:text="Titular: Alex Ram."
+                                        android:textColor="@color/white"
+                                        android:textSize="11.5sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnCopyYapeNumber"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="36dp"
+                                    android:backgroundTint="@color/yalaza_lime"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="0dp"
+                                    android:text="Copiar"
+                                    android:textColor="#0B1A10"
+                                    android:textSize="11.5sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="18dp"
+                                    app:icon="@drawable/ic_copy"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="4dp"
+                                    app:iconTint="#0B1A10" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="💡 Yapea el monto total de tu orden. El repartidor confirmará la constancia al momento de la entrega en tu puerta."
+                                android:textColor="#B2CEC0"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Sub-Panel 3: PLIN Details Box -->
+                        <LinearLayout
+                            android:id="@+id/layoutPaymentPlinDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_admin_form_card"
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="🔵"
+                                    android:textSize="18sp" />
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:text="Número oficial de Plin Yalazas:"
+                                    android:textColor="@color/white"
+                                    android:textSize="12.5sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+
+                            <!-- Number & Copy Button Card -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="#152B1E"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="10dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/tvPlinPhoneNumber"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="922 385 572"
+                                        android:textColor="@color/yalaza_lime"
+                                        android:textSize="18sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="1dp"
+                                        android:text="Titular: Alex Fabrizzio Ramos Huapaya"
+                                        android:textColor="@color/white"
+                                        android:textSize="11.5sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnCopyPlinNumber"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="36dp"
+                                    android:backgroundTint="@color/yalaza_lime"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="10dp"
+                                    android:paddingVertical="0dp"
+                                    android:text="Copiar"
+                                    android:textColor="#0B1A10"
+                                    android:textSize="11.5sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="18dp"
+                                    app:icon="@drawable/ic_copy"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="4dp"
+                                    app:iconTint="#0B1A10" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="💡 Compatible con Interbank, BBVA, Scotiabank y BanBif. Muestra tu constancia al repartidor."
+                                android:textColor="#B2CEC0"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Sub-Panel 4: TRANSFERENCIA Details Box -->
+                        <LinearLayout
+                            android:id="@+id/layoutPaymentTransferDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_admin_form_card"
+                            android:orientation="vertical"
+                            android:padding="12dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Cuentas Bancarias Yalazas Fast Food:"
+                                android:textColor="@color/white"
+                                android:textSize="12.5sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="Titular: Yalazas Fast Food E.I.R.L."
+                                android:textColor="@color/yalaza_lime"
+                                android:textSize="11.5sp"
+                                android:textStyle="bold" />
+
+                            <!-- BCP Account -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="#152B1E"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="8dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="BCP Ahorros Soles"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvBcpAccountNumber"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="191-98765432-0-12"
+                                        android:textColor="@color/yalaza_lime"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvBcpCciNumber"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="CCI: 00219100987654320123"
+                                        android:textColor="@color/yalaza_text_secondary"
+                                        android:textSize="10sp" />
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnCopyBcpNumber"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="32dp"
+                                    android:backgroundTint="@color/yalaza_lime"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="0dp"
+                                    android:text="Copiar"
+                                    android:textColor="#0B1A10"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="16dp"
+                                    app:icon="@drawable/ic_copy"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="4dp"
+                                    app:iconTint="#0B1A10" />
+                            </LinearLayout>
+
+                            <!-- Interbank Account -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:background="#152B1E"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="8dp">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="Interbank Soles"
+                                        android:textColor="@color/white"
+                                        android:textSize="11sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvInterbankAccountNumber"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="200-3001234567"
+                                        android:textColor="@color/yalaza_lime"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold" />
+
+                                    <TextView
+                                        android:id="@+id/tvInterbankCciNumber"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="CCI: 00320000300123456789"
+                                        android:textColor="@color/yalaza_text_secondary"
+                                        android:textSize="10sp" />
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnCopyInterbankNumber"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="32dp"
+                                    android:backgroundTint="@color/yalaza_lime"
+                                    android:insetTop="0dp"
+                                    android:insetBottom="0dp"
+                                    android:paddingHorizontal="8dp"
+                                    android:paddingVertical="0dp"
+                                    android:text="Copiar"
+                                    android:textColor="#0B1A10"
+                                    android:textSize="11sp"
+                                    android:textStyle="bold"
+                                    app:cornerRadius="16dp"
+                                    app:icon="@drawable/ic_copy"
+                                    app:iconGravity="textStart"
+                                    app:iconPadding="4dp"
+                                    app:iconTint="#0B1A10" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 4. Kitchen & Driver Notes -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutConfirmKitchenNotes"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="📝 Indicaciones para cocina o repartidor (Opcional)"
+                    app:boxBackgroundColor="#15211B"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/yalaza_border"
+                    app:boxStrokeWidth="1dp"
+                    app:hintTextColor="@color/yalaza_lime"
+                    app:placeholderText="Ej: Sin mayonesa, timbre malogrado...">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etConfirmKitchenNotes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapSentences"
+                        android:maxLines="3"
+                        android:textColor="@color/white"
+                        android:textSize="12.5sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 5. Send Order CTA Button Container -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSubmitOrderConfirm"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:backgroundTint="@color/yalaza_lime"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="Enviar Pedido a Cocina 🚀"
+                        android:textColor="#0B1A10"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="26dp"
+                        app:icon="@drawable/ic_shopping_bag_cart"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconTint="#0B1A10" />
+
+                    <ProgressBar
+                        android:id="@+id/pbSubmittingOrder"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:indeterminateTint="#0B1A10"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

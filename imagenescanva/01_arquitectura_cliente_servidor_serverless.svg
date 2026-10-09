@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+
+    <linearGradient id="clientGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="675" fill="url(#bgGrad)"/>
+
+  <!-- Grid decoration -->
+  <g opacity="0.05" stroke="#FFFFFF" stroke-width="1">
+    <line x1="0" y1="135" x2="1200" y2="135"/>
+    <line x1="0" y1="270" x2="1200" y2="270"/>
+    <line x1="0" y1="405" x2="1200" y2="405"/>
+    <line x1="0" y1="540" x2="1200" y2="540"/>
+    <line x1="300" y1="0" x2="300" y2="675"/>
+    <line x1="600" y1="0" x2="600" y2="675"/>
+    <line x1="900" y1="0" x2="900" y2="675"/>
+  </g>
+
+  <!-- Header -->
+  <text x="600" y="55" text-anchor="middle" fill="#FF8A00" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" letter-spacing="3">ARQUITECTURA DE SOFTWARE</text>
+  <text x="600" y="90" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800">Estilo Cliente - Servidor &amp; Enfoque Serverless (BaaS)</text>
+
+  <!-- LEFT CARD: CLIENTE (Android Nativo) -->
+  <g filter="url(#dropShadow)">
+    <rect x="70" y="140" width="440" height="470" rx="20" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+
+    <!-- Badge -->
+    <rect x="95" y="165" width="130" height="32" rx="16" fill="url(#clientGrad)"/>
+    <text x="160" y="186" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">CLIENTE NATIVO</text>
+
+    <text x="95" y="235" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">Aplicación Móvil Yalazas</text>
+    <text x="95" y="260" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="14">Desarrollada en Kotlin con Android Jetpack</text>
+
+    <!-- Sub-boxes -->
+    <rect x="95" y="285" width="390" height="85" rx="12" fill="#0F172A" stroke="#334155"/>
+    <text x="115" y="315" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">📱 Interfaz de Usuario e Interacción</text>
+    <text x="115" y="340" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• UI Reactiva (Fragments, XML Layouts, Material Design 3)</text>
+    <text x="115" y="358" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• Gestión de estado local con LiveData &amp; ViewModels</text>
+
+    <rect x="95" y="385" width="390" height="85" rx="12" fill="#0F172A" stroke="#334155"/>
+    <text x="115" y="415" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">⚡ Desacoplamiento de Lógica Pesada</text>
+    <text x="115" y="440" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• No almacena secretos ni base de datos local pesada</text>
+    <text x="115" y="458" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• Consume servicios mediante llamadas asíncronas</text>
+
+    <rect x="95" y="485" width="390" height="95" rx="12" fill="#0F172A" stroke="#FF6B00" stroke-width="1.5"/>
+    <text x="115" y="515" fill="#FF8A00" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">🎯 Ventaja en el Cliente</text>
+    <text x="115" y="540" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="13">Experiencia fluida a 60/120 fps sin bloqueos en el hilo</text>
+    <text x="115" y="558" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="13">principal gracias al uso de Kotlin Coroutines.</text>
+  </g>
+
+  <!-- MIDDLE: PROTOCOL / COMMUNICATION -->
+  <g>
+    <!-- Arrow Right -->
+    <path d="M 530 330 L 650 330" stroke="#FF6B00" stroke-width="4" stroke-dasharray="8 4"/>
+    <polygon points="665,330 648,320 648,340" fill="#FF6B00"/>
+    <rect x="540" y="285" width="120" height="30" rx="15" fill="#0F172A" stroke="#FF6B00" stroke-width="1"/>
+    <text x="600" y="305" text-anchor="middle" fill="#FF6B00" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">HTTPS / TLS 1.3</text>
+
+    <!-- Arrow Left -->
+    <path d="M 665 420 L 545 420" stroke="#38BDF8" stroke-width="4" stroke-dasharray="8 4"/>
+    <polygon points="530,420 547,410 547,430" fill="#38BDF8"/>
+    <rect x="540" y="435" width="120" height="30" rx="15" fill="#0F172A" stroke="#38BDF8" stroke-width="1"/>
+    <text x="600" y="455" text-anchor="middle" fill="#38BDF8" font-family="system-ui, sans-serif" font-size="12" font-weight="bold">WebSockets (Sync)</text>
+
+    <text x="600" y="380" text-anchor="middle" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12" font-weight="600">Desacoplamiento</text>
+  </g>
+
+  <!-- RIGHT CARD: SERVIDOR SERVERLESS (BaaS Firebase) -->
+  <g filter="url(#dropShadow)">
+    <rect x="690" y="140" width="440" height="470" rx="20" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+
+    <!-- Badge -->
+    <rect x="715" y="165" width="180" height="32" rx="16" fill="url(#cloudGrad)"/>
+    <text x="805" y="186" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="13" font-weight="bold">BACKEND SERVERLESS (BaaS)</text>
+
+    <text x="715" y="235" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="22" font-weight="bold">Google Firebase Cloud</text>
+    <text x="715" y="260" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="14">Servicios gestionados en la nube sin servidores dedicados</text>
+
+    <!-- Sub-boxes -->
+    <rect x="715" y="285" width="390" height="85" rx="12" fill="#0F172A" stroke="#334155"/>
+    <text x="735" y="315" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">🔥 Cloud Firestore &amp; Storage</text>
+    <text x="735" y="340" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• Base de datos NoSQL con sincronización en tiempo real</text>
+    <text x="735" y="358" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• Almacenamiento seguro de imágenes de productos y logos</text>
+
+    <rect x="715" y="385" width="390" height="85" rx="12" fill="#0F172A" stroke="#334155"/>
+    <text x="735" y="415" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="15" font-weight="bold">🔐 Firebase Auth &amp; Security Rules</text>
+    <text x="735" y="440" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• Autenticación gestionada (Tokens JWT seguros)</text>
+    <text x="735" y="458" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="13">• Reglas de seguridad basadas en roles (Cliente / Admin)</text>
+
+    <rect x="715" y="485" width="390" height="95" rx="12" fill="#0F172A" stroke="#38BDF8" stroke-width="1.5"/>
+    <text x="735" y="515" fill="#38BDF8" font-family="system-ui, sans-serif" font-size="14" font-weight="bold">📈 Beneficios Serverless</text>
+    <text x="735" y="540" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="13">Autoescalabilidad instantánea ante picos de pedidos,</text>
+    <text x="735" y="558" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="13">cero mantenimiento de SO/servidores y pago por uso.</text>
+  </g>
+</svg>

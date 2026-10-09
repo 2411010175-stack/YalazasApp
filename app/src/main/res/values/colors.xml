@@ -3,18 +3,22 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <color name="yalaza_bg">#FF000000</color>
-    <color name="yalaza_surface">#FF2A2A2A</color>
+    <color name="yalaza_bg">#0A0A0A</color>
+    <color name="yalaza_surface">#1A1A1A</color>
     <color name="yalaza_surface_light">#FF3D3D3D</color>
     <color name="yalaza_lime">#E984B300</color>
     <color name="yalaza_lime_dark">#FF9FD600</color>
-    <color name="yalaza_pink">#FFFF2D8B</color>
+    <color name="yalaza_pink">#E81B62</color>
     <color name="yalaza_pink_dark">#FFE02070</color>
-    <color name="yalaza_yellow">#FFFFEB3B</color>
+    <color name="yalaza_yellow">#FFD54F</color>
     <color name="yalaza_orange">#FFFFAB40</color>
     <color name="yalaza_dot_inactive">#FF666666</color>
+    <color name="yalaza_text_primary">#FFFFFF</color>
+    <color name="yalaza_text_secondary">#9E9E9E</color>
     <color name="yalaza_placeholder">#FF4A4A4A</color>
-    <color name="yalaza_border">#FF555555</color>
+    <color name="yalaza_border">#333333</color>
+    <color name="yalaza_primary_green">#00E676</color>
+    <color name="delivery_green">#00E676</color>
 
     <!-- Wireframe nav / accents -->
     <color name="wf_magenta_nav">#FFD81B60</color>
@@ -25,4 +29,23 @@
 
     <color name="whatsapp_green">#FF25D366</color>
     <color name="whatsapp_green_dark">#FF1DA851</color>
+
+    <!-- Admin Dashboard Colors -->
+    <color name="admin_bg_card">#202523</color>
+    <color name="admin_border_gold">#C5D92D</color>
+    <color name="admin_sale_card_bg">#18261F</color>
+    <color name="admin_sale_card_border">#4E7D32</color>
+    <color name="admin_sale_btn_bg">#556B2F</color>
+    <color name="admin_gear_bg">#2C302E</color>
+    <color name="admin_gear_icon">#E58325</color>
+    <color name="admin_chart_bg">#1C2320</color>
+    <color name="admin_chart_line_pink">#D81B60</color>
+    <color name="admin_chart_line_green">#4CAF50</color>
+    <color name="admin_chart_line_gold">#FFD54F</color>
+    <color name="admin_nav_orange">#F57C00</color>
+    <color name="admin_nav_badge">#E81B62</color>
+    <color name="admin_date_orange">#FF9800</color>
+    <color name="admin_kpi_pink">#E0407B</color>
+    <color name="admin_kpi_yellow">#E6E600</color>
+    <color name="admin_kpi_green">#7CB342</color>
 </resources>

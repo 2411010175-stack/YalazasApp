@@ -1,0 +1,989 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/yalaza_bg"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:paddingBottom="40dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp">
+
+        <!-- 1. Header con Botón Volver y Título -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <ImageButton
+                android:id="@+id/btnBackPanel"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_admin_gear_btn"
+                android:contentDescription="Atrás"
+                android:padding="9dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_back_arrow"
+                app:tint="@color/white" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvPanelTitle"
+                    style="@style/Yalaza.Title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Agregar Nuevo Producto"
+                    android:textColor="@color/white"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPanelSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Configura los detalles de tu plato o combo"
+                    android:textColor="#9EADA4"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Badge de Modo -->
+            <TextView
+                android:id="@+id/tvModeBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_admin_ver_todas"
+                android:paddingStart="10dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="4dp"
+                android:text="NUEVO"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 2. CARD: Información Principal del Producto -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_admin_form_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="INFORMACIÓN GENERAL"
+                android:textColor="@color/admin_nav_orange"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"
+                android:layout_marginBottom="14dp" />
+
+            <!-- Nombre del Producto -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="Nombre del Plato o Combo *"
+                app:boxBackgroundColor="#121A16"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_pink"
+                app:hintTextColor="@color/yalaza_pink">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProductName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapWords"
+                    android:textColor="@color/white"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Categoría Rápida (Chips) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Selecciona Categoría Rápida:"
+                android:textColor="#9EADA4"
+                android:textSize="12sp"
+                android:layout_marginBottom="6dp" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginBottom="10dp">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipAlitas"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🍗 Alitas"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipHamburguesas"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🍔 Hamburguesas"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSalchipapas"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🍟 Salchipapas"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipCombos"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✨ Combos"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipBebidas"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🥤 Bebidas"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipPapas"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🥔 Porciones"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+                </com.google.android.material.chip.ChipGroup>
+            </HorizontalScrollView>
+
+            <!-- Categoría en Texto Editable -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="Categoría *"
+                app:boxBackgroundColor="#121A16"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_pink"
+                app:hintTextColor="@color/yalaza_pink">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProductCategory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Precio (S/) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="Precio en Soles (S/) *"
+                app:prefixText="S/ "
+                app:prefixTextColor="@color/admin_kpi_yellow"
+                app:boxBackgroundColor="#121A16"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_pink"
+                app:hintTextColor="@color/yalaza_pink">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProductPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Eslogan Corto -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:hint="Eslogan breve (Ej: 6 piezas + papas)"
+                app:boxBackgroundColor="#121A16"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_pink"
+                app:hintTextColor="@color/yalaza_pink">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProductTagline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Descripción Detallada -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Descripción completa (Ingredientes, salsas, detalles)"
+                app:boxBackgroundColor="#121A16"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_pink"
+                app:hintTextColor="@color/yalaza_pink">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProductDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:lines="3"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <!-- 3. CARD: Oferta y Precios Promocionales -->
+        <LinearLayout
+            android:id="@+id/cardOfferConfig"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_admin_form_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="OFERTA Y PROMOCIÓN ESPECIAL"
+                        android:textColor="@color/admin_nav_orange"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05" />
+
+                    <TextView
+                        android:id="@+id/tvOfferStatusText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="⚪ Precio regular (Sin oferta)"
+                        android:textColor="#9EADA4"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchProductOffer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    app:useMaterialThemeColors="true" />
+            </LinearLayout>
+
+            <!-- Contenedor expandible de configuración de oferta -->
+            <LinearLayout
+                android:id="@+id/layoutOfferFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="14dp"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#1AFFFFFF"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Precio Original / Regular (Tachado) -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutProductOriginalPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:hint="Precio Regular / Antes de la oferta (S/) *"
+                    app:prefixText="S/ "
+                    app:prefixTextColor="#9EADA4"
+                    app:boxBackgroundColor="#121A16"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/admin_nav_orange"
+                    app:hintTextColor="@color/admin_nav_orange">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etProductOriginalPrice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:textColor="@color/white"
+                        android:textSize="15sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Vista previa interactiva de cálculo del descuento -->
+                <LinearLayout
+                    android:id="@+id/layoutDiscountBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_admin_pill"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp"
+                    android:layout_marginBottom="14dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tvDiscountCalculated"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="💡 Ingresa el precio original para calcular el descuento"
+                        android:textColor="@color/admin_kpi_yellow"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Chips de sugerencias de etiquetas de oferta -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Insignia / Etiqueta rápida:"
+                    android:textColor="#9EADA4"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="6dp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none"
+                    android:layout_marginBottom="10dp">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupOfferTags"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipTagOferta"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔥 OFERTA"
+                            android:textColor="@color/color_admin_chip_text"
+                            app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipTagFlash"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⚡ FLASH"
+                            android:textColor="@color/color_admin_chip_text"
+                            app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipTag2x1"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🍗 2x1"
+                            android:textColor="@color/color_admin_chip_text"
+                            app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipTagCombo"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="✨ COMBO PROMO"
+                            android:textColor="@color/color_admin_chip_text"
+                            app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipTagPromoDia"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="⭐ PROMO DEL DÍA"
+                            android:textColor="@color/color_admin_chip_text"
+                            app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+                    </com.google.android.material.chip.ChipGroup>
+                </HorizontalScrollView>
+
+                <!-- Texto de Etiqueta Personalizada -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Texto de la Insignia (Ej: 🔥 25% OFF, 2x1, PROMO)"
+                    app:boxBackgroundColor="#121A16"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/admin_nav_orange"
+                    app:hintTextColor="@color/admin_nav_orange">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etProductOfferTag"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/white"
+                        android:textSize="14sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 4. CARD: Salsas y Combos Personalizables -->
+        <LinearLayout
+            android:id="@+id/cardSaucesConfig"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_admin_form_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SALSAS Y COMBOS PERSONALIZABLES"
+                        android:textColor="@color/yalaza_lime"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05" />
+
+                    <TextView
+                        android:id="@+id/tvSaucesStatusText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="⚪ Sin selección de salsas"
+                        android:textColor="#9EADA4"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchAllowsSauces"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="false"
+                    app:useMaterialThemeColors="true" />
+            </LinearLayout>
+
+            <!-- Contenedor expandible de salsas -->
+            <LinearLayout
+                android:id="@+id/layoutSaucesFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="14dp"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#1AFFFFFF"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¿Cuántas salsas diferentes puede elegir el cliente? *"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Chips rápidos de cantidad máxima de salsas -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupMaxSauces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceQty1"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1 Salsa"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceQty2"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2 Salsas (Dúo)"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceQty3"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="3 Salsas (Trío)"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceQty4"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="4 Salsas (Familiar)"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <!-- Input numérico de cantidad máxima -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutMaxSauces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp"
+                    android:hint="Cantidad máxima de salsas a elegir *"
+                    app:boxBackgroundColor="#121A16"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/yalaza_lime"
+                    app:hintTextColor="@color/yalaza_lime">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etMaxSauces"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:text="2"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Salsas disponibles en Yalazas para este combo:"
+                    android:textColor="#9EADA4"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="6dp" />
+
+                <!-- Chips de salsas activas para este combo -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipGroupAvailableSauces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:singleSelection="false">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceAcevichada"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Acevichada"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceBbq"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="BBQ Clásica"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceBufalo"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Búfalo Picante"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceMaracuya"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Maracuyá Dulce"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceHoney"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Honey Mustard"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceMango"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Mango Habanero"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceAjo"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Ajo Parmesano"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/chipSauceTartara"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Tártara Especial"
+                        android:textColor="@color/color_admin_chip_text"
+                        app:chipBackgroundColor="@drawable/bg_admin_chip_category" />
+                </com.google.android.material.chip.ChipGroup>
+
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 4. CARD: Disponibilidad y Stock -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_admin_form_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DISPONIBILIDAD EN CARTA"
+                        android:textColor="@color/admin_nav_orange"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05" />
+
+                    <TextView
+                        android:id="@+id/tvStockStatusText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="🟢 Activo para pedidos"
+                        android:textColor="#4CAF50"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchProductAvailable"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    app:useMaterialThemeColors="true" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 4. CARD: Imagen del Producto (Opcional) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_admin_form_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:text="IMAGEN DEL PLATO"
+                    android:textColor="@color/admin_nav_orange"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.05" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_admin_pill"
+                    android:paddingStart="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="2dp"
+                    android:text="OPCIONAL"
+                    android:textColor="#A0B2A6"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Puedes subir productos sin imagen. Se asignará automáticamente una imagen atractiva de Yalazas según la categoría."
+                android:textColor="#9EADA4"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Vista Previa de Imagen -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:background="@drawable/bg_admin_image_frame"
+                android:layout_marginBottom="10dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/ivProductImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Vista previa del plato" />
+
+                <TextView
+                    android:id="@+id/tvImagePlaceholderBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/bg_admin_pill"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="📸 Foto Automática"
+                    android:textColor="@color/white"
+                    android:textSize="11sp" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tvImageStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Usando imagen automática de Yalazas"
+                android:textColor="@color/admin_nav_orange"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Botones de Imagen -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSelectImage"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="Elegir Foto"
+                    android:textColor="@color/white"
+                    android:backgroundTint="#24332B"
+                    app:icon="@android:drawable/ic_menu_gallery"
+                    app:iconTint="@color/yalaza_pink"
+                    app:cornerRadius="10dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDefaultImage"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="Predeterminada"
+                    android:textColor="#A0B2A6"
+                    app:strokeColor="#35483E"
+                    app:cornerRadius="10dp" />
+            </LinearLayout>
+
+            <!-- URL manual de imagen (Opcional) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="O pega un enlace de imagen web (Opcional)"
+                app:boxBackgroundColor="#121A16"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_pink"
+                app:hintTextColor="@color/yalaza_pink">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etProductImageUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textUri"
+                    android:textColor="@color/white"
+                    android:textSize="13sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <!-- Barra de Progreso de Subida/Guardado -->
+        <ProgressBar
+            android:id="@+id/uploadProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Botón Principal Guardar -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveProduct"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="Guardar Producto"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/yalaza_pink"
+            app:cornerRadius="14dp"
+            app:icon="@android:drawable/ic_menu_save"
+            app:iconTint="@color/white"
+            app:iconGravity="textStart" />
+
+        <!-- Botón Eliminar (Solo en Modo Edición) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteProduct"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="14dp"
+            android:text="Eliminar Producto de la Carta"
+            android:textColor="#FF5252"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:strokeColor="#FF5252"
+            app:icon="@android:drawable/ic_menu_delete"
+            app:iconTint="#FF5252"
+            app:iconGravity="textStart"
+            app:cornerRadius="14dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

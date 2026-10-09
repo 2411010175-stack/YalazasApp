@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_admin_bottom_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top Drag Handle & Title Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="8dp">
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="4dp"
+                android:background="@drawable/bg_admin_drag_handle" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_toStartOf="@id/layoutLocationHeaderActions"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ubicación de Entrega 📍"
+                        android:textColor="@color/white"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:text="Mueve el mapa o busca tu calle para fijar el punto"
+                        android:textColor="@color/yalaza_text_secondary"
+                        android:textSize="11.5sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutLocationHeaderActions"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <androidx.appcompat.widget.AppCompatImageButton
+                        android:id="@+id/btnCloseLocationSheet"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_admin_gear_btn"
+                        android:contentDescription="Cerrar"
+                        android:padding="8dp"
+                        android:src="@android:drawable/ic_menu_close_clear_cancel"
+                        app:tint="@color/white" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <!-- Search Bar over Map for Instant Address Lookup -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_admin_form_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp">
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="@color/yalaza_lime" />
+
+                <EditText
+                    android:id="@+id/etMapSearchAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="Buscar calle, avenida o lugar en Cañete..."
+                    android:imeOptions="actionSearch"
+                    android:inputType="textPostalAddress"
+                    android:maxLines="1"
+                    android:textColor="@color/white"
+                    android:textColorHint="#8A9C92"
+                    android:textSize="12.5sp" />
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnMapSearchAction"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Buscar en mapa"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_chevron_right"
+                    app:tint="@color/yalaza_lime" />
+            </LinearLayout>
+
+            <!-- Quick District / Preset Chips for Instant Jump -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:overScrollMode="never"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipGpsQuick"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="6dp"
+                        android:backgroundTint="#1B3828"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="🎯 Mi GPS"
+                        android:textColor="@color/yalaza_lime"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="16dp"
+                        app:strokeColor="@color/yalaza_lime"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipSanVicente"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="6dp"
+                        android:backgroundTint="#16221B"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="📍 San Vicente"
+                        android:textColor="#C0D4C8"
+                        android:textSize="11sp"
+                        app:cornerRadius="16dp"
+                        app:strokeColor="#2E483A"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipImperial"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="6dp"
+                        android:backgroundTint="#16221B"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="📍 Imperial"
+                        android:textColor="#C0D4C8"
+                        android:textSize="11sp"
+                        app:cornerRadius="16dp"
+                        app:strokeColor="#2E483A"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipQuilmana"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="6dp"
+                        android:backgroundTint="#16221B"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="📍 Quilmaná"
+                        android:textColor="#C0D4C8"
+                        android:textSize="11sp"
+                        app:cornerRadius="16dp"
+                        app:strokeColor="#2E483A"
+                        app:strokeWidth="1dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipNuevoImperial"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:backgroundTint="#16221B"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="0dp"
+                        android:text="📍 Nuevo Imperial"
+                        android:textColor="#C0D4C8"
+                        android:textSize="11sp"
+                        app:cornerRadius="16dp"
+                        app:strokeColor="#2E483A"
+                        app:strokeWidth="1dp" />
+                </LinearLayout>
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- Map Container with Center Pin Overlay & Touch Gestures -->
+        <FrameLayout
+            android:id="@+id/layoutMapContainer"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="#1B221E">
+
+            <!-- OpenStreetMap MapView -->
+            <org.osmdroid.views.MapView
+                android:id="@+id/mapView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Fixed Center Marker Pin Container with Bounce Animation -->
+            <LinearLayout
+                android:id="@+id/layoutCenterPin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingBottom="24dp">
+
+                <!-- Speech Bubble Hint -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPinHint"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="4dp"
+                    app:cardBackgroundColor="#CC000000"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="4dp"
+                    app:strokeColor="@color/yalaza_lime"
+                    app:strokeWidth="1dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="Punto de Entrega 🛵"
+                        android:textColor="@color/yalaza_lime"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Delivery Pin Icon -->
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/ivMapCenterPin"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_delivery_pin_yalaza" />
+            </LinearLayout>
+
+            <!-- Floating Map Controls: Zoom In, Zoom Out, GPS, Fullscreen -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="14dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <!-- Zoom In Button -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fabZoomIn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:contentDescription="Acercar mapa"
+                    android:src="@drawable/ic_add"
+                    app:backgroundTint="#24342B"
+                    app:elevation="4dp"
+                    app:fabSize="mini"
+                    app:maxImageSize="18dp"
+                    app:tint="@color/white" />
+
+                <!-- Zoom Out Button -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fabZoomOut"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="Alejar mapa"
+                    android:src="@drawable/ic_remove"
+                    app:backgroundTint="#24342B"
+                    app:elevation="4dp"
+                    app:fabSize="mini"
+                    app:maxImageSize="18dp"
+                    app:tint="@color/white" />
+
+                <!-- My GPS Location Button -->
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/fabMyLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="Mi ubicación actual"
+                    android:src="@drawable/ic_my_location"
+                    app:backgroundTint="#1F4D33"
+                    app:elevation="6dp"
+                    app:fabSize="normal"
+                    app:maxImageSize="24dp"
+                    app:tint="@color/yalaza_lime" />
+            </LinearLayout>
+
+            <!-- Loading Indicator over map when reverse geocoding / searching -->
+            <ProgressBar
+                android:id="@+id/pbMapGeocoding"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="14dp"
+                android:indeterminateTint="@color/yalaza_lime"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <!-- Bottom Address & Confirmation Sheet -->
+        <LinearLayout
+            android:id="@+id/layoutLocationBottomDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#161E1A"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="16dp">
+
+            <!-- Detected Address Container -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="#1D2A24"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#2E483A"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp">
+
+                    <androidx.appcompat.widget.AppCompatImageView
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
+                        android:background="@drawable/bg_admin_gear_btn"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_location_pin"
+                        app:tint="@color/yalaza_lime" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:letterSpacing="0.05"
+                            android:text="DIRECCIÓN DETECTADA"
+                            android:textColor="@color/yalaza_lime"
+                            android:textSize="9.5sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvSheetDetectedAddress"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:text="Moviendo el mapa..."
+                            android:textColor="@color/white"
+                            android:textSize="13.5sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvSheetCoordinates"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Lat: -13.0618 · Lng: -76.3520"
+                            android:textColor="@color/yalaza_text_secondary"
+                            android:textSize="10.5sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Optional Reference & Number Input -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Nro / Dpto / Referencia (ej. Frente al parque)"
+                app:boxBackgroundColor="#15211B"
+                app:boxCornerRadiusBottomEnd="12dp"
+                app:boxCornerRadiusBottomStart="12dp"
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp"
+                app:boxStrokeColor="@color/yalaza_border"
+                app:boxStrokeWidth="1dp"
+                app:hintTextColor="@color/yalaza_lime"
+                app:placeholderText="Ej: Mz B Lt 4, Casa blanca con rejas">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSheetLocationReference"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLines="2"
+                    android:textColor="@color/white"
+                    android:textSize="12.5sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Confirm Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirmDeliveryLocation"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="@color/yalaza_lime"
+                android:text="Confirmar Ubicación de Entrega 🛵"
+                android:textColor="#0B1A10"
+                android:textSize="13.5sp"
+                android:textStyle="bold"
+                app:cornerRadius="24dp"
+                app:icon="@drawable/ic_shopping_bag_cart"
+                app:iconGravity="textStart"
+                app:iconPadding="6dp"
+                app:iconTint="#0B1A10" />
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

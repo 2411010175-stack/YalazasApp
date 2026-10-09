@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="#12221A"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#223C2D"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Top row: Order Number & Delivery Delivered Time -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvHistoryOrderNumber"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="Venta N° 00118" />
+
+            <TextView
+                android:id="@+id/tvHistoryDeliveredBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_delivery_tab_selected"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="✅ ENTREGADO"
+                android:textColor="#00E676"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Customer & Address -->
+        <TextView
+            android:id="@+id/tvHistoryCustomer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="#C0D3C7"
+            android:textSize="13sp"
+            tools:text="👤 Carlos Mendoza • 📞 987 654 321" />
+
+        <TextView
+            android:id="@+id/tvHistoryAddress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#8AA394"
+            android:textSize="12sp"
+            tools:text="📍 Av. Mariscal Benavides 450, San Vicente" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="8dp"
+            android:background="#1B3326" />
+
+        <!-- Bottom Row: Payment Method Tag & Amount -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvHistoryPaymentMethodTag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#1D3E2B"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
+                android:textColor="#00E676"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="💵 EFECTIVO" />
+
+            <TextView
+                android:id="@+id/tvHistoryDeliveredTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:textColor="#7A9385"
+                android:textSize="11sp"
+                tools:text="Entregado a las 8:45 PM" />
+
+            <TextView
+                android:id="@+id/tvHistoryTotalAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#00E676"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="S/ 42.00" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

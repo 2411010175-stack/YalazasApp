@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "973983175323",
+    "project_id": "yalazas-5fc9a",
+    "storage_bucket": "yalazas-5fc9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:973983175323:android:8ca831775b8043ff19ac3e",
+        "android_client_info": {
+          "package_name": "com.yalazas.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWPKC1lS_HwWmz8ndbcbMtp9I2vJOgoNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

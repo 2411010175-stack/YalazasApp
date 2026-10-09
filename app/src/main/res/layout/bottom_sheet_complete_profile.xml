@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_admin_bottom_sheet">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Top Drag Handle & Title Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="18dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="10dp">
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="4dp"
+                android:background="@drawable/bg_admin_drag_handle" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_toStartOf="@id/btnCloseProfileSheet"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="Datos de Contacto y Entrega 🛵"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Completa tu nombre y celular para coordinar la entrega"
+                        android:textColor="@color/yalaza_text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.AppCompatImageButton
+                    android:id="@+id/btnCloseProfileSheet"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="@drawable/bg_admin_gear_btn"
+                    android:contentDescription="Cerrar"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    app:tint="@color/white" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <!-- Scrollable Content -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="never">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="18dp"
+                android:paddingBottom="24dp">
+
+                <!-- 1. Name Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetProfileName"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:hint="👤 Tu Nombre Completo"
+                    android:textColorHint="#9EADA4"
+                    app:boxBackgroundColor="#15211B"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/admin_border_gold"
+                    app:boxStrokeWidth="1dp"
+                    app:hintTextColor="@color/yalaza_lime">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSheetProfileName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPersonName|textCapWords"
+                        android:maxLines="1"
+                        android:textColor="@color/white"
+                        android:textSize="13.5sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 2. Phone Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetProfilePhone"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="📱 Celular o WhatsApp de Contacto"
+                    android:textColorHint="#9EADA4"
+                    app:boxBackgroundColor="#15211B"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/admin_border_gold"
+                    app:boxStrokeWidth="1dp"
+                    app:helperText="El repartidor te llamará a este número al llegar"
+                    app:helperTextTextColor="#9EADA4"
+                    app:hintTextColor="@color/yalaza_lime"
+                    app:prefixText="+51 "
+                    app:prefixTextColor="@color/yalaza_lime">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSheetProfilePhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="phone"
+                        android:maxLength="9"
+                        android:maxLines="1"
+                        android:textColor="@color/white"
+                        android:textSize="13.5sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 3. Delivery Address Input with Map Action -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetProfileAddress"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="📍 Dirección de Entrega"
+                    android:textColorHint="#9EADA4"
+                    app:boxBackgroundColor="#15211B"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/admin_border_gold"
+                    app:boxStrokeWidth="1dp"
+                    app:endIconDrawable="@drawable/ic_location_pin"
+                    app:endIconMode="custom"
+                    app:endIconTint="@color/yalaza_lime"
+                    app:helperText="Toca el ícono del mapa para elegir en OpenStreetMap"
+                    app:helperTextTextColor="#9EADA4"
+                    app:hintTextColor="@color/yalaza_lime">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSheetProfileAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPostalAddress|textCapSentences"
+                        android:maxLines="2"
+                        android:textColor="@color/white"
+                        android:textSize="13.5sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 4. Reference Input -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetProfileReference"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="🏢 Referencia de Entrega (Opcional)"
+                    android:textColorHint="#9EADA4"
+                    app:boxBackgroundColor="#15211B"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeColor="@color/admin_border_gold"
+                    app:boxStrokeWidth="1dp"
+                    app:hintTextColor="@color/yalaza_lime"
+                    app:placeholderText="Ej: Casa blanca de 2 pisos, portón negro">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSheetProfileReference"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textCapSentences"
+                        android:maxLines="2"
+                        android:textColor="@color/white"
+                        android:textSize="13.5sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 5. Submit CTA Button Container -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSaveProfileAndContinue"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:backgroundTint="@color/yalaza_lime"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:text="Guardar y Continuar Pedido 🚀"
+                        android:textColor="#0B1A10"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="26dp"
+                        app:icon="@drawable/ic_shopping_bag_cart"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconTint="#0B1A10" />
+
+                    <ProgressBar
+                        android:id="@+id/pbSavingProfile"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:indeterminateTint="#0B1A10"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

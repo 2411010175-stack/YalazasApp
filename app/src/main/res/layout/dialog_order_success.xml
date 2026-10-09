@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layoutSuccessRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_marginHorizontal="20dp"
+    android:background="@drawable/bg_dialog_order_success"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="22dp">
+
+    <!-- Bouncy Animated Icon Circle Container -->
+    <FrameLayout
+        android:id="@+id/layoutSuccessIconContainer"
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_success_icon_circle">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/ivSuccessIllustration"
+            android:layout_width="54dp"
+            android:layout_height="54dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_delivery_pin_yalaza" />
+    </FrameLayout>
+
+    <!-- Success Title -->
+    <TextView
+        android:id="@+id/tvSuccessTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:text="¡Pedido Enviado a Cocina! 🍗🚀"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvSuccessSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        android:text="¡Tus alitas Yalazas están en marcha! Ya puedes seguir el estado de tu pedido en tiempo real."
+        android:textColor="@color/yalaza_text_secondary"
+        android:textSize="12sp" />
+
+    <!-- Order Reference Code Badge -->
+    <LinearLayout
+        android:id="@+id/layoutSuccessCodeBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_order_code_pill"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="5dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CÓDIGO: "
+            android:textColor="@color/yalaza_text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSuccessOrderCode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/yalaza_lime"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="#A8F2" />
+    </LinearLayout>
+
+    <!-- Info Detail Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardSuccessDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        app:cardBackgroundColor="#17231D"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeColor="#2A4234"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <!-- Estimated Time Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⏱️"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="Tiempo estimado de entrega:"
+                    android:textColor="@color/yalaza_text_secondary"
+                    android:textSize="11.5sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25 - 35 min"
+                    android:textColor="@color/yalaza_lime"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="#24332B" />
+
+            <!-- Address Destination Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvSuccessAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/white"
+                    android:textSize="11.5sp"
+                    tools:text="Av. Mariscal Benavides 450" />
+
+                <TextView
+                    android:id="@+id/tvSuccessTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/yalaza_lime"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    tools:text="S/ 56.00" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Action CTA Buttons -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSuccessTrackOrder"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="@color/yalaza_lime"
+        android:text="Rastrear Pedido en Vivo 📍"
+        android:textColor="#0B1A10"
+        android:textSize="13.5sp"
+        android:textStyle="bold"
+        app:cornerRadius="24dp"
+        app:icon="@drawable/ic_location_pin"
+        app:iconGravity="textStart"
+        app:iconPadding="6dp"
+        app:iconTint="#0B1A10" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSuccessBackToMenu"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="42dp"
+        android:layout_marginTop="4dp"
+        android:text="Seguir viendo el Menú 🍗"
+        android:textColor="@color/yalaza_text_secondary"
+        android:textSize="12.5sp" />
+
+</LinearLayout>

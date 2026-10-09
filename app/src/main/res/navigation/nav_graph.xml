@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/nav_login">
+
+    <fragment
+        android:id="@+id/nav_login"
+        android:name="com.yalazas.app.ui.login.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/nav_menu"
+            app:popUpTo="@id/nav_login"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/nav_register" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_register"
+        android:name="com.yalazas.app.ui.login.RegisterFragment"
+        android:label="Register"
+        tools:layout="@layout/fragment_register">
+        <action
+            android:id="@+id/action_register_to_menu"
+            app:destination="@id/nav_menu"
+            app:popUpTo="@id/nav_register"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.yalazas.app.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_menu"
+        android:name="com.yalazas.app.MenuFragment"
+        android:label="Menu"
+        tools:layout="@layout/fragment_menu" />
+
+
+
+    <fragment
+        android:id="@+id/nav_contact"
+        android:name="com.yalazas.app.ContactFragment"
+        android:label="Contact"
+        tools:layout="@layout/fragment_contact" />
+
+    <!-- Eliminado ComboConfiguratorFragment -->
+
+    <fragment
+        android:id="@+id/nav_admin_panel"
+        android:name="com.yalazas.app.ui.admin.AdminPanelFragment"
+        android:label="Panel Admin"
+        tools:layout="@layout/fragment_admin_panel" />
+
+    <fragment
+        android:id="@+id/nav_admin_users"
+        android:name="com.yalazas.app.ui.admin.AdminUsersFragment"
+        android:label="Gestión de Usuarios"
+        tools:layout="@layout/fragment_admin_users" />
+
+    <fragment
+        android:id="@+id/nav_admin_inventory"
+        android:name="com.yalazas.app.ui.admin.AdminInventoryFragment"
+        android:label="Inventario"
+        tools:layout="@layout/fragment_admin_inventory" />
+
+    <fragment
+        android:id="@+id/nav_admin_sales"
+        android:name="com.yalazas.app.ui.admin.AdminSalesFragment"
+        android:label="Ventas"
+        tools:layout="@layout/fragment_admin_sales" />
+
+    <fragment
+        android:id="@+id/nav_admin_settings"
+        android:name="com.yalazas.app.ui.admin.AdminSettingsFragment"
+        android:label="Ajustes"
+        tools:layout="@layout/fragment_admin_settings" />
+
+    <fragment
+        android:id="@+id/nav_cart"
+        android:name="com.yalazas.app.ui.cart.CartFragment"
+        android:label="Carrito"
+        tools:layout="@layout/fragment_cart" />
+
+    <fragment
+        android:id="@+id/nav_admin_dashboard"
+        android:name="com.yalazas.app.ui.admin.AdminDashboardFragment"
+        android:label="Admin Dashboard"
+        tools:layout="@layout/fragment_admin_dashboard" />
+
+    <fragment
+        android:id="@+id/nav_tracking"
+        android:name="com.yalazas.app.ui.tracking.TrackingFragment"
+        android:label="Rastreo"
+        tools:layout="@layout/fragment_tracking" />
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.yalazas.app.ui.profile.ProfileFragment"
+        android:label="Perfil"
+        tools:layout="@layout/fragment_profile" />
+
+    <!-- Delivery Driver Navigation Fragments -->
+    <fragment
+        android:id="@+id/nav_delivery_orders"
+        android:name="com.yalazas.app.ui.delivery.DeliveryOrdersFragment"
+        android:label="Entregas"
+        tools:layout="@layout/fragment_delivery_orders" />
+
+    <fragment
+        android:id="@+id/nav_delivery_map"
+        android:name="com.yalazas.app.ui.delivery.DeliveryMapFragment"
+        android:label="Mapa en Vivo"
+        tools:layout="@layout/fragment_delivery_map" />
+
+    <fragment
+        android:id="@+id/nav_delivery_history"
+        android:name="com.yalazas.app.ui.delivery.DeliveryHistoryFragment"
+        android:label="Historial de Entregas"
+        tools:layout="@layout/fragment_delivery_history" />
+
+    <fragment
+        android:id="@+id/nav_delivery_profile"
+        android:name="com.yalazas.app.ui.delivery.DeliveryProfileFragment"
+        android:label="Perfil de Repartidor"
+        tools:layout="@layout/fragment_delivery_profile" />
+
+</navigation>

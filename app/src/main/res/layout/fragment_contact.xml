@@ -62,104 +62,6 @@
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            style="@style/Yalaza.Title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start"
-            android:layout_marginTop="16dp"
-            android:text="@string/contact_hours_table_title"
-            android:textSize="18sp" />
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:cardBackgroundColor="@color/yalaza_surface"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/yalaza_border"
-            app:strokeWidth="1dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        style="@style/Yalaza.Body"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/contact_day_week" />
-
-                    <TextView
-                        style="@style/Yalaza.Body"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/contact_time_week"
-                        android:textColor="@color/wf_lime_nav" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        style="@style/Yalaza.Body"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/contact_day_sat" />
-
-                    <TextView
-                        style="@style/Yalaza.Body"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/contact_time_weekend"
-                        android:textColor="@color/wf_lime_nav" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        style="@style/Yalaza.Body"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/contact_day_sun" />
-
-                    <TextView
-                        style="@style/Yalaza.Body"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/contact_time_weekend"
-                        android:textColor="@color/wf_lime_nav" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <androidx.appcompat.widget.AppCompatImageView
-            android:layout_width="160dp"
-            android:layout_height="80dp"
-            android:layout_marginTop="20dp"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/app_name"
-            android:scaleType="fitCenter"
-            app:srcCompat="@drawable/yalaza_logo" />
-
-        <TextView
             android:id="@+id/tvContactAddress"
             style="@style/Yalaza.Body"
             android:layout_width="match_parent"
@@ -170,41 +72,39 @@
             android:gravity="center"
             android:text="@string/contact_address" />
 
-        <TextView
-            style="@style/Yalaza.Body"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:text="@string/contact_hours" />
+            android:layout_marginTop="24dp">
 
-        <TextView
-            style="@style/Yalaza.Body"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:text="@string/contact_phone_label" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnContactChat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:paddingHorizontal="24dp"
+                android:text="WhatsApp"
+                android:textAllCaps="false"
+                app:icon="@drawable/ic_nav_contact"
+                app:iconSize="20dp"
+                android:backgroundTint="#25D366"
+                android:textColor="@color/white"
+                app:cornerRadius="12dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnContactChat"
-            style="@style/Yalaza.Button.WhatsApp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnContactInstagram"
-            style="@style/Yalaza.Button.Instagram"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:minHeight="48dp"
-            android:text="@string/contact_open_instagram"
-            android:textAllCaps="false"
-            android:textColor="@color/wf_lime_nav"
-            app:cornerRadius="24dp"
-            app:strokeColor="@color/wf_magenta_nav"
-            app:strokeWidth="2dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnContactInstagram"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="24dp"
+                android:text="Instagram"
+                android:textAllCaps="false"
+                app:icon="@drawable/ic_instagram_brand"
+                app:iconSize="20dp"
+                android:backgroundTint="#E1306C"
+                android:textColor="@color/white"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
