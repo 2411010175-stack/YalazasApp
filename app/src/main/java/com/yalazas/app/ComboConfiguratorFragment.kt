@@ -8,6 +8,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 
+/** Muestra la configuración de combos del menú. */
 class ComboConfiguratorFragment : Fragment(R.layout.fragment_combo) {
 
     private var quantity: Int = 1
@@ -60,7 +61,7 @@ class ComboConfiguratorFragment : Fragment(R.layout.fragment_combo) {
                     append('\n').append("Notas: ").append(notes)
                 }
             }
-            activity.openWhatsAppFor(msg)
+            activity.abrirWhatsAppConMensaje(msg)
         }
     }
 }

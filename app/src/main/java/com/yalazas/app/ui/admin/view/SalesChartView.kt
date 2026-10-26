@@ -7,6 +7,7 @@ import android.view.View
 import kotlin.math.ceil
 import kotlin.math.max
 
+/** Dibuja la gráfica de ventas a partir de los datos preparados por el panel. */
 class SalesChartView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,

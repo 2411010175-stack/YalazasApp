@@ -10,11 +10,12 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.yalazas.app.R
-import com.yalazas.app.repository.AuthRepository
-import com.yalazas.app.ui.dialogs.LogoutConfirmationDialogFragment
-import com.yalazas.app.ui.location.LocationPickerBottomSheet
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.ui.dialogos.DialogoCerrarSesion
+import com.yalazas.app.ui.ubicacion.HojaSeleccionUbicacion
 import kotlinx.coroutines.launch
 
+/** Muestra y actualiza los datos del perfil del cliente. */
 class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
     private var selectedLat: Double = 0.0
@@ -33,7 +34,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         val btnLogout = view.findViewById<MaterialButton>(R.id.btnLogout)
 
         // Cargar datos actuales
-        val currentProfile = AuthRepository.currentProfile
+        val currentProfile = RepositorioAutenticacion.currentProfile
         if (currentProfile != null) {
             inputName.setText(currentProfile.name)
             inputPhone.setText(currentProfile.phone)
@@ -44,7 +45,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         fun openLocationPicker() {
-            LocationPickerBottomSheet.newInstance(
+            HojaSeleccionUbicacion.crear(
                 currentAddress = inputAddress.text.toString().trim(),
                 currentReference = inputRef.text.toString().trim(),
                 lat = if (selectedLat != 0.0) selectedLat else (currentProfile?.latitude ?: 0.0),
@@ -57,7 +58,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                 selectedLat = lat
                 selectedLng = lng
                 Toast.makeText(requireContext(), "📍 Ubicación fijada en el mapa", Toast.LENGTH_SHORT).show()
-            }.show(parentFragmentManager, LocationPickerBottomSheet.TAG)
+            }.show(parentFragmentManager, HojaSeleccionUbicacion.TAG)
         }
 
         btnPickLocation.setOnClickListener { openLocationPicker() }
@@ -76,7 +77,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
             btnSave.isEnabled = false
             lifecycleScope.launch {
-                val result = AuthRepository.updateProfile(
+                val result = RepositorioAutenticacion.actualizarPerfil(
                     name = name,
                     phone = phone,
                     address = address,
@@ -94,9 +95,9 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
         }
 
         btnLogout.setOnClickListener {
-            LogoutConfirmationDialogFragment.newInstance("¿Estás seguro de que deseas cerrar sesión de tu cuenta?")
-                .setOnConfirmListener {
-                    AuthRepository.logout()
+            DialogoCerrarSesion.crear("¿Estás seguro de que deseas cerrar sesión de tu cuenta?")
+                .definirAccionConfirmacion {
+                    RepositorioAutenticacion.cerrarSesion()
                     Toast.makeText(requireContext(), "Sesión cerrada correctamente", Toast.LENGTH_SHORT).show()
                     findNavController().navigate(
                         R.id.nav_login,
@@ -106,7 +107,7 @@ class ProfileFragment : Fragment(R.layout.fragment_profile) {
                             .build()
                     )
                 }
-                .show(parentFragmentManager, LogoutConfirmationDialogFragment.TAG)
+                .show(parentFragmentManager, DialogoCerrarSesion.TAG)
         }
     }
 }

@@ -4,6 +4,7 @@ import android.os.Parcelable
 import com.google.firebase.Timestamp
 import kotlinx.parcelize.Parcelize
 
+/** Pedido leído de Firestore. Los nombres de sus propiedades corresponden a campos guardados. */
 data class Order(
     var id: String = "",
     val userId: String = "",
@@ -31,10 +32,12 @@ data class Order(
     val routeOrderIndex: Int = 0
 )
 
+/** Artículo del pedido que también se puede enviar entre pantallas mediante Parcelable. */
 @Parcelize
 data class OrderItem(
     val productId: String = "",
     val name: String = "",
+    val description: String = "",
     val quantity: Int = 0,
     val subtotal: Double = 0.0,
     val notes: String = "",

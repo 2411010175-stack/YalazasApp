@@ -11,15 +11,15 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.yalazas.app.ui.dialogs.LogoutConfirmationDialogFragment
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.yalazas.app.ui.dialogos.DialogoCerrarSesion
 import com.yalazas.app.R
 import com.yalazas.app.databinding.DialogEditVehicleBinding
 import com.yalazas.app.databinding.FragmentDeliveryProfileBinding
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.repository.AuthRepository
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.ServiciosFirebase
 
+/** Muestra los datos y la disponibilidad del repartidor. */
 class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
 
     private var _binding: FragmentDeliveryProfileBinding? = null
@@ -36,12 +36,12 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
         loadProfileData()
         loadVehicleData()
         loadDeliveredCountStat()
-        setupListeners()
+        configurarEventos()
     }
 
     private fun loadProfileData() {
-        val profile = AuthRepository.currentProfile
-        val user = FirebaseAuth.getInstance().currentUser
+        val profile = RepositorioAutenticacion.currentProfile
+        val user = ServiciosFirebase.auth.currentUser
 
         val name = profile?.name?.ifBlank { "Repartidor Yalazas" } ?: (user?.displayName ?: "Repartidor Yalazas")
         val email = profile?.email?.ifBlank { user?.email ?: "repartidor@yalazas.pe" } ?: (user?.email ?: "repartidor@yalazas.pe")
@@ -80,23 +80,24 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
     }
 
     private fun loadDeliveredCountStat() {
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        val db = FirebaseFirestore.getInstance()
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
+        val db = ServiciosFirebase.firestore
 
         db.collection("orders")
-            .whereEqualTo("status", OrderStatus.ENTREGADO.name)
+            .whereEqualTo("isDelivery", true)
             .get()
             .addOnSuccessListener { snapshot ->
                 if (!isAdded || _binding == null) return@addOnSuccessListener
                 val count = snapshot.documents.count { doc ->
                     val driverId = doc.getString("deliveryDriverId")
-                    driverId == currentUid || driverId.isNullOrEmpty()
+                    doc.getString("status") == OrderStatus.ENTREGADO.name &&
+                        (driverId == currentUid || driverId.isNullOrEmpty())
                 }
                 binding.tvProfileStatDeliveries.text = count.toString()
             }
     }
 
-    private fun setupListeners() {
+    private fun configurarEventos() {
         binding.switchDriverAvailability.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("driver_available", isChecked).apply()
             updateAvailabilityUI(isChecked)
@@ -114,7 +115,7 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
         }
 
         binding.btnWhatsAppCentral.setOnClickListener {
-            val driverName = AuthRepository.currentProfile?.name ?: "Repartidor"
+            val driverName = RepositorioAutenticacion.currentProfile?.name ?: "Repartidor"
             val message = "¡Hola Administración Yalazas! Soy el repartidor $driverName. Me comunico desde la app para:"
             val url = "https://wa.me/51921456789?text=${Uri.encode(message)}"
             try {
@@ -173,9 +174,9 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
     }
 
     private fun confirmLogout() {
-        LogoutConfirmationDialogFragment.newInstance("¿Deseas cerrar tu turno y salir de tu cuenta de repartidor?")
-            .setOnConfirmListener {
-                AuthRepository.logout()
+        DialogoCerrarSesion.crear("¿Deseas cerrar tu turno y salir de tu cuenta de repartidor?")
+            .definirAccionConfirmacion {
+                RepositorioAutenticacion.cerrarSesion()
                 Toast.makeText(requireContext(), "Sesión de repartidor cerrada", Toast.LENGTH_SHORT).show()
                 try {
                     findNavController().navigate(
@@ -191,7 +192,7 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
                     } catch (_: Exception) { }
                 }
             }
-            .show(parentFragmentManager, LogoutConfirmationDialogFragment.TAG)
+            .show(parentFragmentManager, DialogoCerrarSesion.TAG)
     }
 
     override fun onDestroyView() {

@@ -5,6 +5,7 @@ import com.google.firebase.firestore.Exclude
 import kotlinx.parcelize.Parcelize
 import kotlin.math.roundToInt
 
+/** Producto de la colección `products`; los campos calculados se excluyen de Firestore. */
 @Parcelize
 data class Product(
     var id: String = "",
@@ -23,6 +24,7 @@ data class Product(
     var availableSauces: List<String> = emptyList()
 ) : Parcelable {
 
+    /** Indica si el precio actual representa una oferta válida. */
     @get:Exclude
     val hasDiscount: Boolean
         get() = isOffer && originalPrice > price && originalPrice > 0.0

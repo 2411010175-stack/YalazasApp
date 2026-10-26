@@ -1,5 +1,6 @@
 package com.yalazas.app.model
 
+/** Datos del registro de auditoría de los cambios administrativos. */
 data class AuditLog(
     val id: String = "",
     val usuarioAfectadoId: String = "",

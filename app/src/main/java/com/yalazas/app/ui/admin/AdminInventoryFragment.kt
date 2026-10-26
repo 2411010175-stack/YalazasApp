@@ -1,6 +1,8 @@
 package com.yalazas.app.ui.admin
 
+import android.content.DialogInterface
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -13,19 +15,26 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.model.Product
-import com.yalazas.app.ui.menu.ProductAdapter
+import com.yalazas.app.model.PromocionProducto
+import com.yalazas.app.repositorio.RepositorioPromociones
+import com.yalazas.app.repositorio.ServiciosFirebase
+import com.yalazas.app.ui.menu.AdaptadorProductos
+import java.util.Locale
 
+/** Muestra y filtra el catálogo que administra el restaurante. */
 class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db = ServiciosFirebase.firestore
     private var productsListener: ListenerRegistration? = null
-    private lateinit var productAdapter: ProductAdapter
+    private var promotionsListener: ListenerRegistration? = null
+    private lateinit var productAdapter: AdaptadorProductos
 
     private var allProducts = listOf<Product>()
+    private var promociones = emptyMap<String, PromocionProducto>()
     private var currentSearchQuery = ""
 
     private lateinit var tvProductsCount: TextView
@@ -56,10 +65,12 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
         }
 
         // 3. Configurar Adapter en Modo Administrador
-        productAdapter = ProductAdapter(isAdminMode = true) { selectedProduct, _ ->
+        productAdapter = AdaptadorProductos(isAdminMode = true) { selectedProduct, _ ->
+            // El adaptador puede mostrar una copia con descuento; el editor recibe el producto base.
+            val productoBase = allProducts.firstOrNull { it.id == selectedProduct.id } ?: selectedProduct
             findNavController().navigate(
                 R.id.nav_admin_panel,
-                bundleOf("product" to selectedProduct)
+                bundleOf("product" to productoBase)
             )
         }
         rvInventory.layoutManager = LinearLayoutManager(requireContext())
@@ -69,71 +80,140 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
         inputSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun afterTextChanged(s: android.text.Editable?) {
                 currentSearchQuery = s?.toString() ?: ""
-                filterProducts(currentSearchQuery)
+                filtrarProductos(currentSearchQuery)
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
         // 5. Escuchar cambios de productos en tiempo real
-        listenToProductsRealtime(progressBar)
+        escucharProductosEnTiempoReal(progressBar)
+        promotionsListener = RepositorioPromociones.escuchar(
+            alCambiar = { nuevas ->
+                promociones = nuevas.associateBy { it.productId }
+                filtrarProductos(currentSearchQuery)
+            },
+            alError = {
+                promociones = emptyMap()
+                filtrarProductos(currentSearchQuery)
+            }
+        )
     }
 
     private fun showNewOfferDialog() {
-        val options = arrayOf(
-            "🔥 Crear Nueva Oferta / Combo Promocional",
-            "✨ Aplicar Oferta a Producto Existente de la Carta"
-        )
+        val contenido = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialogo_opciones_oferta, null)
+        val dialogo = MaterialAlertDialogBuilder(requireContext())
+            .setView(contenido)
+            .create()
+        dialogo.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Promociones y Ofertas")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> {
-                        // Crear nuevo producto en modo oferta
-                        findNavController().navigate(
-                            R.id.nav_admin_panel,
-                            bundleOf("isOfferMode" to true)
-                        )
-                    }
-                    1 -> {
-                        // Seleccionar producto existente
-                        showSelectProductForOfferDialog()
-                    }
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        contenido.findViewById<View>(R.id.cardCrearOferta).setOnClickListener {
+            dialogo.dismiss()
+            findNavController().navigate(R.id.nav_admin_panel, bundleOf("isOfferMode" to true))
+        }
+        contenido.findViewById<View>(R.id.cardAplicarOferta).setOnClickListener {
+            dialogo.dismiss()
+            showSelectProductForOfferDialog()
+        }
+        contenido.findViewById<View>(R.id.btnCancelarOferta).setOnClickListener { dialogo.dismiss() }
+        dialogo.show()
+        dialogo.window?.setBackgroundDrawableResource(android.R.color.transparent)
     }
 
     private fun showSelectProductForOfferDialog() {
-        if (allProducts.isEmpty()) {
+        val productosBase = allProducts.filterNot { it.isOffer }
+        if (productosBase.isEmpty()) {
             Toast.makeText(requireContext(), "No hay productos registrados en la carta", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val productNames = allProducts.map { product ->
-            val status = if (product.isOffer) "🔥 [Oferta activa: S/ ${product.price}]" else "S/ ${product.price}"
+        val productNames = productosBase.map { product ->
+            val oferta = promociones[product.id]
+            val status = if (oferta?.active == true) {
+                "🔥 Oferta: S/ ${String.format(Locale.US, "%.2f", oferta.offerPrice)}"
+            } else {
+                "Regular: S/ ${String.format(Locale.US, "%.2f", product.price)}"
+            }
             "${product.name} — $status"
         }.toTypedArray()
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Selecciona el producto para la oferta")
             .setItems(productNames) { _, which ->
-                val selectedProduct = allProducts[which]
-                findNavController().navigate(
-                    R.id.nav_admin_panel,
-                    bundleOf(
-                        "product" to selectedProduct,
-                        "isOfferMode" to true
-                    )
-                )
+                mostrarEditorPromocion(productosBase[which])
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
-    private fun listenToProductsRealtime(progressBar: ProgressBar) {
+    /** Edita la promoción separada del producto base y permite retirarla. */
+    private fun mostrarEditorPromocion(producto: Product) {
+        val contenido = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialogo_editar_promocion, null)
+        val promocionActual = promociones[producto.id]
+        val campoPrecio = contenido.findViewById<TextInputEditText>(R.id.inputPrecioPromocion)
+        val campoEtiqueta = contenido.findViewById<TextInputEditText>(R.id.inputEtiquetaPromocion)
+        val layoutPrecio = contenido.findViewById<TextInputLayout>(R.id.layoutPrecioPromocion)
+
+        contenido.findViewById<TextView>(R.id.tvProductoPromocion).text = producto.name
+        contenido.findViewById<TextView>(R.id.tvPrecioRegularPromocion).text =
+            "Precio regular: S/ ${String.format(Locale.US, "%.2f", producto.price)}"
+        if (promocionActual != null) {
+            campoPrecio.setText(String.format(Locale.US, "%.2f", promocionActual.offerPrice))
+            campoEtiqueta.setText(promocionActual.offerTag)
+        }
+
+        val constructor = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Oferta para producto existente")
+            .setView(contenido)
+            .setPositiveButton("Guardar oferta", null)
+            .setNegativeButton("Cancelar", null)
+        if (promocionActual != null) constructor.setNeutralButton("Quitar oferta", null)
+        val dialogo = constructor.create()
+        dialogo.setOnShowListener {
+            val botonGuardar = dialogo.getButton(DialogInterface.BUTTON_POSITIVE)
+            botonGuardar.setOnClickListener {
+                val precio = campoPrecio.text.toString().trim().toDoubleOrNull()
+                if (precio == null || !precio.isFinite() || precio <= 0.0 || precio >= producto.price) {
+                    layoutPrecio.error = "Ingresa un precio mayor a 0 y menor al regular"
+                    return@setOnClickListener
+                }
+                layoutPrecio.error = null
+                botonGuardar.isEnabled = false
+                RepositorioPromociones.guardar(producto, precio, campoEtiqueta.text.toString()) { resultado ->
+                    if (!isAdded) return@guardar
+                    resultado.onSuccess {
+                        Toast.makeText(requireContext(), "Oferta guardada sin cambiar el producto base", Toast.LENGTH_SHORT).show()
+                        dialogo.dismiss()
+                    }.onFailure { error ->
+                        botonGuardar.isEnabled = true
+                        Toast.makeText(requireContext(), "No se pudo guardar la oferta: ${error.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            if (promocionActual != null) {
+                val botonQuitar = dialogo.getButton(DialogInterface.BUTTON_NEUTRAL)
+                botonQuitar.setOnClickListener {
+                    botonQuitar.isEnabled = false
+                    RepositorioPromociones.quitar(producto.id) { resultado ->
+                        if (!isAdded) return@quitar
+                        resultado.onSuccess {
+                            Toast.makeText(requireContext(), "Oferta retirada; precio regular restaurado", Toast.LENGTH_SHORT).show()
+                            dialogo.dismiss()
+                        }.onFailure { error ->
+                            botonQuitar.isEnabled = true
+                            Toast.makeText(requireContext(), "No se pudo quitar la oferta: ${error.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+        }
+        dialogo.show()
+    }
+
+    /** Refresca el catálogo administrativo al cambiar la colección `products`. */
+    private fun escucharProductosEnTiempoReal(progressBar: ProgressBar) {
         progressBar.visibility = View.VISIBLE
         productsListener?.remove()
         productsListener = db.collection("products")
@@ -147,17 +227,20 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
                 if (snapshot != null) {
                     allProducts = snapshot.toObjects(Product::class.java)
                     tvProductsCount.text = "${allProducts.size} productos"
-                    filterProducts(currentSearchQuery)
+                    filtrarProductos(currentSearchQuery)
                 }
             }
     }
 
-    private fun filterProducts(query: String) {
+    private fun filtrarProductos(query: String) {
         val lower = query.lowercase().trim()
+        val catalogoVisible = allProducts.map { producto ->
+            promociones[producto.id]?.aplicarA(producto) ?: producto
+        }
         val filtered = if (lower.isEmpty()) {
-            allProducts
+            catalogoVisible
         } else {
-            allProducts.filter {
+            catalogoVisible.filter {
                 it.name.lowercase().contains(lower) ||
                 it.category.lowercase().contains(lower) ||
                 it.tagline.lowercase().contains(lower) ||
@@ -172,5 +255,7 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
         super.onDestroyView()
         productsListener?.remove()
         productsListener = null
+        promotionsListener?.remove()
+        promotionsListener = null
     }
 }

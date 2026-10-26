@@ -11,21 +11,22 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.MainActivity
 import com.yalazas.app.R
-import com.yalazas.app.model.AuditLog
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.repository.AuthRepository
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.ServiciosFirebase
+import com.yalazas.app.repositorio.RepositorioPedidos
 import java.util.Date
 
+/** Escucha los pedidos del cliente y permite cancelar los pendientes. */
 class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db = ServiciosFirebase.firestore
     private var ordersListener: ListenerRegistration? = null
-    private lateinit var adapter: CustomerTrackingAdapter
+    private lateinit var adapter: AdaptadorSeguimientoCliente
 
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutEmpty: View
@@ -46,9 +47,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         tvActiveCountBadge = view.findViewById(R.id.tvActiveOrdersCountBadge)
         rvOrders = view.findViewById(R.id.rvCustomerOrders)
 
-        adapter = CustomerTrackingAdapter(
+        adapter = AdaptadorSeguimientoCliente(
             onCancelOrderClick = { order ->
-                confirmCustomerCancelOrder(order)
+                confirmarCancelacionCliente(order)
             }
         )
 
@@ -56,14 +57,15 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         rvOrders.adapter = adapter
 
         btnEmptyGoToMenu.setOnClickListener {
-            (activity as? MainActivity)?.navigateToMenu() ?: findNavController().navigate(R.id.nav_menu)
+            (activity as? MainActivity)?.irAlMenu() ?: findNavController().navigate(R.id.nav_menu)
         }
 
-        listenToCustomerOrdersRealtime()
+        escucharPedidosDelCliente()
     }
 
-    private fun listenToCustomerOrdersRealtime() {
-        val currentUserId = AuthRepository.currentProfile?.uid ?: AuthRepository.currentUser?.uid
+    /** Escucha solo los pedidos del usuario actual y actualiza la lista al cambiar Firestore. */
+    private fun escucharPedidosDelCliente() {
+        val currentUserId = RepositorioAutenticacion.currentProfile?.uid ?: RepositorioAutenticacion.currentUser?.uid
 
         if (currentUserId.isNullOrBlank()) {
             progressBar.visibility = View.GONE
@@ -100,7 +102,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                     }.sortedByDescending { it.timestamp?.toDate() ?: Date(0) }
 
                     val activeCount = orderList.count {
-                        val statusEnum = OrderStatus.fromString(it.status)
+                        val statusEnum = OrderStatus.desdeTexto(it.status)
                         statusEnum in listOf(OrderStatus.PENDIENTE, OrderStatus.EN_PROCESO, OrderStatus.EN_CAMINO)
                     }
 
@@ -118,7 +120,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                         tvEmptyMessage.text = "¡Aún no has realizado un pedido! Revisa nuestra carta de alitas, combos y promociones para comenzar."
                         btnEmptyGoToMenu.text = "Ver Menú de Alitas"
                         btnEmptyGoToMenu.setOnClickListener {
-                            (activity as? MainActivity)?.navigateToMenu() ?: findNavController().navigate(R.id.nav_menu)
+                            (activity as? MainActivity)?.irAlMenu() ?: findNavController().navigate(R.id.nav_menu)
                         }
                     } else {
                         layoutEmpty.visibility = View.GONE
@@ -129,9 +131,10 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             }
     }
 
-    private fun confirmCustomerCancelOrder(order: Order) {
+    /** Muestra la confirmación únicamente si el estado local todavía es pendiente. */
+    private fun confirmarCancelacionCliente(order: Order) {
         // REGLA DE NEGOCIO: Validar nuevamente que el pedido esté en PENDIENTE
-        if (!OrderStatus.canCustomerCancel(order.status)) {
+        if (!OrderStatus.puedeCancelarCliente(order.status)) {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Cancelación no disponible")
                 .setMessage("Tu pedido ya ingresó a preparación en cocina o se encuentra en camino, por lo que no es posible cancelarlo.")
@@ -146,46 +149,29 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             .setMessage("¿Estás seguro de cancelar tu orden? Una vez cancelada no se procesará en cocina ni se enviará.")
             .setIcon(android.R.drawable.ic_dialog_alert)
             .setPositiveButton("Sí, Cancelar Pedido") { _, _ ->
-                cancelOrderInFirestore(order)
+                cancelarPedido(order)
             }
             .setNegativeButton("No, Mantener Pedido", null)
             .show()
     }
 
-    private fun cancelOrderInFirestore(order: Order) {
+    /** Delega la escritura al repositorio y muestra el resultado al cliente. */
+    private fun cancelarPedido(order: Order) {
         progressBar.visibility = View.VISIBLE
-        val currentUserId = AuthRepository.currentProfile?.uid ?: AuthRepository.currentUser?.uid ?: "CLIENTE"
-
-        val updates = mapOf(
-            "status" to OrderStatus.CANCELADO.key,
-            "updatedAt" to System.currentTimeMillis()
-        )
-
-        db.collection("orders").document(order.id)
-            .update(updates)
-            .addOnSuccessListener {
-                // Registrar log de auditoría
-                val log = AuditLog(
-                    id = db.collection("auditoria").document().id,
-                    usuarioAfectadoId = currentUserId,
-                    usuarioAdministradorId = currentUserId,
-                    accion = "CANCELACION_CLIENTE_PEDIDO",
-                    rolAnterior = order.status,
-                    rolNuevo = OrderStatus.CANCELADO.key
-                )
-                db.collection("auditoria").document(log.id).set(log)
-
-                progressBar.visibility = View.GONE
+        RepositorioPedidos.cancelarPedidoPropio(order) { result ->
+            if (!isAdded || view == null) return@cancelarPedidoPropio
+            progressBar.visibility = View.GONE
+            result.onSuccess {
                 Toast.makeText(requireContext(), "Tu pedido ha sido cancelado", Toast.LENGTH_LONG).show()
+            }.onFailure { error ->
+                Toast.makeText(requireContext(), "Error al cancelar pedido: ${error.message}", Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener { e ->
-                progressBar.visibility = View.GONE
-                Toast.makeText(requireContext(), "Error al cancelar pedido: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Evita recibir actualizaciones después de destruir la pantalla.
         ordersListener?.remove()
         ordersListener = null
     }

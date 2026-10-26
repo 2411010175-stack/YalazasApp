@@ -569,13 +569,13 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="¿Cuántas salsas diferentes puede elegir el cliente? *"
+                    android:text="¿Cuántas salsas están incluidas sin costo? *"
                     android:textColor="@color/white"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="6dp" />
 
-                <!-- Chips rápidos de cantidad máxima de salsas -->
+                <!-- Chips rápidos de salsas incluidas sin costo -->
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/chipGroupMaxSauces"
                     android:layout_width="match_parent"
@@ -626,7 +626,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="14dp"
-                    android:hint="Cantidad máxima de salsas a elegir *"
+                    android:hint="Cantidad de salsas incluidas *"
                     app:boxBackgroundColor="#121A16"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
@@ -841,7 +841,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Puedes subir productos sin imagen. Se asignará automáticamente una imagen atractiva de Yalazas según la categoría."
+                android:text="Pega una URL pública HTTPS que muestre la imagen directamente. El cliente la verá en la app. Si la dejas vacía, se usará una URL predeterminada según la categoría."
                 android:textColor="#9EADA4"
                 android:textSize="12sp"
                 android:layout_marginBottom="12dp" />
@@ -871,7 +871,7 @@
                     android:paddingTop="3dp"
                     android:paddingEnd="8dp"
                     android:paddingBottom="3dp"
-                    android:text="📸 Foto Automática"
+                    android:text="URL predeterminada"
                     android:textColor="@color/white"
                     android:textSize="11sp" />
             </FrameLayout>
@@ -880,50 +880,28 @@
                 android:id="@+id/tvImageStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Usando imagen automática de Yalazas"
+                android:text="Vista previa de la URL predeterminada"
                 android:textColor="@color/admin_nav_orange"
                 android:textSize="12sp"
                 android:layout_marginBottom="12dp" />
 
-            <!-- Botones de Imagen -->
-            <LinearLayout
+            <!-- Inserta la URL predeterminada en el mismo campo editable. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDefaultImage"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:text="Usar URL predeterminada"
+                android:textColor="#A0B2A6"
+                app:strokeColor="#35483E"
+                app:cornerRadius="10dp" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSelectImage"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="6dp"
-                    android:text="Elegir Foto"
-                    android:textColor="@color/white"
-                    android:backgroundTint="#24332B"
-                    app:icon="@android:drawable/ic_menu_gallery"
-                    app:iconTint="@color/yalaza_pink"
-                    app:cornerRadius="10dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDefaultImage"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="6dp"
-                    android:text="Predeterminada"
-                    android:textColor="#A0B2A6"
-                    app:strokeColor="#35483E"
-                    app:cornerRadius="10dp" />
-            </LinearLayout>
-
-            <!-- URL manual de imagen (Opcional) -->
+            <!-- URL de la imagen (opcional) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:hint="O pega un enlace de imagen web (Opcional)"
+                android:hint="URL pública de imagen (https://...)"
                 app:boxBackgroundColor="#121A16"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
@@ -943,9 +921,9 @@
 
         </LinearLayout>
 
-        <!-- Barra de Progreso de Subida/Guardado -->
+        <!-- Indicador mientras se guarda o elimina el producto. -->
         <ProgressBar
-            android:id="@+id/uploadProgress"
+            android:id="@+id/progressGuardadoProducto"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

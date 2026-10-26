@@ -1,5 +1,6 @@
 package com.yalazas.app.model
 
+/** Acciones que la aplicación asocia a cada rol de usuario. */
 enum class Permission {
     MANAGE_USERS,
     MANAGE_PRODUCTS,
@@ -16,6 +17,7 @@ enum class Permission {
     VIEW_OWN_ORDER_STATUS
 }
 
+/** Roles reconocidos por la aplicación; `value` conserva el texto usado por Firebase. */
 enum class Role(val value: String, val permissions: List<Permission>) {
     ADMIN("ADMINISTRADOR", listOf(
         Permission.MANAGE_USERS,
@@ -44,7 +46,7 @@ enum class Role(val value: String, val permissions: List<Permission>) {
     ));
 
     companion object {
-        fun fromString(role: String): Role {
+        fun desdeTexto(role: String): Role {
             return values().find { it.name.equals(role, ignoreCase = true) || it.value.equals(role, ignoreCase = true) } ?: CLIENTE
         }
     }

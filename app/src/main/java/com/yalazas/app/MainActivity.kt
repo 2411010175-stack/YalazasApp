@@ -19,6 +19,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.yalazas.app.databinding.ActivityMainBinding
 
+/** Aloja la navegación y coordina las barras inferiores según el rol. */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -35,32 +36,34 @@ class MainActivity : AppCompatActivity() {
         insetsController.isAppearanceLightStatusBars = false
         insetsController.isAppearanceLightNavigationBars = false
 
-        val adminTabDestinations = setOf(
+        // Cada grupo usa una barra inferior distinta; login y formularios ocupan toda la pantalla.
+        val destinosAdmin = setOf(
             R.id.nav_admin_dashboard,
             R.id.nav_admin_inventory,
             R.id.nav_admin_users,
             R.id.nav_admin_sales
         )
 
-        val deliveryTabDestinations = setOf(
+        val destinosReparto = setOf(
             R.id.nav_delivery_orders,
             R.id.nav_delivery_map,
             R.id.nav_delivery_history,
             R.id.nav_delivery_profile
         )
 
-        val fullScreenDestinations = setOf(
+        val destinosPantallaCompleta = setOf(
             R.id.nav_login,
             R.id.nav_register,
             R.id.nav_admin_panel,
             R.id.nav_admin_settings
         )
 
-        var currentDestinationId = R.id.nav_home
-        var isKeyboardVisible = false
+        var destinoActualId = R.id.nav_home
+        var tecladoVisible = false
 
-        fun updateNavigationVisibility() {
-            if (isKeyboardVisible) {
+        // La barra se oculta también al abrir el teclado para no tapar los campos de entrada.
+        fun actualizarVisibilidadNavegacion() {
+            if (tecladoVisible) {
                 // Cuando el teclado está abierto (ej. buscando pedidos, usuarios, productos),
                 // ocultamos la barra de navegación para que el teclado se superponga directamente
                 // y no empuje la barra hacia arriba ocupando espacio visual
@@ -69,20 +72,20 @@ class MainActivity : AppCompatActivity() {
                 binding.adminBottomNav.visibility = View.GONE
                 binding.deliveryBottomNav.visibility = View.GONE
             } else {
-                when (currentDestinationId) {
-                    in fullScreenDestinations -> {
+                when (destinoActualId) {
+                    in destinosPantallaCompleta -> {
                         binding.navContainer.visibility = View.GONE
                         binding.bottomNav.visibility = View.GONE
                         binding.adminBottomNav.visibility = View.GONE
                         binding.deliveryBottomNav.visibility = View.GONE
                     }
-                    in adminTabDestinations -> {
+                    in destinosAdmin -> {
                         binding.navContainer.visibility = View.VISIBLE
                         binding.bottomNav.visibility = View.GONE
                         binding.adminBottomNav.visibility = View.VISIBLE
                         binding.deliveryBottomNav.visibility = View.GONE
                     }
-                    in deliveryTabDestinations -> {
+                    in destinosReparto -> {
                         binding.navContainer.visibility = View.VISIBLE
                         binding.bottomNav.visibility = View.GONE
                         binding.adminBottomNav.visibility = View.GONE
@@ -111,15 +114,15 @@ class MainActivity : AppCompatActivity() {
             )
             val isImeOpen = insets.isVisible(WindowInsetsCompat.Type.ime()) || imeInsets.bottom > 0
 
-            isKeyboardVisible = isImeOpen
-            updateNavigationVisibility()
+            tecladoVisible = isImeOpen
+            actualizarVisibilidadNavegacion()
 
             if (isImeOpen) {
                 // Con teclado visible: fragmentContainer tiene padding inferior igual a la altura del teclado
                 binding.fragmentContainer.setPadding(0, statusBarInsets.top, 0, imeInsets.bottom)
             } else {
                 // Sin teclado: ajustamos padding según visibilidad del contenedor de navegación
-                val isNavVisible = currentDestinationId !in fullScreenDestinations
+                val isNavVisible = destinoActualId !in destinosPantallaCompleta
                 val bottomPadding = if (isNavVisible) 0 else navBarInsets.bottom
                 binding.fragmentContainer.setPadding(0, statusBarInsets.top, 0, bottomPadding)
                 binding.navContainer.setPadding(0, 0, 0, navBarInsets.bottom)
@@ -150,7 +153,7 @@ class MainActivity : AppCompatActivity() {
         deliveryBadge.isVisible = false
 
         // Observar cantidad de productos en el carrito para el badge del cliente
-        com.yalazas.app.repository.CartRepository.items.observe(this) { items ->
+        com.yalazas.app.repositorio.RepositorioCarrito.items.observe(this) { items ->
             val count = items.sumOf { it.quantity }
             val cartBadge = binding.bottomNav.getOrCreateBadge(R.id.nav_cart)
             cartBadge.backgroundColor = ContextCompat.getColor(this, R.color.yalaza_pink)
@@ -163,21 +166,22 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Mantiene la barra correcta al cambiar de pantalla mediante el gráfico de navegación.
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            currentDestinationId = destination.id
-            updateNavigationVisibility()
+            destinoActualId = destination.id
+            actualizarVisibilidadNavegacion()
         }
     }
 
     /**
      * Dispara la animación Fly-to-Cart desde la vista clickeada hacia el icono de carrito en la barra de navegación
      */
-    fun playAddToCartAnimation(fromView: View, onEnd: (() -> Unit)? = null) {
+    fun animarAgregadoAlCarrito(fromView: View, onEnd: (() -> Unit)? = null) {
         val cartItemView = binding.bottomNav.findViewById<View>(R.id.nav_cart) ?: binding.bottomNav
-        com.yalazas.app.utils.CartAnimationHelper.animateFlyToCart(this, fromView, cartItemView, onEnd)
+        com.yalazas.app.utilidades.AnimadorCarrito.animarHaciaCarrito(this, fromView, cartItemView, onEnd)
     }
 
-    fun openWhatsAppFor(message: String) {
+    fun abrirWhatsAppConMensaje(message: String) {
         val phone = getString(R.string.whatsapp_phone_e164)
         val url = "https://wa.me/$phone?text=${Uri.encode(message)}"
         val intent = Intent(Intent.ACTION_VIEW, url.toUri())
@@ -187,19 +191,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun navigateToMenu() {
+    fun irAlMenu() {
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.fragmentContainer) as NavHostFragment
         navHostFragment.navController.navigate(R.id.nav_menu)
     }
 
-    fun openInstagram() {
+    fun abrirInstagram() {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, "https://www.instagram.com/yalazas_pe/".toUri()))
         } catch (_: ActivityNotFoundException) {
         }
     }
 
-    fun openMap() {
+    fun abrirMapa() {
         val lat = -13.061851
         val lng = -76.352075
         val label = Uri.encode("Yalaza - Av Ramos 309")

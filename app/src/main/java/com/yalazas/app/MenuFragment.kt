@@ -1,9 +1,9 @@
 package com.yalazas.app
 
-import com.yalazas.app.ui.location.LocationPickerBottomSheet
-import com.yalazas.app.ui.menu.ProductAdapter
-import com.yalazas.app.ui.menu.ProductDetailBottomSheet
-import com.yalazas.app.ui.menu.SauceSelectionBottomSheet
+import com.yalazas.app.ui.ubicacion.HojaSeleccionUbicacion
+import com.yalazas.app.ui.menu.AdaptadorProductos
+import com.yalazas.app.ui.menu.HojaDetalleProducto
+import com.yalazas.app.ui.menu.HojaSeleccionSalsas
 
 import android.os.Bundle
 import android.view.View
@@ -13,32 +13,41 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.yalazas.app.MainActivity
 import com.yalazas.app.R
-import com.yalazas.app.repository.AuthRepository
-import com.yalazas.app.repository.CartRepository
-import com.yalazas.app.viewmodel.MenuState
-import com.yalazas.app.viewmodel.MenuViewModel
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.RepositorioCarrito
+import com.yalazas.app.modelovista.EstadoMenu
+import com.yalazas.app.modelovista.ModeloVistaMenu
+import kotlinx.coroutines.launch
 
+/** Muestra los productos disponibles y conecta filtros, búsqueda y carrito. */
 class MenuFragment : Fragment(R.layout.fragment_menu) {
 
-    private val viewModel: MenuViewModel by viewModels()
-    private lateinit var productAdapter: ProductAdapter
+    private val modeloVista: ModeloVistaMenu by viewModels()
+    private lateinit var productAdapter: AdaptadorProductos
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         setupProfileHeader(view)
-        setupRecyclerView(view)
-        setupObservers(view)
-        setupListeners(view)
+        configurarLista(view)
+        observarEstados(view)
+        configurarEventos(view)
 
-        // Refrescar los productos cada vez que volvemos a la pantalla
-        viewModel.loadProducts()
+        // El listener solo permanece activo mientras la pantalla es visible.
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                modeloVista.observarProductos()
+            }
+        }
     }
 
     private fun setupProfileHeader(view: View) {
@@ -49,7 +58,7 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         val layoutMenuAvatar = view.findViewById<View>(R.id.layoutMenuAvatar)
 
         // Observar perfil en tiempo real
-        AuthRepository.liveProfile.observe(viewLifecycleOwner) { profile ->
+        RepositorioAutenticacion.liveProfile.observe(viewLifecycleOwner) { profile ->
             if (profile != null && profile.name.isNotBlank()) {
                 val firstName = profile.name.trim().split(" ").firstOrNull() ?: profile.name
                 tvGreetingName.text = "¡Hola, $firstName! 👋"
@@ -76,8 +85,8 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
 
         // Click en la píldora de dirección para abrir OpenStreetMap Location Picker
         layoutMenuDeliveryPill?.setOnClickListener {
-            val currentProfile = AuthRepository.currentProfile
-            LocationPickerBottomSheet.newInstance(
+            val currentProfile = RepositorioAutenticacion.currentProfile
+            HojaSeleccionUbicacion.crear(
                 currentAddress = currentProfile?.address.orEmpty(),
                 currentReference = currentProfile?.reference.orEmpty(),
                 lat = currentProfile?.latitude ?: 0.0,
@@ -85,7 +94,7 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
             ) { selectedAddress, _, _, _ ->
                 tvMenuDeliveryAddress.text = "📍 $selectedAddress"
                 Toast.makeText(requireContext(), "¡Ubicación de entrega guardada! 🛵", Toast.LENGTH_SHORT).show()
-            }.show(parentFragmentManager, LocationPickerBottomSheet.TAG)
+            }.show(parentFragmentManager, HojaSeleccionUbicacion.TAG)
         }
 
         // Click en el avatar para ir a Perfil
@@ -94,40 +103,42 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         }
     }
 
-    private fun setupRecyclerView(view: View) {
+    /** Conecta el adaptador con el carrito y abre el detalle del producto seleccionado. */
+    private fun configurarLista(view: View) {
         val recyclerView = view.findViewById<RecyclerView>(R.id.menuRecyclerView)
-        productAdapter = ProductAdapter(
+        productAdapter = AdaptadorProductos(
             isAdminMode = false,
             onItemClick = { product ->
-                ProductDetailBottomSheet.newInstance(product)
-                    .show(parentFragmentManager, ProductDetailBottomSheet.TAG)
+                HojaDetalleProducto.crear(product)
+                    .show(parentFragmentManager, HojaDetalleProducto.TAG)
             },
             onActionClick = { product, clickedView ->
                 if (product.allowsSauces && product.maxSauces > 0) {
-                    SauceSelectionBottomSheet.newInstance(product)
-                        .show(parentFragmentManager, SauceSelectionBottomSheet.TAG)
+                    HojaSeleccionSalsas.crear(product)
+                        .show(parentFragmentManager, HojaSeleccionSalsas.TAG)
                 } else {
-                    CartRepository.addProduct(product)
-                    (activity as? MainActivity)?.playAddToCartAnimation(clickedView)
+                    RepositorioCarrito.agregarProducto(product)
+                    (activity as? MainActivity)?.animarAgregadoAlCarrito(clickedView)
                 }
             }
         )
         recyclerView.adapter = productAdapter
     }
 
-    private fun setupObservers(view: View) {
+    /** Refleja en pantalla la carga, los productos filtrados o un error. */
+    private fun observarEstados(view: View) {
         val progressBar = view.findViewById<View>(R.id.menuProgressBar)
         val recyclerView = view.findViewById<RecyclerView>(R.id.menuRecyclerView)
         val tvEmptyMenu = view.findViewById<View>(R.id.tvEmptyMenu)
 
-        viewModel.menuState.observe(viewLifecycleOwner) { state ->
+        modeloVista.estadoMenu.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is MenuState.Loading -> {
+                is EstadoMenu.Cargando -> {
                     progressBar.visibility = View.VISIBLE
                     recyclerView.visibility = View.GONE
                     tvEmptyMenu.visibility = View.GONE
                 }
-                is MenuState.Success -> {
+                is EstadoMenu.Exito -> {
                     progressBar.visibility = View.GONE
                     if (state.products.isEmpty()) {
                         recyclerView.visibility = View.GONE
@@ -138,7 +149,7 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
                         productAdapter.submitList(state.products)
                     }
                 }
-                is MenuState.Error -> {
+                is EstadoMenu.Error -> {
                     progressBar.visibility = View.GONE
                     recyclerView.visibility = View.GONE
                     tvEmptyMenu.visibility = View.VISIBLE
@@ -147,10 +158,11 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         }
     }
 
-    private fun setupListeners(view: View) {
+    /** Vincula la búsqueda y las categorías con el modelo de vista. */
+    private fun configurarEventos(view: View) {
         // Búsqueda en vivo
         view.findViewById<TextInputEditText>(R.id.inputSearchMenu)?.addTextChangedListener { text ->
-            viewModel.filterProducts(text?.toString() ?: "")
+            modeloVista.filtrarProductos(text?.toString() ?: "")
         }
 
         // Selector dinámico de categorías
@@ -166,7 +178,7 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
                 R.id.chipCatSides -> "PORCIONES"
                 else -> "TODOS"
             }
-            viewModel.setCategory(category)
+            modeloVista.seleccionarCategoria(category)
         }
     }
 }

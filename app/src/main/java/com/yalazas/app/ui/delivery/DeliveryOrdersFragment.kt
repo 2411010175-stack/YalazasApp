@@ -5,26 +5,26 @@ import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.databinding.FragmentDeliveryOrdersBinding
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.repository.AuthRepository
-import com.yalazas.app.ui.dialogs.BatchTakeConfirmationDialogFragment
-import com.yalazas.app.ui.dialogs.MarkDeliveredConfirmationDialogFragment
-import com.yalazas.app.ui.dialogs.TakeOrderConfirmationDialogFragment
-import com.yalazas.app.utils.DeliveryRouteOptimizer
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.ServiciosFirebase
+import com.yalazas.app.ui.dialogos.DialogoTomarVariosPedidos
+import com.yalazas.app.ui.dialogos.DialogoMarcarEntregado
+import com.yalazas.app.ui.dialogos.DialogoTomarPedido
+import com.yalazas.app.utilidades.OptimizadorRutasEntrega
 import java.util.Locale
 
+/** Escucha pedidos y permite tomarlos o marcarlos como entregados. */
 class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
     private var _binding: FragmentDeliveryOrdersBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var adapter: DeliveryOrdersAdapter
+    private lateinit var adapter: AdaptadorPedidosReparto
     private var firestoreListener: ListenerRegistration? = null
 
     private var allOrders: List<Order> = emptyList()
@@ -35,19 +35,19 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         _binding = FragmentDeliveryOrdersBinding.bind(view)
 
         setupUI()
-        setupRecyclerView()
-        setupListeners()
-        listenOrdersFromFirestore()
+        configurarLista()
+        configurarEventos()
+        escucharPedidosDeFirestore()
     }
 
     private fun setupUI() {
-        val driverName = AuthRepository.currentProfile?.name?.ifBlank { "Repartidor" } ?: "Repartidor"
+        val driverName = RepositorioAutenticacion.currentProfile?.name?.ifBlank { "Repartidor" } ?: "Repartidor"
         binding.tvDeliveryDriverGreeting.text = "¡Hola $driverName! 👋"
         binding.tvDeliveryDriverStatus.text = "🟢 En Turno • Repartidor Oficial"
     }
 
-    private fun setupRecyclerView() {
-        adapter = DeliveryOrdersAdapter(
+    private fun configurarLista() {
+        adapter = AdaptadorPedidosReparto(
             onTakeOrderClick = { order ->
                 confirmTakeOrder(order)
             },
@@ -62,15 +62,15 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         binding.rvDeliveryOrders.adapter = adapter
     }
 
-    private fun setupListeners() {
+    private fun configurarEventos() {
         binding.swipeRefreshDelivery.setOnRefreshListener {
             binding.swipeRefreshDelivery.isRefreshing = false
-            listenOrdersFromFirestore()
+            escucharPedidosDeFirestore()
         }
 
         binding.btnDeliveryRefresh.setOnClickListener {
             binding.progressDelivery.visibility = View.VISIBLE
-            listenOrdersFromFirestore()
+            escucharPedidosDeFirestore()
         }
 
         binding.tabDeliveryAvailable.setOnClickListener {
@@ -115,7 +115,7 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
             binding.tabDeliveryInRoute.setBackgroundResource(R.drawable.bg_delivery_tab_selected)
             binding.tabDeliveryInRoute.setTextColor(requireContext().getColor(R.color.yalaza_primary_green))
         }
-        filterAndDisplayOrders()
+        filtrarYMostrarPedidos()
     }
 
     private fun updateBatchSelectionUI(count: Int, selectedOrders: List<Order>) {
@@ -128,12 +128,14 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         }
     }
 
-    private fun listenOrdersFromFirestore() {
+    /** Mantiene la lista de pedidos a domicilio sincronizada con Firestore. */
+    private fun escucharPedidosDeFirestore() {
         firestoreListener?.remove()
         binding.progressDelivery.visibility = View.VISIBLE
 
-        val db = FirebaseFirestore.getInstance()
+        val db = ServiciosFirebase.firestore
         firestoreListener = db.collection("orders")
+            .whereEqualTo("isDelivery", true)
             .addSnapshotListener { snapshot, error ->
                 if (!isAdded || _binding == null) return@addSnapshotListener
                 binding.progressDelivery.visibility = View.GONE
@@ -150,14 +152,15 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
                     }.filter { it.isDelivery } // Solo pedidos para delivery a domicilio
                      .sortedByDescending { it.timestamp?.toDate()?.time ?: 0L }
 
-                    updateMetricsAndTabs()
-                    filterAndDisplayOrders()
+                    actualizarMetricasYPestanas()
+                    filtrarYMostrarPedidos()
                 }
             }
     }
 
-    private fun updateMetricsAndTabs() {
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    /** Cuenta los pedidos disponibles y los que ya están en ruta. */
+    private fun actualizarMetricasYPestanas() {
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
 
         val availableCount = allOrders.count {
             it.status == OrderStatus.EN_PROCESO.name && it.deliveryDriverId.isNullOrEmpty()
@@ -175,8 +178,9 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         binding.tabDeliveryInRoute.text = "En Ruta ($inRouteCount) 🛵"
     }
 
-    private fun filterAndDisplayOrders() {
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    /** Muestra la pestaña elegida y respeta el orden de las paradas asignadas. */
+    private fun filtrarYMostrarPedidos() {
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
 
         val filteredList = if (currentTab == 0) {
             // Disponibles para recoger en cocina
@@ -216,17 +220,18 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     }
 
     private fun confirmTakeOrder(order: Order) {
-        TakeOrderConfirmationDialogFragment.newInstance(order) {
+        DialogoTomarPedido.crear(order) {
             takeSingleOrder(order)
-        }.show(parentFragmentManager, TakeOrderConfirmationDialogFragment.TAG)
+        }.show(parentFragmentManager, DialogoTomarPedido.TAG)
     }
 
+    /** Asigna el pedido al repartidor actual y lo pasa a EN_CAMINO. */
     private fun takeSingleOrder(order: Order) {
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        val driverName = AuthRepository.currentProfile?.name ?: "Repartidor Yalazas"
-        val driverPhone = AuthRepository.currentProfile?.phone ?: ""
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
+        val driverName = RepositorioAutenticacion.currentProfile?.name ?: "Repartidor Yalazas"
+        val driverPhone = RepositorioAutenticacion.currentProfile?.phone ?: ""
 
-        val db = FirebaseFirestore.getInstance()
+        val db = ServiciosFirebase.firestore
         val updates = mapOf(
             "status" to OrderStatus.EN_CAMINO.name,
             "deliveryDriverId" to currentUid,
@@ -251,22 +256,23 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     }
 
     private fun confirmBatchTakeOrders(ordersToTake: List<Order>) {
-        BatchTakeConfirmationDialogFragment.newInstance(ordersToTake) {
+        DialogoTomarVariosPedidos.crear(ordersToTake) {
             executeBatchRouteOptimization(ordersToTake)
-        }.show(parentFragmentManager, BatchTakeConfirmationDialogFragment.TAG)
+        }.show(parentFragmentManager, DialogoTomarVariosPedidos.TAG)
     }
 
+    /** Calcula la secuencia y asigna los pedidos en una sola operación de Firestore. */
     private fun executeBatchRouteOptimization(ordersToTake: List<Order>) {
         binding.progressDelivery.visibility = View.VISIBLE
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        val driverName = AuthRepository.currentProfile?.name ?: "Repartidor Yalazas"
-        val driverPhone = AuthRepository.currentProfile?.phone ?: ""
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
+        val driverName = RepositorioAutenticacion.currentProfile?.name ?: "Repartidor Yalazas"
+        val driverPhone = RepositorioAutenticacion.currentProfile?.phone ?: ""
 
         // 1. Ejecutamos el algoritmo de optimización de ruta y urgencia
-        val sequencedOrders = DeliveryRouteOptimizer.optimizeDeliverySequence(ordersToTake)
+        val sequencedOrders = OptimizadorRutasEntrega.optimizarSecuenciaEntregas(ordersToTake)
 
         // 2. Aplicamos un Batch Write en Firestore para actualizar todos los documentos atómicamente
-        val db = FirebaseFirestore.getInstance()
+        val db = ServiciosFirebase.firestore
         val batch = db.batch()
 
         sequencedOrders.forEach { order ->
@@ -306,13 +312,14 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     }
 
     private fun confirmMarkDelivered(order: Order) {
-        MarkDeliveredConfirmationDialogFragment.newInstance(order) {
+        DialogoMarcarEntregado.crear(order) {
             markOrderDelivered(order)
-        }.show(parentFragmentManager, MarkDeliveredConfirmationDialogFragment.TAG)
+        }.show(parentFragmentManager, DialogoMarcarEntregado.TAG)
     }
 
+    /** Marca la entrega y el pago en el documento del pedido. */
     private fun markOrderDelivered(order: Order) {
-        val db = FirebaseFirestore.getInstance()
+        val db = ServiciosFirebase.firestore
         val updates = mapOf(
             "status" to OrderStatus.ENTREGADO.name,
             "paymentStatus" to "PAGADO"

@@ -10,13 +10,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.yalazas.app.R
-import com.yalazas.app.repository.AuthRepository
-import com.yalazas.app.repository.CartRepository
-import com.yalazas.app.ui.location.LocationPickerBottomSheet
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.RepositorioCarrito
+import com.yalazas.app.ui.ubicacion.HojaSeleccionUbicacion
 
+/** Muestra el carrito, sus totales y el acceso a la confirmación. */
 class CartFragment : Fragment(R.layout.fragment_cart) {
 
-    private lateinit var adapter: CartAdapter
+    private lateinit var adapter: AdaptadorCarrito
     private var selectedAddress: String = ""
     private var selectedReference: String = ""
     private var selectedLat: Double = 0.0
@@ -34,13 +35,13 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         val layoutDeliverySelector = view.findViewById<View>(R.id.layoutCartDeliverySelector)
         val tvDeliveryAddress = view.findViewById<TextView>(R.id.tvCartDeliveryAddress)
 
-        adapter = CartAdapter { cartItem, newQuantity ->
-            CartRepository.updateItemQuantity(cartItem, newQuantity)
+        adapter = AdaptadorCarrito { cartItem, newQuantity ->
+            RepositorioCarrito.actualizarCantidadArticulo(cartItem, newQuantity)
         }
         recyclerView.adapter = adapter
 
         // Sincronizar dirección activa desde el perfil del usuario
-        AuthRepository.liveProfile.observe(viewLifecycleOwner) { profile ->
+        RepositorioAutenticacion.liveProfile.observe(viewLifecycleOwner) { profile ->
             if (profile != null) {
                 if (selectedAddress.isBlank()) {
                     selectedAddress = profile.address
@@ -54,8 +55,8 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
 
         // Selector interactivo de Mapa OpenStreetMap
         layoutDeliverySelector?.setOnClickListener {
-            val prof = AuthRepository.currentProfile
-            LocationPickerBottomSheet.newInstance(
+            val prof = RepositorioAutenticacion.currentProfile
+            HojaSeleccionUbicacion.crear(
                 currentAddress = selectedAddress.ifBlank { prof?.address.orEmpty() },
                 currentReference = selectedReference.ifBlank { prof?.reference.orEmpty() },
                 lat = if (selectedLat != 0.0) selectedLat else (prof?.latitude ?: 0.0),
@@ -66,10 +67,10 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                 selectedLat = lat
                 selectedLng = lng
                 updateDeliveryText(tvDeliveryAddress)
-            }.show(parentFragmentManager, LocationPickerBottomSheet.TAG)
+            }.show(parentFragmentManager, HojaSeleccionUbicacion.TAG)
         }
 
-        CartRepository.items.observe(viewLifecycleOwner) { items ->
+        RepositorioCarrito.items.observe(viewLifecycleOwner) { items ->
             adapter.submitList(items)
 
             if (items.isEmpty()) {
@@ -80,7 +81,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                 summaryCard.visibility = View.VISIBLE
             }
 
-            val totalSavings = CartRepository.getTotalSavings()
+            val totalSavings = RepositorioCarrito.obtenerAhorroTotal()
             if (totalSavings > 0.0) {
                 tvSavings.visibility = View.VISIBLE
                 tvSavings.text = "🎉 ¡Estás ahorrando S/ ${String.format(java.util.Locale.US, "%.2f", totalSavings)} con ofertas!"
@@ -88,21 +89,21 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                 tvSavings.visibility = View.GONE
             }
 
-            tvTotal.text = "S/ ${String.format(java.util.Locale.US, "%.2f", CartRepository.getTotal())}"
+            tvTotal.text = "S/ ${String.format(java.util.Locale.US, "%.2f", RepositorioCarrito.obtenerTotal())}"
         }
 
         btnSend.setOnClickListener {
-            val items = CartRepository.items.value ?: emptyList()
+            val items = RepositorioCarrito.items.value ?: emptyList()
             if (items.isEmpty()) return@setOnClickListener
 
-            val profile = AuthRepository.currentProfile
+            val profile = RepositorioAutenticacion.currentProfile
             val finalAddress = selectedAddress.ifBlank { profile?.address.orEmpty() }
             val finalPhone = profile?.phone.orEmpty()
             val finalName = profile?.name.orEmpty()
 
             // Si falta teléfono, nombre o dirección, abrir el bottom sheet elegante para completar perfil
             if (finalPhone.isBlank() || finalName.isBlank() || finalAddress.isBlank()) {
-                CompleteProfileBottomSheet.newInstance(
+                HojaCompletarPerfil.crear(
                     name = finalName,
                     phone = finalPhone,
                     address = finalAddress,
@@ -124,7 +125,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                         lng = lng,
                         tvDeliveryAddress = tvDeliveryAddress
                     )
-                }.show(parentFragmentManager, CompleteProfileBottomSheet.TAG)
+                }.show(parentFragmentManager, HojaCompletarPerfil.TAG)
                 return@setOnClickListener
             }
 
@@ -145,7 +146,7 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
         lng: Double,
         tvDeliveryAddress: TextView?
     ) {
-        OrderConfirmationBottomSheet.newInstance(
+        HojaConfirmacionPedido.crear(
             address = address,
             reference = reference,
             lat = lat,
@@ -158,13 +159,13 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                 updateDeliveryText(tvDeliveryAddress)
             },
             onOrderPlaced = { orderId, total, finalAddress ->
-                OrderSuccessDialogFragment.newInstance(
+                DialogoPedidoRegistrado.crear(
                     orderId = orderId,
                     total = total,
                     address = finalAddress
-                ).show(parentFragmentManager, OrderSuccessDialogFragment.TAG)
+                ).show(parentFragmentManager, DialogoPedidoRegistrado.TAG)
             }
-        ).show(parentFragmentManager, OrderConfirmationBottomSheet.TAG)
+        ).show(parentFragmentManager, HojaConfirmacionPedido.TAG)
     }
 
     private fun updateDeliveryText(tvDeliveryAddress: TextView?) {

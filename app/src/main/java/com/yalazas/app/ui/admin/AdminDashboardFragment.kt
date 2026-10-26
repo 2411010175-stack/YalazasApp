@@ -10,23 +10,24 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.yalazas.app.R
 import com.yalazas.app.model.OrderItem
 import com.yalazas.app.model.OrderStatus
+import com.yalazas.app.repositorio.ServiciosFirebase
 import com.yalazas.app.ui.admin.view.SalesChartView
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+/** Resume ventas y pedidos con datos escuchados en tiempo real. */
 class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db = ServiciosFirebase.firestore
     private var ordersListener: ListenerRegistration? = null
-    private lateinit var salesAdapter: AdminRecentSalesAdapter
+    private lateinit var salesAdapter: AdaptadorVentasRecientes
     private lateinit var salesChartView: SalesChartView
 
     private enum class ChartFilter { DD, MM, AA }
@@ -75,12 +76,12 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         setupChartFilters(view)
 
         // 5. Iniciar escucha en tiempo real de Firestore
-        listenToOrdersRealtime(view)
+        escucharPedidosEnTiempoReal(view)
     }
 
     private fun setupRecentSales(view: View) {
         val rvSales = view.findViewById<RecyclerView>(R.id.rvRecentSales)
-        salesAdapter = AdminRecentSalesAdapter { saleItem ->
+        salesAdapter = AdaptadorVentasRecientes { saleItem ->
             showSaleDetailsDialog(saleItem)
         }
         rvSales.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
@@ -108,7 +109,8 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         btnAA.setOnClickListener { updateButtons(ChartFilter.AA) }
     }
 
-    private fun listenToOrdersRealtime(view: View) {
+    /** Recalcula los indicadores y la gráfica cuando llegan cambios de pedidos. */
+    private fun escucharPedidosEnTiempoReal(view: View) {
         val tvTotalSales = view.findViewById<TextView>(R.id.tvTotalSalesCount)
         val tvDailySales = view.findViewById<TextView>(R.id.tvDailySalesCount)
         val tvPendingOrders = view.findViewById<TextView>(R.id.tvPendingOrdersCount)
@@ -143,7 +145,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
                 for ((index, doc) in snapshot.documents.withIndex()) {
                     val status = doc.getString("status") ?: "PENDIENTE"
-                    val statusEnum = OrderStatus.fromString(status)
+                    val statusEnum = OrderStatus.desdeTexto(status)
                     val isCancelled = (statusEnum == OrderStatus.CANCELADO)
 
                     if (statusEnum == OrderStatus.PENDIENTE ||
@@ -172,6 +174,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                         OrderItem(
                             productId = itemMap["productId"]?.toString() ?: "",
                             name = itemMap["name"]?.toString() ?: "",
+                            description = itemMap["description"]?.toString() ?: "",
                             quantity = (itemMap["quantity"] as? Number)?.toInt() ?: 1,
                             subtotal = (itemMap["subtotal"] as? Number)?.toDouble() ?: 0.0
                         )
@@ -269,7 +272,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         val orderCal = Calendar.getInstance()
         for (order in cachedOrders) {
             // Excluir órdenes canceladas del monto en gráficas
-            if (OrderStatus.fromString(order.status) == OrderStatus.CANCELADO) continue
+            if (OrderStatus.desdeTexto(order.status) == OrderStatus.CANCELADO) continue
 
             orderCal.time = order.date
             for (i in 0 until daysCount) {
@@ -299,7 +302,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
         for (order in cachedOrders) {
             // Excluir órdenes canceladas del monto en gráficas
-            if (OrderStatus.fromString(order.status) == OrderStatus.CANCELADO) continue
+            if (OrderStatus.desdeTexto(order.status) == OrderStatus.CANCELADO) continue
 
             orderCal.time = order.date
             if (orderCal.get(Calendar.YEAR) == currentYear) {
@@ -324,7 +327,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         val orderCal = Calendar.getInstance()
         for (order in cachedOrders) {
             // Excluir órdenes canceladas del monto en gráficas
-            if (OrderStatus.fromString(order.status) == OrderStatus.CANCELADO) continue
+            if (OrderStatus.desdeTexto(order.status) == OrderStatus.CANCELADO) continue
 
             orderCal.time = order.date
             val orderYear = orderCal.get(Calendar.YEAR)
@@ -342,8 +345,8 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
     }
 
     private fun showSaleDetailsDialog(saleItem: AdminSaleItem) {
-        val sheet = AdminSaleDetailsBottomSheet.fromSaleItem(saleItem)
-        sheet.show(parentFragmentManager, "AdminSaleDetailsBottomSheet")
+        val sheet = HojaDetalleVenta.fromSaleItem(saleItem)
+        sheet.show(parentFragmentManager, "HojaDetalleVenta")
     }
 
     override fun onDestroyView() {

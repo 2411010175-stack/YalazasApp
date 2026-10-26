@@ -9,9 +9,10 @@ import android.widget.ImageView
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.yalazas.app.ui.dialogs.LogoutConfirmationDialogFragment
+import com.yalazas.app.ui.dialogos.DialogoCerrarSesion
 import kotlin.math.max
 
+/** Presenta la portada y los accesos principales del cliente. */
 class HomeFragment : Fragment(R.layout.fragment_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -25,15 +26,15 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         val scrollHintArrow = view.findViewById<View>(R.id.scrollHintArrow)
 
         view.findViewById<View>(R.id.btnInstagram).setOnClickListener {
-            activity.openInstagram()
+            activity.abrirInstagram()
         }
 
         view.findViewById<View>(R.id.btnOrderNow).setOnClickListener {
-            activity.navigateToMenu()
+            activity.irAlMenu()
         }
 
         val btnAdmin = view.findViewById<View>(R.id.btnAdminPanel)
-        if (com.yalazas.app.repository.AuthRepository.currentProfile?.role == "Admin") {
+        if (com.yalazas.app.repositorio.RepositorioAutenticacion.currentProfile?.role == "Admin") {
             btnAdmin.visibility = View.VISIBLE
             btnAdmin.setOnClickListener {
                 findNavController().navigate(R.id.nav_admin_dashboard)
@@ -43,12 +44,12 @@ class HomeFragment : Fragment(R.layout.fragment_home) {
         }
 
         view.findViewById<View>(R.id.btnLogout).setOnClickListener {
-            LogoutConfirmationDialogFragment.newInstance("¿Deseas cerrar tu sesión actual de Yalazas?")
-                .setOnConfirmListener {
-                    com.yalazas.app.repository.AuthRepository.logout()
+            DialogoCerrarSesion.crear("¿Deseas cerrar tu sesión actual de Yalazas?")
+                .definirAccionConfirmacion {
+                    com.yalazas.app.repositorio.RepositorioAutenticacion.cerrarSesion()
                     findNavController().navigate(R.id.nav_login)
                 }
-                .show(parentFragmentManager, LogoutConfirmationDialogFragment.TAG)
+                .show(parentFragmentManager, DialogoCerrarSesion.TAG)
         }
 
         scrollView.viewTreeObserver.addOnGlobalLayoutListener(

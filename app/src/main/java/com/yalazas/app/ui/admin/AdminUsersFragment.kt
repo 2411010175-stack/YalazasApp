@@ -12,20 +12,21 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.yalazas.app.R
 import com.yalazas.app.model.AuditLog
 import com.yalazas.app.model.UserProfile
-import com.yalazas.app.repository.AuthRepository
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.ServiciosFirebase
 import java.util.Locale
 
+/** Lista usuarios y permite gestionar roles y activación. */
 class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db = ServiciosFirebase.firestore
     private var usersListener: ListenerRegistration? = null
-    private lateinit var adapter: UserAdapter
+    private lateinit var adapter: AdaptadorUsuarios
     private var allUsers = listOf<UserProfile>()
     private var currentFilter = ""
 
@@ -51,7 +52,7 @@ class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
         val recyclerView = view.findViewById<RecyclerView>(R.id.usersRecyclerView)
         val inputSearch = view.findViewById<TextInputEditText>(R.id.inputSearchUser)
 
-        adapter = UserAdapter { selectedUser ->
+        adapter = AdaptadorUsuarios { selectedUser ->
             showEditUserRoleDialog(selectedUser)
         }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -66,10 +67,11 @@ class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-        listenToUsersRealtime()
+        escucharUsuariosEnTiempoReal()
     }
 
-    private fun listenToUsersRealtime() {
+    /** Escucha perfiles de `users` para actualizar la lista administrativa. */
+    private fun escucharUsuariosEnTiempoReal() {
         progressBar.visibility = View.VISIBLE
         usersListener?.remove()
         usersListener = db.collection("users")
@@ -115,7 +117,7 @@ class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
     }
 
     private fun showEditUserRoleDialog(user: UserProfile) {
-        val currentAdminId = AuthRepository.currentProfile?.uid ?: ""
+        val currentAdminId = RepositorioAutenticacion.currentProfile?.uid ?: ""
 
         // Evitar que el administrador se quite permisos a sí mismo por error
         if (user.uid.isNotBlank() && user.uid == currentAdminId) {
@@ -123,11 +125,11 @@ class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
             return
         }
 
-        val sheet = AdminChangeRoleBottomSheet.newInstance(user)
+        val sheet = HojaCambioRolAdministrador.crear(user)
         sheet.onRoleSaved = { newRole, isActive ->
             saveUserRoleAndStatus(user, newRole, isActive, currentAdminId)
         }
-        sheet.show(parentFragmentManager, AdminChangeRoleBottomSheet.TAG)
+        sheet.show(parentFragmentManager, HojaCambioRolAdministrador.TAG)
     }
 
     private fun saveUserRoleAndStatus(user: UserProfile, newRole: String, isActive: Boolean, adminId: String) {

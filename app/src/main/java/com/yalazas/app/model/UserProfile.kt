@@ -1,5 +1,6 @@
 package com.yalazas.app.model
 
+/** Perfil almacenado en `users`; `role` y los demás nombres deben coincidir con Firestore. */
 data class UserProfile(
     val uid: String = "",
     val email: String = "",

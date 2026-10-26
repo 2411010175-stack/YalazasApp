@@ -2,6 +2,7 @@ package com.yalazas.app.model
 
 import java.util.Locale
 
+/** Estados del pedido y reglas locales; las claves de cada estado se guardan en Firestore. */
 enum class OrderStatus(
     val key: String,
     val label: String,
@@ -40,7 +41,8 @@ enum class OrderStatus(
     );
 
     companion object {
-        fun fromString(status: String?): OrderStatus {
+        /** Interpreta el texto recibido de Firestore; un valor desconocido se muestra como pendiente. */
+        fun desdeTexto(status: String?): OrderStatus {
             val upper = status?.uppercase(Locale.getDefault()) ?: ""
             return when {
                 upper.contains("PENDIENTE") -> PENDIENTE
@@ -56,8 +58,8 @@ enum class OrderStatus(
          * Retorna las transiciones estrictamente válidas y secuenciales para el Administrador.
          * Evita que se salten etapas del proceso operativo de pedidos.
          */
-        fun getAllowedTransitions(currentStatusStr: String?): List<OrderStatus> {
-            val current = fromString(currentStatusStr)
+        fun obtenerTransicionesPermitidas(currentStatusStr: String?): List<OrderStatus> {
+            val current = desdeTexto(currentStatusStr)
             return when (current) {
                 PENDIENTE -> listOf(EN_PROCESO, CANCELADO)
                 EN_PROCESO -> listOf(EN_CAMINO, CANCELADO)
@@ -72,8 +74,8 @@ enum class OrderStatus(
          * En el momento que pasa a EN_PROCESO (en cocina/preparación) o posteriores,
          * el usuario YA NO PUEDE cancelar el pedido.
          */
-        fun canCustomerCancel(statusStr: String?): Boolean {
-            val status = fromString(statusStr)
+        fun puedeCancelarCliente(statusStr: String?): Boolean {
+            val status = desdeTexto(statusStr)
             return status == PENDIENTE
         }
     }

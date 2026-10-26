@@ -17,22 +17,23 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.yalazas.app.R
 import com.yalazas.app.model.AuditLog
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.repository.AuthRepository
+import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.ServiciosFirebase
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+/** Lista, filtra y actualiza pedidos desde el panel administrativo. */
 class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
 
-    private val db = FirebaseFirestore.getInstance()
+    private val db = ServiciosFirebase.firestore
     private var ordersListener: ListenerRegistration? = null
-    private lateinit var adapter: AdminSalesAdapter
+    private lateinit var adapter: AdaptadorVentas
 
     private var allOrdersWithNumbers = listOf<Pair<Order, String>>()
     private var currentSearchQuery = ""
@@ -82,12 +83,12 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
             }
         })
 
-        adapter = AdminSalesAdapter(
+        adapter = AdaptadorVentas(
             onDetailsClick = { order, saleNumber ->
-                showOrderDetailsDialog(order, saleNumber)
+                mostrarDetallePedido(order, saleNumber)
             },
             onChangeStatusClick = { order ->
-                showChangeStatusDialog(order)
+                mostrarDialogoCambioEstado(order)
             }
         )
 
@@ -104,23 +105,24 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
                 R.id.chipCancelled -> "CANCELADO"
                 else -> "ALL"
             }
-            applyFilters()
+            aplicarFiltros()
         }
 
         // Configurar Barra de Búsqueda
         inputSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 currentSearchQuery = s?.toString()?.trim() ?: ""
-                applyFilters()
+                aplicarFiltros()
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-        listenToOrdersRealtime()
+        escucharPedidosEnTiempoReal()
     }
 
-    private fun listenToOrdersRealtime() {
+    /** Escucha las ventas y conserva los datos necesarios para aplicar filtros locales. */
+    private fun escucharPedidosEnTiempoReal() {
         progressBar.visibility = View.VISIBLE
         ordersListener?.remove()
         ordersListener = db.collection("orders")
@@ -147,12 +149,13 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
 
                     allOrdersWithNumbers = orderList
                     tvOrdersCount.text = "${allOrdersWithNumbers.size} pedidos"
-                    applyFilters()
+                    aplicarFiltros()
                 }
             }
     }
 
-    private fun applyFilters() {
+    /** Combina los filtros seleccionados antes de actualizar la lista. */
+    private fun aplicarFiltros() {
         val queryLower = currentSearchQuery.lowercase(Locale.getDefault())
 
         val filtered = allOrdersWithNumbers.filter { (order, saleNumber) ->
@@ -185,18 +188,19 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
         layoutEmpty.visibility = if (filtered.isEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun showChangeStatusDialog(order: Order) {
-        val currentAdminId = AuthRepository.currentProfile?.uid ?: "ADMIN"
+    private fun mostrarDialogoCambioEstado(order: Order) {
+        val currentAdminId = RepositorioAutenticacion.currentProfile?.uid ?: "ADMIN"
         val saleNumber = allOrdersWithNumbers.find { it.first.id == order.id }?.second ?: ""
 
-        val sheet = AdminChangeStatusBottomSheet.fromOrder(order, saleNumber)
+        val sheet = HojaCambioEstadoPedido.desdePedido(order, saleNumber)
         sheet.onStatusSelected = { newStatus ->
-            updateOrderStatus(order, newStatus, currentAdminId)
+            actualizarEstadoPedido(order, newStatus, currentAdminId)
         }
-        sheet.show(parentFragmentManager, AdminChangeStatusBottomSheet.TAG)
+        sheet.show(parentFragmentManager, HojaCambioEstadoPedido.TAG)
     }
 
-    private fun updateOrderStatus(order: Order, newStatus: String, adminId: String) {
+    /** Registra el nuevo estado y la auditoría de la acción administrativa. */
+    private fun actualizarEstadoPedido(order: Order, newStatus: String, adminId: String) {
         progressBar.visibility = View.VISIBLE
 
         val updates = mapOf(
@@ -227,9 +231,9 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
             }
     }
 
-    private fun showOrderDetailsDialog(order: Order, saleNumber: String) {
-        val sheet = AdminSaleDetailsBottomSheet.fromOrder(order, saleNumber)
-        sheet.show(parentFragmentManager, "AdminSaleDetailsBottomSheet")
+    private fun mostrarDetallePedido(order: Order, saleNumber: String) {
+        val sheet = HojaDetalleVenta.desdePedido(order, saleNumber)
+        sheet.show(parentFragmentManager, "HojaDetalleVenta")
     }
 
     override fun onDestroyView() {

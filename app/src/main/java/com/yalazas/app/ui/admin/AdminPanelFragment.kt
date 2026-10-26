@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -13,8 +14,6 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -25,20 +24,18 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import com.yalazas.app.R
 import com.yalazas.app.model.Product
+import com.yalazas.app.repositorio.RepositorioPromociones
+import com.yalazas.app.repositorio.ServiciosFirebase
 import java.util.Locale
-import java.util.UUID
 
+/** Gestiona productos y ofertas; cada imagen se guarda como URL pública. */
 class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
 
-    private val db = FirebaseFirestore.getInstance()
-    private val storage = FirebaseStorage.getInstance().reference
+    private val db = ServiciosFirebase.firestore
     private val productsCollection = db.collection("products")
 
-    private var selectedImageUri: Uri? = null
     private var editingProduct: Product? = null
     private var isOfferModeArg: Boolean = false
 
@@ -58,7 +55,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
     private lateinit var ivProductImage: ImageView
     private lateinit var tvImagePlaceholderBadge: TextView
     private lateinit var tvImageStatus: TextView
-    private lateinit var uploadProgress: ProgressBar
+    private lateinit var progresoGuardado: ProgressBar
     private lateinit var btnSave: MaterialButton
     private lateinit var btnDelete: MaterialButton
 
@@ -91,24 +88,10 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
 
     private val fallbackDefaultImage = "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=800&q=80"
 
-    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            selectedImageUri = uri
-            etProductImageUrl.setText("") // Limpiar URL manual si se eligió de galería
-            ivProductImage.load(uri) {
-                crossfade(true)
-                placeholder(android.R.color.darker_gray)
-            }
-            tvImagePlaceholderBadge.visibility = View.GONE
-            tvImageStatus.text = "Foto de galería seleccionada"
-            tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_kpi_green))
-        }
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        bindViews(view)
+        vincularVistas(view)
 
         // Botón Volver
         view.findViewById<ImageButton>(R.id.btnBackPanel).setOnClickListener {
@@ -124,26 +107,26 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
             arguments?.getParcelable("product")
         }
 
-        setupChipsCategory()
-        setupStockSwitch()
-        setupOfferControls()
-        setupSaucesControls()
-        setupManualUrlInput()
-        setupImageButtons(view)
-        setupFormMode()
+        configurarCategorias()
+        configurarDisponibilidad()
+        configurarOfertas()
+        configurarSalsas()
+        configurarUrlManual()
+        configurarImagenPredeterminada(view)
+        configurarModoFormulario()
 
         // Guardar / Actualizar Producto
         btnSave.setOnClickListener {
-            handleSaveProduct()
+            guardarProducto()
         }
 
         // Eliminar Producto
         btnDelete.setOnClickListener {
-            showDeleteConfirmationDialog()
+            mostrarConfirmacionEliminacion()
         }
     }
 
-    private fun bindViews(view: View) {
+    private fun vincularVistas(view: View) {
         tvPanelTitle = view.findViewById(R.id.tvPanelTitle)
         tvPanelSubtitle = view.findViewById(R.id.tvPanelSubtitle)
         tvModeBadge = view.findViewById(R.id.tvModeBadge)
@@ -159,7 +142,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         ivProductImage = view.findViewById(R.id.ivProductImage)
         tvImagePlaceholderBadge = view.findViewById(R.id.tvImagePlaceholderBadge)
         tvImageStatus = view.findViewById(R.id.tvImageStatus)
-        uploadProgress = view.findViewById(R.id.uploadProgress)
+        progresoGuardado = view.findViewById(R.id.progressGuardadoProducto)
         btnSave = view.findViewById(R.id.btnSaveProduct)
         btnDelete = view.findViewById(R.id.btnDeleteProduct)
 
@@ -181,7 +164,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         chipGroupAvailableSauces = view.findViewById(R.id.chipGroupAvailableSauces)
     }
 
-    private fun setupChipsCategory() {
+    private fun configurarCategorias() {
         val chipMap = mapOf(
             R.id.chipAlitas to "Alitas",
             R.id.chipHamburguesas to "Hamburguesas",
@@ -196,9 +179,9 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
                 val categoryName = chipMap[checkedIds.first()] ?: return@setOnCheckedStateChangeListener
                 etProductCategory.setText(categoryName)
 
-                // Si no tiene imagen personalizada ni URL manual, actualizamos preview con la foto por defecto
-                if (selectedImageUri == null && etProductImageUrl.text.isNullOrBlank()) {
-                    loadDefaultImageForCategory(categoryName)
+                // Sin URL escrita, la vista previa usa la imagen pública de la categoría.
+                if (etProductImageUrl.text.isNullOrBlank()) {
+                    cargarImagenPredeterminada(categoryName)
                 }
             }
         }
@@ -206,8 +189,8 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         etProductCategory.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val text = s?.toString()?.trim() ?: ""
-                if (selectedImageUri == null && etProductImageUrl.text.isNullOrBlank() && text.isNotEmpty()) {
-                    loadDefaultImageForCategory(text)
+                if (etProductImageUrl.text.isNullOrBlank() && text.isNotEmpty()) {
+                    cargarImagenPredeterminada(text)
                 }
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -215,7 +198,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         })
     }
 
-    private fun setupOfferControls() {
+    private fun configurarOfertas() {
         switchProductOffer.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 layoutOfferFields.visibility = View.VISIBLE
@@ -229,7 +212,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
                 tvOfferStatusText.text = "⚪ Precio regular (Sin oferta)"
                 tvOfferStatusText.setTextColor(Color.parseColor("#9EADA4"))
             }
-            recalculateDiscountPreview()
+            recalcularVistaPreviaDescuento()
         }
 
         val tagMap = mapOf(
@@ -249,7 +232,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
 
         val discountWatcher = object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                recalculateDiscountPreview()
+                recalcularVistaPreviaDescuento()
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -259,7 +242,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         etProductPrice.addTextChangedListener(discountWatcher)
     }
 
-    private fun setupSaucesControls() {
+    private fun configurarSalsas() {
         switchAllowsSauces.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 layoutSaucesFields.visibility = View.VISIBLE
@@ -304,7 +287,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         })
     }
 
-    private fun getSelectedSaucesList(): List<String> {
+    private fun obtenerSalsasSeleccionadas(): List<String> {
         val chipMap = mapOf(
             R.id.chipSauceAcevichada to "Acevichada",
             R.id.chipSauceBbq to "BBQ Clásica",
@@ -319,7 +302,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         return checkedIds.mapNotNull { chipMap[it] }
     }
 
-    private fun setSelectedSaucesChips(sauces: List<String>) {
+    private fun marcarSalsasSeleccionadas(sauces: List<String>) {
         val chipMap = mapOf(
             "Acevichada" to R.id.chipSauceAcevichada,
             "BBQ Clásica" to R.id.chipSauceBbq,
@@ -343,7 +326,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         }
     }
 
-    private fun recalculateDiscountPreview() {
+    private fun recalcularVistaPreviaDescuento() {
         if (!switchProductOffer.isChecked) return
 
         val originalPrice = etProductOriginalPrice.text.toString().trim().toDoubleOrNull() ?: 0.0
@@ -368,7 +351,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         }
     }
 
-    private fun setupStockSwitch() {
+    private fun configurarDisponibilidad() {
         switchAvailable.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
                 tvStockStatusText.text = "🟢 Activo para pedidos"
@@ -380,20 +363,47 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         }
     }
 
-    private fun setupManualUrlInput() {
+    /** Coil obtiene la imagen de la URL para la vista previa; no se sube a Storage. */
+    private fun configurarUrlManual() {
         etProductImageUrl.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val url = s?.toString()?.trim() ?: ""
-                if (url.isNotBlank()) {
-                    selectedImageUri = null
-                    tvImagePlaceholderBadge.visibility = View.GONE
-                    tvImageStatus.text = "Usando enlace web directo"
-                    tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_kpi_yellow))
-                    ivProductImage.load(url) {
-                        crossfade(true)
-                        placeholder(android.R.color.darker_gray)
-                        error(android.R.drawable.ic_menu_report_image)
-                    }
+                etProductImageUrl.error = null
+                if (url.isBlank()) {
+                    cargarImagenPredeterminada(etProductCategory.text.toString().trim())
+                    return
+                }
+                tvImagePlaceholderBadge.visibility = View.GONE
+                if (!esUrlImagenValida(url)) {
+                    ivProductImage.setImageResource(android.R.drawable.ic_menu_report_image)
+                    tvImageStatus.text = "Escribe una URL pública que comience con https://"
+                    tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.yalaza_pink))
+                    return
+                }
+                tvImageStatus.text = "Cargando vista previa desde la URL..."
+                tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_kpi_yellow))
+                ivProductImage.load(url) {
+                    crossfade(true)
+                    placeholder(android.R.color.darker_gray)
+                    error(android.R.drawable.ic_menu_report_image)
+                    listener(
+                        onSuccess = { _, _ ->
+                            if (isAdded && this@AdminPanelFragment.view != null &&
+                                etProductImageUrl.text.toString().trim() == url
+                            ) {
+                                tvImageStatus.text = "Imagen disponible desde la URL"
+                                tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_kpi_green))
+                            }
+                        },
+                        onError = { _, _ ->
+                            if (isAdded && this@AdminPanelFragment.view != null &&
+                                etProductImageUrl.text.toString().trim() == url
+                            ) {
+                                tvImageStatus.text = "No se pudo mostrar la imagen. Revisa que la URL sea pública y directa."
+                                tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.yalaza_pink))
+                            }
+                        }
+                    )
                 }
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -401,34 +411,37 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         })
     }
 
-    private fun setupImageButtons(view: View) {
-        // Seleccionar de Galería
-        view.findViewById<MaterialButton>(R.id.btnSelectImage).setOnClickListener {
-            pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-        }
-
-        // Restablecer a Imagen Predeterminada
+    /** Coloca en el campo la URL predeterminada de la categoría elegida. */
+    private fun configurarImagenPredeterminada(view: View) {
         view.findViewById<MaterialButton>(R.id.btnDefaultImage).setOnClickListener {
-            selectedImageUri = null
-            etProductImageUrl.setText("")
             val category = etProductCategory.text.toString().trim()
-            loadDefaultImageForCategory(category)
-            Toast.makeText(requireContext(), "Restablecida imagen automática de Yalazas", Toast.LENGTH_SHORT).show()
+            etProductImageUrl.setText(categoryDefaultImages[category] ?: fallbackDefaultImage)
+            Toast.makeText(requireContext(), "URL predeterminada aplicada", Toast.LENGTH_SHORT).show()
         }
     }
 
-    private fun loadDefaultImageForCategory(category: String) {
+    /** Vista previa usada cuando el administrador deja la URL en blanco. */
+    private fun cargarImagenPredeterminada(category: String) {
         val imageUrl = categoryDefaultImages[category] ?: fallbackDefaultImage
         ivProductImage.load(imageUrl) {
             crossfade(true)
             placeholder(android.R.color.darker_gray)
+            error(android.R.drawable.ic_menu_report_image)
         }
         tvImagePlaceholderBadge.visibility = View.VISIBLE
         tvImageStatus.text = "Usando foto automática de Yalazas ($category)"
         tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_nav_orange))
     }
 
-    private fun setupFormMode() {
+    /** Acepta enlaces HTTPS públicos; la vista previa comprueba si el servidor entrega una imagen. */
+    private fun esUrlImagenValida(url: String): Boolean {
+        if (url.any(Char::isWhitespace)) return false
+        val parsed = Uri.parse(url)
+        return parsed.scheme.equals("https", ignoreCase = true) && !parsed.host.isNullOrBlank()
+    }
+
+    /** Ajusta el formulario para crear un producto o editar uno existente. */
+    private fun configurarModoFormulario() {
         val product = editingProduct
         if (product != null) {
             // Modo EDICIÓN
@@ -461,8 +474,10 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
                 etProductOfferTag.setText(if (product.offerTag.isNotBlank()) product.offerTag else "🔥 OFERTA")
             } else {
                 switchProductOffer.isChecked = false
+                // Las ofertas sobre productos existentes se gestionan en una colección aparte.
+                switchProductOffer.isEnabled = false
                 layoutOfferFields.visibility = View.GONE
-                tvOfferStatusText.text = "⚪ Precio regular (Sin oferta)"
+                tvOfferStatusText.text = "Las ofertas se aplican desde Inventario > Nueva Oferta"
                 tvOfferStatusText.setTextColor(Color.parseColor("#9EADA4"))
             }
 
@@ -480,31 +495,20 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
                 }
                 tvSaucesStatusText.text = "🟢 Permite elegir hasta $max salsa${if (max != 1) "s" else ""}"
                 tvSaucesStatusText.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_kpi_green))
-                setSelectedSaucesChips(product.availableSauces)
+                marcarSalsasSeleccionadas(product.availableSauces)
             } else {
                 switchAllowsSauces.isChecked = false
                 layoutSaucesFields.visibility = View.GONE
                 tvSaucesStatusText.text = "⚪ Sin selección de salsas"
                 tvSaucesStatusText.setTextColor(Color.parseColor("#9EADA4"))
-                setSelectedSaucesChips(emptyList())
+                marcarSalsasSeleccionadas(emptyList())
             }
 
             // Seleccionar chip si coincide
-            selectChipByCategory(product.category)
+            seleccionarChipCategoria(product.category)
 
-            if (product.imageUrl.isNotBlank()) {
-                etProductImageUrl.setText(product.imageUrl)
-                ivProductImage.load(product.imageUrl) {
-                    crossfade(true)
-                    placeholder(android.R.color.darker_gray)
-                    error(android.R.drawable.ic_menu_report_image)
-                }
-                tvImagePlaceholderBadge.visibility = View.GONE
-                tvImageStatus.text = "Imagen actual del producto cargada"
-                tvImageStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_kpi_green))
-            } else {
-                loadDefaultImageForCategory(product.category)
-            }
+            // setText activa la vista previa por URL o la imagen predeterminada.
+            etProductImageUrl.setText(product.imageUrl)
         } else if (isOfferModeArg) {
             // Modo CREACIÓN DE OFERTA
             tvPanelTitle.text = "Crear Nueva Oferta"
@@ -525,12 +529,12 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
             layoutSaucesFields.visibility = View.GONE
             tvSaucesStatusText.text = "⚪ Sin selección de salsas"
             tvSaucesStatusText.setTextColor(Color.parseColor("#9EADA4"))
-            setSelectedSaucesChips(emptyList())
+            marcarSalsasSeleccionadas(emptyList())
 
             // Por defecto categoría Combos o Alitas
             view?.findViewById<Chip>(R.id.chipCombos)?.isChecked = true
             etProductCategory.setText("Combos")
-            loadDefaultImageForCategory("Combos")
+            cargarImagenPredeterminada("Combos")
         } else {
             // Modo CREACIÓN REGULAR
             tvPanelTitle.text = "Agregar Nuevo Producto"
@@ -548,18 +552,18 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
             layoutSaucesFields.visibility = View.GONE
             tvSaucesStatusText.text = "⚪ Sin selección de salsas"
             tvSaucesStatusText.setTextColor(Color.parseColor("#9EADA4"))
-            setSelectedSaucesChips(emptyList())
+            marcarSalsasSeleccionadas(emptyList())
 
             // Por defecto categoría Alitas
             view?.findViewById<Chip>(R.id.chipAlitas)?.isChecked = true
             etProductCategory.setText("Alitas")
-            loadDefaultImageForCategory("Alitas")
+            cargarImagenPredeterminada("Alitas")
         }
 
-        recalculateDiscountPreview()
+        recalcularVistaPreviaDescuento()
     }
 
-    private fun selectChipByCategory(category: String) {
+    private fun seleccionarChipCategoria(category: String) {
         val categoryLower = category.lowercase().trim()
         when {
             categoryLower.contains("alita") -> view?.findViewById<Chip>(R.id.chipAlitas)?.isChecked = true
@@ -571,7 +575,8 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         }
     }
 
-    private fun handleSaveProduct() {
+    /** Valida el formulario y guarda únicamente la URL de la imagen en Firestore. */
+    private fun guardarProducto() {
         val name = etProductName.text.toString().trim()
         val tagline = etProductTagline.text.toString().trim()
         val description = etProductDescription.text.toString().trim()
@@ -586,7 +591,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         val allowsSauces = switchAllowsSauces.isChecked
         val maxSaucesStr = etMaxSauces.text.toString().trim()
         val maxSauces = if (allowsSauces) (maxSaucesStr.toIntOrNull() ?: 1).coerceAtLeast(1) else 0
-        val availableSauces = if (allowsSauces) getSelectedSaucesList() else emptyList()
+        val availableSauces = if (allowsSauces) obtenerSalsasSeleccionadas() else emptyList()
 
         if (name.isBlank() || priceStr.isBlank()) {
             Toast.makeText(requireContext(), "Ingresa el nombre y el precio del producto", Toast.LENGTH_SHORT).show()
@@ -596,6 +601,12 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         val price = priceStr.toDoubleOrNull() ?: 0.0
         if (price <= 0.0) {
             Toast.makeText(requireContext(), "El precio final debe ser mayor a 0", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (manualUrl.isNotBlank() && !esUrlImagenValida(manualUrl)) {
+            etProductImageUrl.error = "Usa una URL pública HTTPS"
+            etProductImageUrl.requestFocus()
             return
         }
 
@@ -629,66 +640,15 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
             offerTag = ""
         }
 
-        if (selectedImageUri != null) {
-            // Subir a Firebase Storage con tolerancia a fallos
-            uploadImageWithFallback(name, tagline, description, price, originalPrice, isOffer, offerTag, category, isAvailable, manualUrl, allowsSauces, maxSauces, availableSauces)
-        } else {
-            val finalImageUrl = when {
-                manualUrl.isNotBlank() -> manualUrl
-                editingProduct?.imageUrl?.isNotBlank() == true -> editingProduct!!.imageUrl
-                else -> categoryDefaultImages[category] ?: fallbackDefaultImage
-            }
-            saveToFirestore(name, tagline, description, price, originalPrice, isOffer, offerTag, category, isAvailable, finalImageUrl, allowsSauces, maxSauces, availableSauces)
+        // Sin URL manual se conserva una URL pública predeterminada de la categoría.
+        val finalImageUrl = manualUrl.ifBlank {
+            categoryDefaultImages[category] ?: fallbackDefaultImage
         }
+        guardarEnFirestore(name, tagline, description, price, originalPrice, isOffer, offerTag, category, isAvailable, finalImageUrl, allowsSauces, maxSauces, availableSauces)
     }
 
-    private fun uploadImageWithFallback(
-        name: String,
-        tagline: String,
-        description: String,
-        price: Double,
-        originalPrice: Double,
-        isOffer: Boolean,
-        offerTag: String,
-        category: String,
-        isAvailable: Boolean,
-        manualUrlFallback: String,
-        allowsSauces: Boolean,
-        maxSauces: Int,
-        availableSauces: List<String>
-    ) {
-        val imageUri = selectedImageUri ?: return
-
-        btnSave.isEnabled = false
-        btnDelete.isEnabled = false
-        uploadProgress.visibility = View.VISIBLE
-        tvImageStatus.text = "Subiendo imagen a la nube..."
-
-        val imageRef = storage.child("products/${UUID.randomUUID()}.jpg")
-        imageRef.putFile(imageUri)
-            .continueWithTask { task ->
-                if (!task.isSuccessful) throw task.exception ?: Exception("Error en almacenamiento")
-                imageRef.downloadUrl
-            }
-            .addOnSuccessListener { downloadUri ->
-                saveToFirestore(name, tagline, description, price, originalPrice, isOffer, offerTag, category, isAvailable, downloadUri.toString(), allowsSauces, maxSauces, availableSauces)
-            }
-            .addOnFailureListener {
-                val fallbackUrl = if (manualUrlFallback.isNotBlank()) {
-                    manualUrlFallback
-                } else {
-                    categoryDefaultImages[category] ?: fallbackDefaultImage
-                }
-                Toast.makeText(
-                    requireContext(),
-                    "Almacenamiento no disponible. Guardando con imagen automática de Yalazas...",
-                    Toast.LENGTH_LONG
-                ).show()
-                saveToFirestore(name, tagline, description, price, originalPrice, isOffer, offerTag, category, isAvailable, fallbackUrl, allowsSauces, maxSauces, availableSauces)
-            }
-    }
-
-    private fun saveToFirestore(
+    /** Escribe el producto con las claves esperadas por la colección `products`. */
+    private fun guardarEnFirestore(
         name: String,
         tagline: String,
         description: String,
@@ -705,7 +665,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
     ) {
         btnSave.isEnabled = false
         btnDelete.isEnabled = false
-        uploadProgress.visibility = View.VISIBLE
+        progresoGuardado.visibility = View.VISIBLE
 
         val isEdit = editingProduct != null
         val docRef = if (isEdit) {
@@ -745,29 +705,34 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
                 Toast.makeText(requireContext(), "Error al guardar en Firestore: ${e.message}", Toast.LENGTH_LONG).show()
                 btnSave.isEnabled = true
                 btnDelete.isEnabled = true
-                uploadProgress.visibility = View.GONE
+                progresoGuardado.visibility = View.GONE
             }
     }
 
-    private fun showDeleteConfirmationDialog() {
+    private fun mostrarConfirmacionEliminacion() {
         val product = editingProduct ?: return
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Eliminar Producto")
             .setMessage("¿Estás seguro de que deseas eliminar \"${product.name}\" de la carta de Yalazas?")
             .setPositiveButton("Eliminar") { _, _ ->
-                deleteProductFromFirestore(product.id)
+                eliminarProductoDeFirestore(product.id)
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
-    private fun deleteProductFromFirestore(productId: String) {
+    /** Elimina el documento seleccionado después de la confirmación del administrador. */
+    private fun eliminarProductoDeFirestore(productId: String) {
         btnSave.isEnabled = false
         btnDelete.isEnabled = false
-        uploadProgress.visibility = View.VISIBLE
+        progresoGuardado.visibility = View.VISIBLE
 
         productsCollection.document(productId).delete()
             .addOnSuccessListener {
+                // La promoción huérfana no se muestra; se intenta retirarla de Firestore.
+                RepositorioPromociones.quitar(productId) { resultado ->
+                    resultado.onFailure { Log.w("AdminPanelFragment", "No se pudo retirar la promoción", it) }
+                }
                 Toast.makeText(requireContext(), "Producto eliminado de la carta", Toast.LENGTH_SHORT).show()
                 findNavController().popBackStack()
             }
@@ -775,7 +740,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
                 Toast.makeText(requireContext(), "Error al eliminar: ${e.message}", Toast.LENGTH_LONG).show()
                 btnSave.isEnabled = true
                 btnDelete.isEnabled = true
-                uploadProgress.visibility = View.GONE
+                progresoGuardado.visibility = View.GONE
             }
     }
 }

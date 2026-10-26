@@ -1,0 +1,186 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(profilePath());
+    }
+
+    function accountEnabled() {
+      return signedIn() && (!hasProfile() || get(profilePath()).data.get('active', true) == true);
+    }
+
+    function hasRole(role) {
+      return hasProfile()
+        && get(profilePath()).data.get('active', true) == true
+        && get(profilePath()).data.get('role', 'CLIENTE') == role;
+    }
+
+    function admin() {
+      return hasRole('ADMIN') || hasRole('ADMINISTRADOR');
+    }
+
+    function driver() {
+      return hasRole('REPARTIDOR');
+    }
+
+    function validRole(role) {
+      return role in ['ADMIN', 'ADMINISTRADOR', 'COCINERO', 'MESERO', 'REPARTIDOR', 'CLIENTE'];
+    }
+
+    function nextStatus(from, to) {
+      return (from == 'PENDIENTE' && to in ['EN_PROCESO', 'CANCELADO'])
+        || (from == 'EN_PROCESO' && to in ['EN_CAMINO', 'CANCELADO'])
+        || (from == 'EN_CAMINO' && to in ['ENTREGADO', 'CANCELADO']);
+    }
+
+    function statusFieldsOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
+    match /users/{userId} {
+      allow get: if admin() || (signedIn() && request.auth.uid == userId);
+      allow list: if admin();
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'CLIENTE'
+        && request.resource.data.active == true;
+      allow update: if (
+        signedIn()
+        && request.auth.uid == userId
+        && resource.data.get('active', true) == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'phone', 'address', 'reference', 'latitude', 'longitude', 'updatedAt'
+        ])
+      ) || (
+        admin()
+        && request.auth.uid != userId
+        && request.resource.data.uid == userId
+        && validRole(request.resource.data.role)
+        && request.resource.data.active is bool
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'uid', 'role', 'active', 'updatedAt'
+        ])
+      );
+      allow delete: if false;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if admin();
+    }
+
+    // Las promociones de productos existentes se guardan fuera del producto base.
+    match /promotions/{productId} {
+      allow read: if true;
+      allow create, update: if admin()
+        && exists(/databases/$(database)/documents/products/$(productId))
+        && request.resource.data.keys().hasOnly(['productId', 'offerPrice', 'offerTag', 'active'])
+        && request.resource.data.keys().hasAll(['productId', 'offerPrice', 'offerTag', 'active'])
+        && request.resource.data.productId == productId
+        && request.resource.data.offerPrice is number
+        && request.resource.data.offerPrice > 0
+        && request.resource.data.offerPrice < get(/databases/$(database)/documents/products/$(productId)).data.price
+        && request.resource.data.offerTag is string
+        && request.resource.data.offerTag.size() <= 40
+        && request.resource.data.active is bool;
+      allow delete: if admin();
+    }
+
+    match /orders/{orderId} {
+      allow get: if admin()
+        || (accountEnabled() && resource.data.userId == request.auth.uid)
+        || (driver() && resource.data.isDelivery == true);
+      // Las consultas del cliente deben filtrar por userId; las del repartidor, por isDelivery.
+      allow list: if admin()
+        || (accountEnabled() && resource.data.userId == request.auth.uid)
+        || (driver() && resource.data.isDelivery == true);
+
+      allow create: if accountEnabled()
+        && request.resource.data.keys().hasAll([
+          'userId', 'customerName', 'phone', 'address', 'total', 'items',
+          'status', 'paymentMethod', 'paymentAmount', 'paymentChange',
+          'paymentStatus', 'isDelivery', 'deliveryDistanceKm', 'deliveryFee',
+          'timestamp', 'deliveryDriverId', 'deliveryDriverName',
+          'deliveryDriverPhone', 'routeOrderIndex'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PENDIENTE'
+        && request.resource.data.paymentStatus == 'PENDIENTE'
+        && request.resource.data.paymentMethod in ['EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA']
+        && request.resource.data.deliveryDriverId == ''
+        && request.resource.data.deliveryDriverName == ''
+        && request.resource.data.deliveryDriverPhone == ''
+        && request.resource.data.routeOrderIndex == 0
+        && request.resource.data.isDelivery is bool
+        && request.resource.data.total is number
+        && request.resource.data.total > 0
+        && request.resource.data.paymentAmount is number
+        && request.resource.data.paymentAmount >= 0
+        && request.resource.data.paymentChange is number
+        && request.resource.data.paymentChange >= 0
+        && request.resource.data.deliveryDistanceKm is number
+        && request.resource.data.deliveryDistanceKm >= 0
+        && request.resource.data.deliveryFee is number
+        && request.resource.data.deliveryFee >= 0
+        && (request.resource.data.isDelivery == true || request.resource.data.deliveryFee == 0)
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 50
+        && request.resource.data.timestamp == request.time;
+
+      allow update: if (
+        admin()
+        && statusFieldsOnly()
+        && nextStatus(resource.data.status, request.resource.data.status)
+      ) || (
+        accountEnabled()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status == 'PENDIENTE'
+        && request.resource.data.status == 'CANCELADO'
+        && statusFieldsOnly()
+      ) || (
+        driver()
+        && resource.data.isDelivery == true
+        && resource.data.status == 'EN_PROCESO'
+        && resource.data.deliveryDriverId == ''
+        && request.resource.data.status == 'EN_CAMINO'
+        && request.resource.data.deliveryDriverId == request.auth.uid
+        && request.resource.data.routeOrderIndex is int
+        && request.resource.data.routeOrderIndex > 0
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'deliveryDriverId', 'deliveryDriverName',
+          'deliveryDriverPhone', 'routeOrderIndex'
+        ])
+      ) || (
+        driver()
+        && resource.data.isDelivery == true
+        && resource.data.status == 'EN_CAMINO'
+        && resource.data.deliveryDriverId == request.auth.uid
+        && request.resource.data.status == 'ENTREGADO'
+        && request.resource.data.paymentStatus == 'PAGADO'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'paymentStatus'
+        ])
+      );
+      allow delete: if false;
+    }
+
+    match /auditoria/{logId} {
+      allow read, create: if admin();
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -5,22 +5,22 @@ import android.view.View
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.databinding.FragmentDeliveryHistoryBinding
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
+import com.yalazas.app.repositorio.ServiciosFirebase
 import java.util.Calendar
 import java.util.Locale
 
+/** Muestra entregas anteriores y métricas del repartidor. */
 class DeliveryHistoryFragment : Fragment(R.layout.fragment_delivery_history) {
 
     private var _binding: FragmentDeliveryHistoryBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var adapter: DeliveryHistoryAdapter
+    private lateinit var adapter: AdaptadorHistorialEntregas
     private var firestoreListener: ListenerRegistration? = null
 
     private var deliveredOrders: List<Order> = emptyList()
@@ -30,21 +30,21 @@ class DeliveryHistoryFragment : Fragment(R.layout.fragment_delivery_history) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentDeliveryHistoryBinding.bind(view)
 
-        setupRecyclerView()
-        setupListeners()
-        listenDeliveredOrders()
+        configurarLista()
+        configurarEventos()
+        escucharPedidosEntregados()
     }
 
-    private fun setupRecyclerView() {
-        adapter = DeliveryHistoryAdapter()
+    private fun configurarLista() {
+        adapter = AdaptadorHistorialEntregas()
         binding.rvDeliveryHistory.layoutManager = LinearLayoutManager(requireContext())
         binding.rvDeliveryHistory.adapter = adapter
     }
 
-    private fun setupListeners() {
+    private fun configurarEventos() {
         binding.swipeRefreshHistory.setOnRefreshListener {
             binding.swipeRefreshHistory.isRefreshing = false
-            listenDeliveredOrders()
+            escucharPedidosEntregados()
         }
 
         binding.chipFilterToday.setOnClickListener {
@@ -83,18 +83,18 @@ class DeliveryHistoryFragment : Fragment(R.layout.fragment_delivery_history) {
             2 -> binding.tvHistoryDateSubtitle.text = "Historial completo de entregas"
         }
 
-        filterAndComputeMetrics()
+        filtrarYCalcularMetricas()
     }
 
-    private fun listenDeliveredOrders() {
+    private fun escucharPedidosEntregados() {
         firestoreListener?.remove()
         binding.progressHistory.visibility = View.VISIBLE
 
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        val db = FirebaseFirestore.getInstance()
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
+        val db = ServiciosFirebase.firestore
 
         firestoreListener = db.collection("orders")
-            .whereEqualTo("status", OrderStatus.ENTREGADO.name)
+            .whereEqualTo("isDelivery", true)
             .addSnapshotListener { snapshot, error ->
                 if (!isAdded || _binding == null) return@addSnapshotListener
                 binding.progressHistory.visibility = View.GONE
@@ -107,19 +107,20 @@ class DeliveryHistoryFragment : Fragment(R.layout.fragment_delivery_history) {
                 if (snapshot != null) {
                     val allDelivered = snapshot.documents.mapNotNull { doc ->
                         doc.toObject(Order::class.java)?.copy(id = doc.id)
-                    }.sortedByDescending { it.timestamp?.toDate()?.time ?: 0L }
+                    }.filter { it.status == OrderStatus.ENTREGADO.name }
+                        .sortedByDescending { it.timestamp?.toDate()?.time ?: 0L }
 
                     // Filtrar por entregas a domicilio del repartidor actual (o generales entregadas si no tienen id asignado)
                     deliveredOrders = allDelivered.filter { order ->
                         order.isDelivery && (order.deliveryDriverId == currentUid || order.deliveryDriverId.isNullOrEmpty())
                     }
 
-                    filterAndComputeMetrics()
+                    filtrarYCalcularMetricas()
                 }
             }
     }
 
-    private fun filterAndComputeMetrics() {
+    private fun filtrarYCalcularMetricas() {
         val startOfToday = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)

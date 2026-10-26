@@ -12,15 +12,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.databinding.FragmentDeliveryMapBinding
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.utils.DeliveryPricingHelper
-import com.yalazas.app.utils.DeliveryRouteOptimizer
+import com.yalazas.app.repositorio.ServiciosFirebase
+import com.yalazas.app.utilidades.CalculadoraTarifaEntrega
+import com.yalazas.app.utilidades.OptimizadorRutasEntrega
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -28,6 +27,7 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import java.util.Locale
 
+/** Muestra en el mapa las entregas activas y sus rutas. */
 class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
 
     private var _binding: FragmentDeliveryMapBinding? = null
@@ -38,18 +38,18 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
     private var selectedOrder: Order? = null
 
     // Ubicación Central de Yalazas Fast Food (Imperial, Cañete, Perú)
-    private val storeGeoPoint = GeoPoint(DeliveryPricingHelper.STORE_LATITUDE, DeliveryPricingHelper.STORE_LONGITUDE)
+    private val storeGeoPoint = GeoPoint(CalculadoraTarifaEntrega.LATITUD_LOCAL, CalculadoraTarifaEntrega.LONGITUD_LOCAL)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentDeliveryMapBinding.bind(view)
 
-        setupOpenStreetMap()
-        setupListeners()
-        listenActiveDeliveries()
+        configurarMapa()
+        configurarEventos()
+        escucharEntregasActivas()
     }
 
-    private fun setupOpenStreetMap() {
+    private fun configurarMapa() {
         val ctx = requireContext().applicationContext
         val osmPrefs = ctx.getSharedPreferences("yalazas_osm_prefs", Context.MODE_PRIVATE)
         Configuration.getInstance().load(ctx, osmPrefs)
@@ -71,7 +71,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         })
     }
 
-    private fun setupListeners() {
+    private fun configurarEventos() {
         binding.fabCenterStore.setOnClickListener {
             binding.deliveryMapView.controller.animateTo(storeGeoPoint, 16.5, 1000L)
         }
@@ -85,7 +85,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         }
 
         binding.btnMapRefresh.setOnClickListener {
-            listenActiveDeliveries()
+            escucharEntregasActivas()
             Toast.makeText(requireContext(), "Actualizando mapa...", Toast.LENGTH_SHORT).show()
         }
 
@@ -127,12 +127,14 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         }
     }
 
-    private fun listenActiveDeliveries() {
+    /** Escucha entregas asignadas para mantener marcadores y ruta actualizados. */
+    private fun escucharEntregasActivas() {
         firestoreListener?.remove()
-        val currentUid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
 
-        val db = FirebaseFirestore.getInstance()
+        val db = ServiciosFirebase.firestore
         firestoreListener = db.collection("orders")
+            .whereEqualTo("isDelivery", true)
             .addSnapshotListener { snapshot, error ->
                 if (!isAdded || _binding == null) return@addSnapshotListener
 
@@ -219,7 +221,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         inRouteOrders.forEach { order ->
             validGpsCount++
             val customerPoint = GeoPoint(order.latitude, order.longitude)
-            val stopText = if (order.routeOrderIndex > 0) DeliveryRouteOptimizer.getStopBadgeText(order.routeOrderIndex) else "En Ruta"
+            val stopText = if (order.routeOrderIndex > 0) OptimizadorRutasEntrega.textoInsigniaParada(order.routeOrderIndex) else "En Ruta"
             val customerMarker = Marker(binding.deliveryMapView).apply {
                 position = customerPoint
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
@@ -278,7 +280,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
 
         if (order.status == OrderStatus.EN_CAMINO.name && order.routeOrderIndex > 0) {
             binding.tvPreviewStopBadge.visibility = View.VISIBLE
-            binding.tvPreviewStopBadge.text = DeliveryRouteOptimizer.getStopBadgeText(order.routeOrderIndex)
+            binding.tvPreviewStopBadge.text = OptimizadorRutasEntrega.textoInsigniaParada(order.routeOrderIndex)
         } else if (order.status == OrderStatus.EN_PROCESO.name) {
             binding.tvPreviewStopBadge.visibility = View.VISIBLE
             binding.tvPreviewStopBadge.text = "📦 Por Recoger"
@@ -297,13 +299,13 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         val distKm = if (order.deliveryDistanceKm > 0) {
             order.deliveryDistanceKm
         } else if (order.latitude != 0.0 && order.longitude != 0.0) {
-            DeliveryPricingHelper.calculateDistanceKm(lat2 = order.latitude, lon2 = order.longitude)
+            CalculadoraTarifaEntrega.calcularDistanciaKm(lat2 = order.latitude, lon2 = order.longitude)
         } else {
             0.0
         }
-        val fee = if (order.deliveryFee > 0) order.deliveryFee else DeliveryPricingHelper.calculateDeliveryFee(distKm, order.isDelivery)
+        val fee = if (order.deliveryFee > 0) order.deliveryFee else CalculadoraTarifaEntrega.calcularTarifaEntrega(distKm, order.isDelivery)
         if (distKm > 0) {
-            val distStr = DeliveryPricingHelper.formatDistance(distKm)
+            val distStr = CalculadoraTarifaEntrega.formatearDistancia(distKm)
             binding.tvPreviewDistanceFee.text = "📏 $distStr • Costo Envío: S/ %.2f".format(Locale.getDefault(), fee)
             binding.tvPreviewDistanceFee.visibility = View.VISIBLE
         } else {
