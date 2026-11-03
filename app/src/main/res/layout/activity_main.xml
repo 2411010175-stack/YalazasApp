@@ -42,7 +42,7 @@
             android:id="@+id/adminBottomNav"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#050505"
+            android:background="@color/admin_ui_bg"
             android:visibility="gone"
             app:itemIconTint="@color/admin_nav_item_colors"
             app:itemTextColor="@color/admin_nav_text_colors"

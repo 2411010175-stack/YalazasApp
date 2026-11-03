@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/yalaza_bg"
+    android:background="@color/admin_ui_bg"
     android:clipToPadding="false"
     android:fillViewport="true"
     android:paddingBottom="40dp">
@@ -60,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="Configura los detalles de tu plato o combo"
-                    android:textColor="#9EADA4"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -105,7 +105,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:hint="Nombre del Plato o Combo *"
-                app:boxBackgroundColor="#121A16"
+                app:boxBackgroundColor="@color/admin_ui_surface_soft"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
@@ -127,7 +127,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Selecciona Categoría Rápida:"
-                android:textColor="#9EADA4"
+                android:textColor="@color/admin_ui_text_secondary"
                 android:textSize="12sp"
                 android:layout_marginBottom="6dp" />
 
@@ -205,7 +205,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:hint="Categoría *"
-                app:boxBackgroundColor="#121A16"
+                app:boxBackgroundColor="@color/admin_ui_surface_soft"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
@@ -229,7 +229,7 @@
                 android:hint="Precio en Soles (S/) *"
                 app:prefixText="S/ "
                 app:prefixTextColor="@color/admin_kpi_yellow"
-                app:boxBackgroundColor="#121A16"
+                app:boxBackgroundColor="@color/admin_ui_surface_soft"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
@@ -253,7 +253,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:hint="Eslogan breve (Ej: 6 piezas + papas)"
-                app:boxBackgroundColor="#121A16"
+                app:boxBackgroundColor="@color/admin_ui_surface_soft"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
@@ -274,7 +274,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Descripción completa (Ingredientes, salsas, detalles)"
-                app:boxBackgroundColor="#121A16"
+                app:boxBackgroundColor="@color/admin_ui_surface_soft"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"
@@ -331,7 +331,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:text="⚪ Precio regular (Sin oferta)"
-                        android:textColor="#9EADA4"
+                        android:textColor="@color/admin_ui_text_secondary"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -367,8 +367,8 @@
                     android:layout_marginBottom="12dp"
                     android:hint="Precio Regular / Antes de la oferta (S/) *"
                     app:prefixText="S/ "
-                    app:prefixTextColor="#9EADA4"
-                    app:boxBackgroundColor="#121A16"
+                    app:prefixTextColor="@color/admin_ui_text_secondary"
+                    app:boxBackgroundColor="@color/admin_ui_surface_soft"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -414,7 +414,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Insignia / Etiqueta rápida:"
-                    android:textColor="#9EADA4"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="12sp"
                     android:layout_marginBottom="6dp" />
 
@@ -482,7 +482,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Texto de la Insignia (Ej: 🔥 25% OFF, 2x1, PROMO)"
-                    app:boxBackgroundColor="#121A16"
+                    app:boxBackgroundColor="@color/admin_ui_surface_soft"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -538,7 +538,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"
                         android:text="⚪ Sin selección de salsas"
-                        android:textColor="#9EADA4"
+                        android:textColor="@color/admin_ui_text_secondary"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -627,7 +627,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="14dp"
                     android:hint="Cantidad de salsas incluidas *"
-                    app:boxBackgroundColor="#121A16"
+                    app:boxBackgroundColor="@color/admin_ui_surface_soft"
                     app:boxCornerRadiusBottomEnd="12dp"
                     app:boxCornerRadiusBottomStart="12dp"
                     app:boxCornerRadiusTopEnd="12dp"
@@ -650,7 +650,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Salsas disponibles en Yalazas para este combo:"
-                    android:textColor="#9EADA4"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="12sp"
                     android:layout_marginBottom="6dp" />
 
@@ -833,7 +833,7 @@
                     android:paddingEnd="8dp"
                     android:paddingBottom="2dp"
                     android:text="OPCIONAL"
-                    android:textColor="#A0B2A6"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="10sp"
                     android:textStyle="bold" />
             </RelativeLayout>
@@ -842,7 +842,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Pega una URL pública HTTPS que muestre la imagen directamente. El cliente la verá en la app. Si la dejas vacía, se usará una URL predeterminada según la categoría."
-                android:textColor="#9EADA4"
+                android:textColor="@color/admin_ui_text_secondary"
                 android:textSize="12sp"
                 android:layout_marginBottom="12dp" />
 
@@ -892,7 +892,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Usar URL predeterminada"
-                android:textColor="#A0B2A6"
+                android:textColor="@color/admin_ui_text_secondary"
                 app:strokeColor="#35483E"
                 app:cornerRadius="10dp" />
 
@@ -902,7 +902,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:hint="URL pública de imagen (https://...)"
-                app:boxBackgroundColor="#121A16"
+                app:boxBackgroundColor="@color/admin_ui_surface_soft"
                 app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
                 app:boxCornerRadiusTopEnd="12dp"

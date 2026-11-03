@@ -1,5 +1,6 @@
 package com.yalazas.app.ui.admin
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,20 +11,21 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.yalazas.app.R
-import com.yalazas.app.model.AuditLog
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.RepositorioEstadosPedido
 import com.yalazas.app.repositorio.ServiciosFirebase
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -95,6 +97,8 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
+        configurarColoresFiltros(chipGroup)
+
         // Configurar Filtros por Chips
         chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
             currentStatusFilter = when (checkedIds.firstOrNull()) {
@@ -119,6 +123,39 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
         })
 
         escucharPedidosEnTiempoReal()
+    }
+
+    /** Cada filtro conserva el color de su estado; la selección usa un fondo más visible. */
+    private fun configurarColoresFiltros(chipGroup: ChipGroup) {
+        val filtros = listOf(
+            R.id.chipPending to OrderStatus.PENDIENTE,
+            R.id.chipKitchen to OrderStatus.EN_PROCESO,
+            R.id.chipDelivery to OrderStatus.EN_CAMINO,
+            R.id.chipDelivered to OrderStatus.ENTREGADO,
+            R.id.chipCancelled to OrderStatus.CANCELADO
+        )
+
+        fun colores(seleccionado: Int, normal: Int) = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(ContextCompat.getColor(requireContext(), seleccionado), ContextCompat.getColor(requireContext(), normal))
+        )
+
+        chipGroup.findViewById<Chip>(R.id.chipAll)?.apply {
+            chipBackgroundColor = colores(R.color.admin_filter_all_selected, R.color.admin_ui_surface)
+            chipStrokeColor = colores(R.color.admin_ui_amount, R.color.admin_ui_border)
+            setTextColor(colores(R.color.white, R.color.admin_ui_text_secondary))
+            checkedIconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.white))
+        }
+
+        filtros.forEach { (id, estado) ->
+            val estilo = PaletaEstadosVenta.para(estado)
+            chipGroup.findViewById<Chip>(id)?.apply {
+                chipBackgroundColor = colores(estilo.boton, estilo.tarjeta)
+                chipStrokeColor = colores(estilo.textoEstado, estilo.borde)
+                setTextColor(colores(R.color.white, estilo.textoEstado))
+                checkedIconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.white))
+            }
+        }
     }
 
     /** Escucha las ventas y conserva los datos necesarios para aplicar filtros locales. */
@@ -163,7 +200,7 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
             val statusMatches = when (currentStatusFilter) {
                 "ALL" -> true
                 "PENDIENTE" -> order.status.contains("PENDIENTE", ignoreCase = true)
-                "EN_PROCESO" -> order.status.contains("PROCESO", ignoreCase = true) || order.status.contains("COCIN", ignoreCase = true)
+                "EN_PROCESO" -> OrderStatus.desdeTexto(order.status) in listOf(OrderStatus.EN_PROCESO, OrderStatus.LISTO_PARA_ENTREGA)
                 "EN_CAMINO" -> order.status.contains("CAMINO", ignoreCase = true) || order.status.contains("REPART", ignoreCase = true)
                 "ENTREGADO" -> order.status.contains("ENTREG", ignoreCase = true)
                 "CANCELADO" -> order.status.contains("CANCEL", ignoreCase = true)
@@ -189,46 +226,33 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
     }
 
     private fun mostrarDialogoCambioEstado(order: Order) {
-        val currentAdminId = RepositorioAutenticacion.currentProfile?.uid ?: "ADMIN"
         val saleNumber = allOrdersWithNumbers.find { it.first.id == order.id }?.second ?: ""
 
         val sheet = HojaCambioEstadoPedido.desdePedido(order, saleNumber)
         sheet.onStatusSelected = { newStatus ->
-            actualizarEstadoPedido(order, newStatus, currentAdminId)
+            actualizarEstadoPedido(order, newStatus)
         }
         sheet.show(parentFragmentManager, HojaCambioEstadoPedido.TAG)
     }
 
-    /** Registra el nuevo estado y la auditoría de la acción administrativa. */
-    private fun actualizarEstadoPedido(order: Order, newStatus: String, adminId: String) {
+    /** State valida el estado vigente y guarda la auditoría junto al pedido. */
+    private fun actualizarEstadoPedido(order: Order, newStatus: String) {
         progressBar.visibility = View.VISIBLE
-
-        val updates = mapOf(
-            "status" to newStatus,
-            "updatedAt" to System.currentTimeMillis()
-        )
-
-        db.collection("orders").document(order.id)
-            .update(updates)
-            .addOnSuccessListener {
-                // Registrar auditoría
-                val log = AuditLog(
-                    id = db.collection("auditoria").document().id,
-                    usuarioAfectadoId = order.userId.ifBlank { order.id },
-                    usuarioAdministradorId = adminId,
-                    accion = "CAMBIO_ESTADO_PEDIDO",
-                    rolAnterior = order.status,
-                    rolNuevo = newStatus
-                )
-                db.collection("auditoria").document(log.id).set(log)
-
-                Toast.makeText(requireContext(), "Estado actualizado a $newStatus", Toast.LENGTH_SHORT).show()
-                progressBar.visibility = View.GONE
+        val destino = OrderStatus.values().firstOrNull { it.key == newStatus }
+        if (destino == null) {
+            progressBar.visibility = View.GONE
+            Toast.makeText(requireContext(), "Estado de destino inválido", Toast.LENGTH_SHORT).show()
+            return
+        }
+        RepositorioEstadosPedido.cambiarAdministrador(order.id, destino) { resultado ->
+            if (!isAdded || view == null) return@cambiarAdministrador
+            progressBar.visibility = View.GONE
+            resultado.onSuccess {
+                Toast.makeText(requireContext(), "Estado actualizado a ${destino.label}", Toast.LENGTH_SHORT).show()
+            }.onFailure { error ->
+                Toast.makeText(requireContext(), "Error al actualizar estado: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(requireContext(), "Error al actualizar estado: ${e.message}", Toast.LENGTH_LONG).show()
-                progressBar.visibility = View.GONE
-            }
+        }
     }
 
     private fun mostrarDetallePedido(order: Order, saleNumber: String) {

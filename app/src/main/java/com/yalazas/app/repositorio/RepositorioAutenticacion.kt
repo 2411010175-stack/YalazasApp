@@ -6,6 +6,9 @@ import com.google.firebase.auth.FirebaseUser
 import com.yalazas.app.model.UserProfile
 import kotlinx.coroutines.tasks.await
 
+/** Error propio que permite mostrar un aviso específico sin depender del texto de Firebase. */
+class CuentaDesactivadaException : IllegalStateException("Cuenta desactivada")
+
 /** Centraliza la sesión de Firebase Auth y el perfil correspondiente en Firestore. */
 object RepositorioAutenticacion {
     private val auth = ServiciosFirebase.auth
@@ -33,7 +36,7 @@ object RepositorioAutenticacion {
 
             if (currentProfile?.active == false) {
                 cerrarSesion()
-                return Result.failure(Exception("Cuenta desactivada. Comunícate con el administrador."))
+                return Result.failure(CuentaDesactivadaException())
             }
 
             Result.success(user)

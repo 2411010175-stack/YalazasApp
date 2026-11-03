@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/yalaza_bg"
+    android:background="@color/admin_ui_bg"
     android:orientation="vertical">
 
     <!-- Top Header -->
@@ -67,9 +67,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
-                app:cardBackgroundColor="@color/admin_bg_card"
+                app:cardBackgroundColor="@color/admin_ui_surface"
                 app:cardCornerRadius="16dp"
-                app:strokeColor="#38453E"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -93,7 +93,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:text="Si se desactiva, los clientes verán el local como temporalmente cerrado."
-                        android:textColor="#A0B2A6"
+                        android:textColor="@color/admin_ui_text_secondary"
                         android:textSize="12sp" />
 
                     <View
@@ -101,7 +101,7 @@
                         android:layout_height="1dp"
                         android:layout_marginTop="12dp"
                         android:layout_marginBottom="12dp"
-                        android:background="#2E3933" />
+                        android:background="@color/admin_ui_divider" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -144,9 +144,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
-                app:cardBackgroundColor="@color/admin_bg_card"
+                app:cardBackgroundColor="@color/admin_ui_surface"
                 app:cardCornerRadius="16dp"
-                app:strokeColor="#38453E"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -169,7 +169,7 @@
                         android:layout_height="1dp"
                         android:layout_marginTop="12dp"
                         android:layout_marginBottom="12dp"
-                        android:background="#2E3933" />
+                        android:background="@color/admin_ui_divider" />
 
                     <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchLowStock"
@@ -196,9 +196,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
-                app:cardBackgroundColor="@color/admin_bg_card"
+                app:cardBackgroundColor="@color/admin_ui_surface"
                 app:cardCornerRadius="16dp"
-                app:strokeColor="#38453E"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -211,7 +211,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Sesión activa como:"
-                        android:textColor="#A0B2A6"
+                        android:textColor="@color/admin_ui_text_secondary"
                         android:textSize="12sp" />
 
                     <TextView

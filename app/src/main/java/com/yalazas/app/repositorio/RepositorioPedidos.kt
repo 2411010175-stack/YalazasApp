@@ -26,7 +26,12 @@ data class SolicitudPedido(
 
 /** Fachada del checkout: valida el pedido y concentra su escritura en Firestore. */
 object RepositorioPedidos {
-    /** Solicita cancelar un pedido propio. La regla publicada de Firestore decide el permiso final. */
+    /** Conserva la fachada del pedido y delega la transición al único repositorio State. */
+    fun cambiarEstadoCocina(orderId: String, destino: OrderStatus, onResult: (Result<Unit>) -> Unit) {
+        RepositorioEstadosPedido.cambiarCocina(orderId, destino, onResult)
+    }
+
+    /** Solicita cancelar un pedido propio, con validación del estado remoto. */
     fun cancelarPedidoPropio(order: Order, onResult: (Result<Unit>) -> Unit) {
         val uid = ServiciosFirebase.auth.currentUser?.uid
         if (uid == null || uid != order.userId || order.id.isBlank() ||
@@ -36,10 +41,7 @@ object RepositorioPedidos {
             return
         }
 
-        ServiciosFirebase.firestore.collection("orders").document(order.id)
-            .update("status", OrderStatus.CANCELADO.key, "updatedAt", System.currentTimeMillis())
-            .addOnSuccessListener { onResult(Result.success(Unit)) }
-            .addOnFailureListener { error -> onResult(Result.failure(error)) }
+        RepositorioEstadosPedido.cancelarPropio(order.id, onResult)
     }
 
     /** Valida los datos, registra `orders` y vacía el carrito solo cuando Firestore confirma. */
@@ -67,7 +69,7 @@ object RepositorioPedidos {
             "longitude" to (if (request.longitude != 0.0) request.longitude else profile.longitude),
             "comment" to request.comment,
             "total" to total,
-            "status" to "PENDIENTE",
+            "status" to OrderStatus.PENDIENTE.key,
             "paymentMethod" to request.paymentMethod,
             "paymentAmount" to paidAmount,
             "paymentChange" to change,

@@ -1,6 +1,8 @@
 package com.yalazas.app.ui.tracking
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -17,6 +19,7 @@ import com.yalazas.app.R
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
 import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.RepositorioUbicacionRepartidor
 import com.yalazas.app.repositorio.ServiciosFirebase
 import com.yalazas.app.repositorio.RepositorioPedidos
 import java.util.Date
@@ -26,6 +29,16 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private val db = ServiciosFirebase.firestore
     private var ordersListener: ListenerRegistration? = null
+    private val escuchasUbicacion = mutableMapOf<String, ListenerRegistration>()
+    private val temporizador = Handler(Looper.getMainLooper())
+    private val refrescarEdad = object : Runnable {
+        override fun run() {
+            if (view != null) {
+                adapter.refrescarEdadUbicaciones()
+                temporizador.postDelayed(this, 30_000L)
+            }
+        }
+    }
     private lateinit var adapter: AdaptadorSeguimientoCliente
 
     private lateinit var progressBar: ProgressBar
@@ -50,6 +63,9 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         adapter = AdaptadorSeguimientoCliente(
             onCancelOrderClick = { order ->
                 confirmarCancelacionCliente(order)
+            },
+            onViewDriverClick = { order ->
+                DialogoUbicacionRepartidor.mostrar(parentFragmentManager, order)
             }
         )
 
@@ -61,6 +77,16 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         }
 
         escucharPedidosDelCliente()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        temporizador.post(refrescarEdad)
+    }
+
+    override fun onPause() {
+        temporizador.removeCallbacks(refrescarEdad)
+        super.onPause()
     }
 
     /** Escucha solo los pedidos del usuario actual y actualiza la lista al cambiar Firestore. */
@@ -87,6 +113,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         ordersListener = db.collection("orders")
             .whereEqualTo("userId", currentUserId)
             .addSnapshotListener { snapshot, error ->
+                if (!isAdded || view == null) return@addSnapshotListener
                 progressBar.visibility = View.GONE
 
                 if (error != null) {
@@ -101,9 +128,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                         }
                     }.sortedByDescending { it.timestamp?.toDate() ?: Date(0) }
 
+                    sincronizarUbicaciones(orderList)
+
                     val activeCount = orderList.count {
                         val statusEnum = OrderStatus.desdeTexto(it.status)
-                        statusEnum in listOf(OrderStatus.PENDIENTE, OrderStatus.EN_PROCESO, OrderStatus.EN_CAMINO)
+                        statusEnum in listOf(OrderStatus.PENDIENTE, OrderStatus.EN_PROCESO, OrderStatus.LISTO_PARA_ENTREGA, OrderStatus.EN_CAMINO)
                     }
 
                     if (activeCount > 0) {
@@ -129,6 +158,31 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                     }
                 }
             }
+    }
+
+    /** Cada pedido activo escucha únicamente su propio documento de posición. */
+    private fun sincronizarUbicaciones(pedidos: List<Order>) {
+        val idsEnRuta = pedidos.filter {
+            it.isDelivery && it.status == OrderStatus.EN_CAMINO.name && it.deliveryDriverId.isNotBlank()
+        }.map { it.id }.toSet()
+
+        (escuchasUbicacion.keys - idsEnRuta).forEach { id ->
+            escuchasUbicacion.remove(id)?.remove()
+            adapter.actualizarUbicacion(id, null)
+            (parentFragmentManager.findFragmentByTag(DialogoUbicacionRepartidor.etiqueta(id))
+                as? DialogoUbicacionRepartidor)?.dismissAllowingStateLoss()
+        }
+        (idsEnRuta - escuchasUbicacion.keys).forEach { id ->
+            escuchasUbicacion[id] = RepositorioUbicacionRepartidor.observar(
+                id,
+                alCambiar = { posicion ->
+                    if (isAdded && view != null) adapter.actualizarUbicacion(id, posicion)
+                },
+                alError = {
+                    if (isAdded && view != null) adapter.indicarErrorUbicacion(id)
+                }
+            )
+        }
     }
 
     /** Muestra la confirmación únicamente si el estado local todavía es pendiente. */
@@ -174,5 +228,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         // Evita recibir actualizaciones después de destruir la pantalla.
         ordersListener?.remove()
         ordersListener = null
+        escuchasUbicacion.values.forEach { it.remove() }
+        escuchasUbicacion.clear()
     }
 }

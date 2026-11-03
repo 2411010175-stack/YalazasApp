@@ -152,8 +152,8 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
                     // Mostrar pedidos listos en cocina (por recoger) o en camino del repartidor actual
                     activeOrders = all.filter { order ->
                         order.isDelivery && (
-                            (order.status == OrderStatus.EN_PROCESO.name && order.deliveryDriverId.isNullOrEmpty()) ||
-                            (order.status == OrderStatus.EN_CAMINO.name && (order.deliveryDriverId == currentUid || order.deliveryDriverId.isNullOrEmpty()))
+                            (order.status == OrderStatus.LISTO_PARA_ENTREGA.name && order.deliveryDriverId.isNullOrEmpty()) ||
+                            (order.status == OrderStatus.EN_CAMINO.name && order.deliveryDriverId == currentUid)
                         )
                     }
 
@@ -192,7 +192,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         )
 
         val pendingPickupOrders = activeOrders.filter {
-            it.status == OrderStatus.EN_PROCESO.name && it.latitude != 0.0 && it.longitude != 0.0
+            it.status == OrderStatus.LISTO_PARA_ENTREGA.name && it.latitude != 0.0 && it.longitude != 0.0
         }
 
         // 3. Trazar Polilínea de la Ruta Optimizada (Local -> Parada 1 -> Parada 2 -> ...)
@@ -281,7 +281,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         if (order.status == OrderStatus.EN_CAMINO.name && order.routeOrderIndex > 0) {
             binding.tvPreviewStopBadge.visibility = View.VISIBLE
             binding.tvPreviewStopBadge.text = OptimizadorRutasEntrega.textoInsigniaParada(order.routeOrderIndex)
-        } else if (order.status == OrderStatus.EN_PROCESO.name) {
+        } else if (order.status == OrderStatus.LISTO_PARA_ENTREGA.name) {
             binding.tvPreviewStopBadge.visibility = View.VISIBLE
             binding.tvPreviewStopBadge.text = "📦 Por Recoger"
         } else {

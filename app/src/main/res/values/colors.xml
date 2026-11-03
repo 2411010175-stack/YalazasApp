@@ -48,4 +48,54 @@
     <color name="admin_kpi_pink">#E0407B</color>
     <color name="admin_kpi_yellow">#E6E600</color>
     <color name="admin_kpi_green">#7CB342</color>
+
+    <!-- Paleta propia del panel administrativo: superficies calmadas y acentos Yalazas. -->
+    <color name="admin_ui_bg">#101411</color>
+    <color name="admin_ui_surface">#1D2421</color>
+    <color name="admin_ui_surface_soft">#17201B</color>
+    <color name="admin_ui_border">#35483E</color>
+    <color name="admin_ui_divider">#304039</color>
+    <color name="admin_ui_text_secondary">#B8C9BF</color>
+    <color name="admin_ui_text_muted">#9AAC9F</color>
+    <color name="admin_ui_sale_card">#261C23</color>
+    <color name="admin_ui_sale_border">#674657</color>
+    <color name="admin_ui_amount">#F0D57C</color>
+    <color name="admin_ui_accent">#F3A5BD</color>
+    <color name="admin_ui_button">#B82157</color>
+    <color name="admin_ui_button_secondary">#2B3B32</color>
+    <color name="admin_ui_chart_line">#F26B92</color>
+    <color name="admin_filter_all_selected">#745326</color>
+
+    <!-- Cada estado conserva su color en la tarjeta, la insignia y la acción. -->
+    <color name="admin_status_pending">#F0D57C</color>
+    <color name="admin_status_pending_bg">#3D321B</color>
+    <color name="admin_status_cooking">#88D1EA</color>
+    <color name="admin_status_cooking_bg">#15333E</color>
+    <color name="admin_status_ready">#F1B678</color>
+    <color name="admin_status_ready_bg">#3B2A1E</color>
+    <color name="admin_status_road">#D3A5E1</color>
+    <color name="admin_status_road_bg">#35213E</color>
+    <color name="admin_status_delivered">#9AD5A8</color>
+    <color name="admin_status_delivered_bg">#1E3B28</color>
+    <color name="admin_status_cancelled">#F29A9D</color>
+    <color name="admin_status_cancelled_bg">#442529</color>
+
+    <color name="admin_sale_pending_card">#2B261C</color>
+    <color name="admin_sale_pending_border">#766647</color>
+    <color name="admin_sale_pending_button">#755A20</color>
+    <color name="admin_sale_cooking_card">#1C2A30</color>
+    <color name="admin_sale_cooking_border">#496B79</color>
+    <color name="admin_sale_cooking_button">#225D70</color>
+    <color name="admin_sale_ready_card">#2C241D</color>
+    <color name="admin_sale_ready_border">#80634A</color>
+    <color name="admin_sale_ready_button">#85512C</color>
+    <color name="admin_sale_road_card">#2A2230</color>
+    <color name="admin_sale_road_border">#705779</color>
+    <color name="admin_sale_road_button">#684476</color>
+    <color name="admin_sale_delivered_card">#1E2B22</color>
+    <color name="admin_sale_delivered_border">#55745C</color>
+    <color name="admin_sale_delivered_button">#286140</color>
+    <color name="admin_sale_cancelled_card">#2D2022</color>
+    <color name="admin_sale_cancelled_border">#83535A</color>
+    <color name="admin_sale_cancelled_button">#7F3942</color>
 </resources>

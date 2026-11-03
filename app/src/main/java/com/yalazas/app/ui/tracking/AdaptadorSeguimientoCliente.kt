@@ -13,27 +13,55 @@ import com.google.android.material.button.MaterialButton
 import com.yalazas.app.R
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
+import com.yalazas.app.model.UbicacionRepartidor
+import com.yalazas.app.model.DistanciaSeguimiento
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 /** Dibuja los pedidos del cliente y sus estados actuales. */
 class AdaptadorSeguimientoCliente(
-    private val onCancelOrderClick: (Order) -> Unit
+    private val onCancelOrderClick: (Order) -> Unit,
+    private val onViewDriverClick: (Order) -> Unit
 ) : ListAdapter<Order, AdaptadorSeguimientoCliente.TrackingViewHolder>(OrderDiffCallback()) {
+
+    private val ubicaciones = mutableMapOf<String, UbicacionRepartidor>()
+    private val erroresUbicacion = mutableSetOf<String>()
+
+    fun actualizarUbicacion(pedidoId: String, ubicacion: UbicacionRepartidor?) {
+        erroresUbicacion.remove(pedidoId)
+        if (ubicacion == null) ubicaciones.remove(pedidoId) else ubicaciones[pedidoId] = ubicacion
+        val indice = currentList.indexOfFirst { it.id == pedidoId }
+        if (indice >= 0) notifyItemChanged(indice)
+    }
+
+    fun indicarErrorUbicacion(pedidoId: String) {
+        ubicaciones.remove(pedidoId)
+        erroresUbicacion.add(pedidoId)
+        val indice = currentList.indexOfFirst { it.id == pedidoId }
+        if (indice >= 0) notifyItemChanged(indice)
+    }
+
+    fun refrescarEdadUbicaciones() {
+        currentList.forEachIndexed { indice, pedido ->
+            if (pedido.id in ubicaciones) notifyItemChanged(indice)
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackingViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_customer_tracking_order, parent, false)
-        return TrackingViewHolder(view, onCancelOrderClick)
+        return TrackingViewHolder(view, onCancelOrderClick, onViewDriverClick)
     }
 
     override fun onBindViewHolder(holder: TrackingViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val pedido = getItem(position)
+        holder.bind(pedido, ubicaciones[pedido.id], pedido.id in erroresUbicacion)
     }
 
     class TrackingViewHolder(
         itemView: View,
-        private val onCancelOrderClick: (Order) -> Unit
+        private val onCancelOrderClick: (Order) -> Unit,
+        private val onViewDriverClick: (Order) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
 
         private val tvCode: TextView = itemView.findViewById(R.id.tvCustomerOrderCode)
@@ -62,6 +90,9 @@ class AdaptadorSeguimientoCliente(
         private val tvAddress: TextView = itemView.findViewById(R.id.tvCustomerOrderAddress)
         private val tvSummary: TextView = itemView.findViewById(R.id.tvCustomerOrderSummary)
         private val tvTotal: TextView = itemView.findViewById(R.id.tvCustomerOrderTotal)
+        private val tvProductsAmount: TextView = itemView.findViewById(R.id.tvCustomerOrderProductsAmount)
+        private val tvDeliveryFee: TextView = itemView.findViewById(R.id.tvCustomerOrderDeliveryFee)
+        private val tvDeliveryLabel: TextView = itemView.findViewById(R.id.tvCustomerOrderDeliveryLabel)
 
         // Cancel / Notice Sections
         private val layoutCancelSection: View = itemView.findViewById(R.id.layoutCancelActionSection)
@@ -71,7 +102,13 @@ class AdaptadorSeguimientoCliente(
         private val tvInfoIcon: TextView = itemView.findViewById(R.id.tvInfoNoticeIcon)
         private val tvInfoMessage: TextView = itemView.findViewById(R.id.tvInfoNoticeMessage)
 
-        fun bind(order: Order) {
+        private val layoutDriverTracking: View = itemView.findViewById(R.id.layoutDriverTracking)
+        private val tvDriverName: TextView = itemView.findViewById(R.id.tvTrackingDriverName)
+        private val tvDriverDistance: TextView = itemView.findViewById(R.id.tvTrackingDriverDistance)
+        private val tvDriverUpdate: TextView = itemView.findViewById(R.id.tvTrackingDriverUpdate)
+        private val btnViewDriverMap: MaterialButton = itemView.findViewById(R.id.btnViewDriverMap)
+
+        fun bind(order: Order, ubicacion: UbicacionRepartidor?, errorUbicacion: Boolean) {
             val context = itemView.context
             val orderCode = if (order.id.isNotBlank()) "#${order.id.takeLast(5).uppercase()}" else "#ORDEN"
             tvCode.text = "Orden $orderCode"
@@ -95,6 +132,10 @@ class AdaptadorSeguimientoCliente(
                 OrderStatus.EN_PROCESO -> {
                     tvStatus.text = "👨‍🍳 EN COCINA"
                     tvStatus.setTextColor(Color.parseColor("#29B6F6"))
+                }
+                OrderStatus.LISTO_PARA_ENTREGA -> {
+                    tvStatus.text = "📦 LISTO PARA ENTREGA"
+                    tvStatus.setTextColor(Color.parseColor("#FFAB40"))
                 }
                 OrderStatus.EN_CAMINO -> {
                     tvStatus.text = "🛵 EN CAMINO"
@@ -128,7 +169,7 @@ class AdaptadorSeguimientoCliente(
                 tvLabelStep1.setTextColor(textActive)
 
                 // Paso 2: Cocina (Activo en EN_PROCESO, EN_CAMINO, ENTREGADO)
-                val isStep2Active = statusEnum in listOf(OrderStatus.EN_PROCESO, OrderStatus.EN_CAMINO, OrderStatus.ENTREGADO)
+                val isStep2Active = statusEnum in listOf(OrderStatus.EN_PROCESO, OrderStatus.LISTO_PARA_ENTREGA, OrderStatus.EN_CAMINO, OrderStatus.ENTREGADO)
                 iconStep2.setBackgroundResource(if (isStep2Active) R.drawable.bg_tracking_step_active else R.drawable.bg_tracking_step_inactive)
                 line1to2.setBackgroundColor(if (isStep2Active) activeColor else inactiveColor)
                 tvLabelStep2.setTextColor(if (isStep2Active) textActive else textInactive)
@@ -167,7 +208,36 @@ class AdaptadorSeguimientoCliente(
             }
 
             // 6. Total
+            // El total ya incluye el cargo por envío; mostramos el desglose sin volver a sumarlo.
+            tvProductsAmount.text = "S/ ${String.format(Locale.US, "%.2f", (order.total - order.deliveryFee).coerceAtLeast(0.0))}"
+            tvDeliveryLabel.text = if (order.isDelivery) "Delivery" else "Envío (recojo en local)"
+            tvDeliveryFee.text = "S/ ${String.format(Locale.US, "%.2f", order.deliveryFee)}"
             tvTotal.text = "S/ ${String.format(Locale.US, "%.2f", order.total)}"
+
+            val enRuta = order.isDelivery && statusEnum == OrderStatus.EN_CAMINO && order.deliveryDriverId.isNotBlank()
+            layoutDriverTracking.visibility = if (enRuta) View.VISIBLE else View.GONE
+            if (enRuta) {
+                tvDriverName.text = "🛵 Reparte: ${order.deliveryDriverName.ifBlank { "Repartidor Yalazas" }}"
+                val tieneDestino = order.latitude in -90.0..90.0 && order.longitude in -180.0..180.0 &&
+                    (order.latitude != 0.0 || order.longitude != 0.0)
+                tvDriverDistance.text = if (ubicacion?.esValida() == true && tieneDestino) {
+                    val metros = DistanciaSeguimiento.metros(
+                        ubicacion.latitude, ubicacion.longitude, order.latitude, order.longitude
+                    )
+                    "Aprox. ${DistanciaSeguimiento.formatear(metros)} de tu dirección"
+                } else if (ubicacion?.esValida() == true) {
+                    "Tu dirección no tiene coordenadas para calcular la distancia"
+                } else {
+                    "Esperando la ubicación del repartidor"
+                }
+                tvDriverUpdate.text = when {
+                    errorUbicacion -> "No se pudo consultar el GPS. Revisa conexión o permisos de Firestore"
+                    ubicacion == null -> "Aparecerá cuando el repartidor comparta su GPS"
+                    ubicacion.esReciente() -> "Posición reciente · distancia en línea recta"
+                    else -> "Última posición disponible · señal sin actualizar"
+                }
+                btnViewDriverMap.setOnClickListener { onViewDriverClick(order) }
+            }
 
             // 7. REGLA DE CANCELACIÓN Y MENSAJES INFORMATIVOS
             val canCancel = OrderStatus.puedeCancelarCliente(order.status)
@@ -188,6 +258,10 @@ class AdaptadorSeguimientoCliente(
                     OrderStatus.EN_PROCESO -> {
                         tvInfoIcon.text = "👨‍🍳"
                         tvInfoMessage.text = "¡Tu pedido ya está preparándose en cocina! 🍗 Por razones de preparación de alimentos, ya no es posible cancelarlo."
+                    }
+                    OrderStatus.LISTO_PARA_ENTREGA -> {
+                        tvInfoIcon.text = "📦"
+                        tvInfoMessage.text = "Tu pedido está empacado y listo para ${if (order.isDelivery) "que el repartidor lo recoja" else "recojo en el local"}."
                     }
                     OrderStatus.EN_CAMINO -> {
                         tvInfoIcon.text = "🛵"

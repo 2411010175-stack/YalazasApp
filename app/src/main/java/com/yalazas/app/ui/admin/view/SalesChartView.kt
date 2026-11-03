@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import com.yalazas.app.R
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -15,47 +16,47 @@ class SalesChartView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#2A352F")
+        color = context.getColor(R.color.admin_ui_divider)
         strokeWidth = 1.5f
         style = Paint.Style.STROKE
     }
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#8E9E96")
+        color = context.getColor(R.color.admin_ui_text_muted)
         textSize = 24f
         textAlign = Paint.Align.RIGHT
     }
 
     private val xTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#8E9E96")
+        color = context.getColor(R.color.admin_ui_text_muted)
         textSize = 20f
         textAlign = Paint.Align.CENTER
         typeface = Typeface.DEFAULT_BOLD
     }
 
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#B0C4B8")
+        color = context.getColor(R.color.admin_ui_text_secondary)
         textSize = 22f
         textAlign = Paint.Align.CENTER
     }
 
-    // Línea única de Ventas: Color Verde
-    private val greenLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#4CAF50")
+    // La serie usa el rosa de Yalazas para destacarse sobre la cuadrícula discreta.
+    private val salesLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = context.getColor(R.color.admin_ui_chart_line)
         strokeWidth = 5f
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
 
-    private val greenDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#4CAF50")
+    private val salesDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = context.getColor(R.color.admin_ui_chart_line)
         style = Paint.Style.STROKE
         strokeWidth = 3.5f
     }
 
     private val dotCenterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#1C2320")
+        color = context.getColor(R.color.admin_ui_surface)
         style = Paint.Style.FILL
     }
 
@@ -63,10 +64,11 @@ class SalesChartView @JvmOverloads constructor(
         style = Paint.Style.FILL
     }
 
-    private var xLabels = listOf("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SET", "OCT", "NOV", "DIC")
-    private var periodLabel = "Meses"
-    private var yValues = listOf(60, 40, 20, 0)
-    private var currentMaxY = 60f
+    private var xLabels = emptyList<String>()
+    private var periodLabel = ""
+    private var yValues = emptyList<Int>()
+    private var currentMaxY = 0f
+    private var mensajeEstado: String? = "Cargando ventas..."
 
     // Puntos de datos de ventas (en Soles)
     private var salesData = listOf<Float>()
@@ -76,6 +78,7 @@ class SalesChartView @JvmOverloads constructor(
         period: String,
         sales: List<Float>
     ) {
+        mensajeEstado = null
         if (labels.isNotEmpty()) {
             this.xLabels = labels
         }
@@ -97,6 +100,12 @@ class SalesChartView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun mostrarMensaje(mensaje: String) {
+        mensajeEstado = mensaje
+        salesData = emptyList()
+        invalidate()
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
@@ -104,6 +113,11 @@ class SalesChartView @JvmOverloads constructor(
         val h = height.toFloat()
 
         if (w <= 0 || h <= 0) return
+
+        mensajeEstado?.let { mensaje ->
+            canvas.drawText(mensaje, w / 2f, h / 2f, labelPaint)
+            return
+        }
 
         val paddingLeft = 85f
         val paddingRight = 35f
@@ -140,7 +154,7 @@ class SalesChartView @JvmOverloads constructor(
         // 4. Etiqueta de Periodo ("Días", "Meses", "Años")
         canvas.drawText(periodLabel, paddingLeft + plotWidth / 2f, h - 8f, labelPaint)
 
-        // 5. Dibujar la serie única de Ventas (Línea Verde)
+        // 5. Dibujar la serie única de ventas.
         if (salesData.isNotEmpty()) {
             drawSalesSeries(canvas, salesData, paddingLeft, paddingTop, plotWidth, plotHeight)
         }
@@ -177,28 +191,28 @@ class SalesChartView @JvmOverloads constructor(
             }
         }
 
-        // Cerrar el path para el sombreado degradado suave debajo de la línea verde
+        // Cerrar el path para el sombreado degradado suave debajo de la línea.
         if (points.isNotEmpty()) {
             fillPath.lineTo(points.last().x, baselineY)
             fillPath.close()
 
             fillPaint.shader = LinearGradient(
                 0f, top, 0f, baselineY,
-                Color.parseColor("#444CAF50"),
-                Color.parseColor("#054CAF50"),
+                Color.parseColor("#44F26B92"),
+                Color.parseColor("#05F26B92"),
                 Shader.TileMode.CLAMP
             )
             canvas.drawPath(fillPath, fillPaint)
         }
 
-        // Dibujar la línea verde
-        canvas.drawPath(path, greenLinePaint)
+        // Dibujar la línea de ventas.
+        canvas.drawPath(path, salesLinePaint)
 
         // Dibujar los puntos circulares en cada vértice
         val dotRadius = 7.5f
         for (pt in points) {
             canvas.drawCircle(pt.x, pt.y, dotRadius, dotCenterPaint)
-            canvas.drawCircle(pt.x, pt.y, dotRadius, greenDotPaint)
+            canvas.drawCircle(pt.x, pt.y, dotRadius, salesDotPaint)
         }
     }
 }

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/yalaza_bg"
+    android:background="@color/admin_ui_bg"
     android:orientation="vertical">
 
     <!-- Header -->
@@ -38,13 +38,13 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:background="@drawable/bg_admin_pill"
+                android:background="@drawable/bg_admin_chart_filter"
                 android:paddingStart="10dp"
                 android:paddingTop="4dp"
                 android:paddingEnd="10dp"
                 android:paddingBottom="4dp"
                 android:text="0 productos"
-                android:textColor="@color/admin_kpi_yellow"
+                android:textColor="@color/admin_ui_amount"
                 android:textSize="12sp"
                 android:textStyle="bold" />
         </RelativeLayout>
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:text="Administra la carta, precios y disponibilidad de platos"
-            android:textColor="#9EADA4"
+            android:textColor="@color/admin_ui_text_secondary"
             android:textSize="13sp" />
     </LinearLayout>
 
@@ -83,7 +83,7 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:layout_marginEnd="6dp"
-            android:backgroundTint="#D81B60"
+            android:backgroundTint="@color/admin_ui_button"
             android:elevation="2dp"
             android:text="Nuevo Producto"
             android:textColor="@color/white"
@@ -105,7 +105,7 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:layout_marginStart="6dp"
-            android:backgroundTint="#F57C00"
+            android:backgroundTint="@color/admin_ui_button_secondary"
             android:elevation="2dp"
             android:text="Nueva Oferta"
             android:textColor="@color/white"
@@ -129,7 +129,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="10dp"
         android:hint="Buscar por nombre, categoría o descripción..."
-        app:boxBackgroundColor="#121A16"
+        app:boxBackgroundColor="@color/admin_ui_surface_soft"
         app:boxCornerRadiusBottomEnd="14dp"
         app:boxCornerRadiusBottomStart="14dp"
         app:boxCornerRadiusTopEnd="14dp"
@@ -191,7 +191,7 @@
                 android:layout_marginTop="4dp"
                 android:gravity="center"
                 android:text="No hay productos que coincidan con la búsqueda"
-                android:textColor="#9EADA4"
+                android:textColor="@color/admin_ui_text_secondary"
                 android:textSize="13sp" />
         </LinearLayout>
 

@@ -18,8 +18,14 @@ enum class OrderStatus(
     EN_PROCESO(
         key = "EN_PROCESO",
         label = "En Cocina (Preparación)",
-        actionText = "Despachar a Repartidor / Delivery",
+        actionText = "Marcar listo para entrega",
         emoji = "👨‍🍳"
+    ),
+    LISTO_PARA_ENTREGA(
+        key = "LISTO_PARA_ENTREGA",
+        label = "Listo para Entrega",
+        actionText = "Recoger pedido",
+        emoji = "📦"
     ),
     EN_CAMINO(
         key = "EN_CAMINO",
@@ -45,6 +51,7 @@ enum class OrderStatus(
         fun desdeTexto(status: String?): OrderStatus {
             val upper = status?.uppercase(Locale.getDefault()) ?: ""
             return when {
+                upper.contains("LISTO") -> LISTO_PARA_ENTREGA
                 upper.contains("PENDIENTE") -> PENDIENTE
                 upper.contains("PROCESO") || upper.contains("COCIN") || upper.contains("PREPAR") -> EN_PROCESO
                 upper.contains("CAMINO") || upper.contains("REPART") || upper.contains("DELIVERY") -> EN_CAMINO
@@ -59,14 +66,7 @@ enum class OrderStatus(
          * Evita que se salten etapas del proceso operativo de pedidos.
          */
         fun obtenerTransicionesPermitidas(currentStatusStr: String?): List<OrderStatus> {
-            val current = desdeTexto(currentStatusStr)
-            return when (current) {
-                PENDIENTE -> listOf(EN_PROCESO, CANCELADO)
-                EN_PROCESO -> listOf(EN_CAMINO, CANCELADO)
-                EN_CAMINO -> listOf(ENTREGADO, CANCELADO)
-                ENTREGADO -> emptyList() // Pedido completado (Terminal)
-                CANCELADO -> emptyList() // Pedido cancelado (Terminal)
-            }
+            return EstadoPedido.opciones(currentStatusStr, Role.ADMIN)
         }
 
         /**
@@ -75,8 +75,7 @@ enum class OrderStatus(
          * el usuario YA NO PUEDE cancelar el pedido.
          */
         fun puedeCancelarCliente(statusStr: String?): Boolean {
-            val status = desdeTexto(statusStr)
-            return status == PENDIENTE
+            return CANCELADO in EstadoPedido.opciones(statusStr, Role.CLIENTE)
         }
     }
 }

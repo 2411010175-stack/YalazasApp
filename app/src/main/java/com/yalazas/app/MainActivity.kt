@@ -55,7 +55,8 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_login,
             R.id.nav_register,
             R.id.nav_admin_panel,
-            R.id.nav_admin_settings
+            R.id.nav_admin_settings,
+            R.id.nav_cocina
         )
 
         var destinoActualId = R.id.nav_home

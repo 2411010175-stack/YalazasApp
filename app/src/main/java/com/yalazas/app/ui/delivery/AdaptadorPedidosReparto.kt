@@ -90,7 +90,7 @@ class AdaptadorPedidosReparto(
             binding.tvDeliveryOrderNumber.text = numStr
 
             // Checkbox para selección múltiple (solo visible en modo selección / pedidos por recoger)
-            if (isSelectionMode && order.status == OrderStatus.EN_PROCESO.name) {
+            if (isSelectionMode && order.status == OrderStatus.LISTO_PARA_ENTREGA.name) {
                 binding.cbSelectOrder.visibility = View.VISIBLE
                 binding.cbSelectOrder.setOnCheckedChangeListener(null)
                 binding.cbSelectOrder.isChecked = isSelected
@@ -118,7 +118,7 @@ class AdaptadorPedidosReparto(
             // Estado y Botón de Acción Principal
             val status = OrderStatus.desdeTexto(order.status)
             when (status) {
-                OrderStatus.EN_PROCESO -> {
+                OrderStatus.LISTO_PARA_ENTREGA -> {
                     binding.tvDeliveryStatusBadge.text = "📦 LISTO"
                     binding.tvDeliveryStatusBadge.setBackgroundResource(R.drawable.bg_delivery_tab_selected)
                     binding.tvDeliveryStatusBadge.setTextColor(context.getColor(R.color.yalaza_primary_green))

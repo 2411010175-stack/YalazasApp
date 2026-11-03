@@ -103,6 +103,12 @@
         tools:layout="@layout/fragment_tracking" />
 
     <fragment
+        android:id="@+id/nav_cocina"
+        android:name="com.yalazas.app.ui.cocina.CocinaDashboardFragment"
+        android:label="Cocina"
+        tools:layout="@layout/fragment_cocina" />
+
+    <fragment
         android:id="@+id/nav_profile"
         android:name="com.yalazas.app.ui.profile.ProfileFragment"
         android:label="Perfil"

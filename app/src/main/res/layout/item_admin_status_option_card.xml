@@ -8,10 +8,10 @@
     android:layout_marginBottom="8dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="#18221D"
+    app:cardBackgroundColor="@color/admin_ui_surface"
     app:cardCornerRadius="12dp"
     app:cardElevation="0dp"
-    app:strokeColor="#2C3B33"
+    app:strokeColor="@color/admin_ui_border"
     app:strokeWidth="1.5dp">
 
     <LinearLayout
@@ -51,7 +51,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:textColor="#9EADA4"
+                android:textColor="@color/admin_ui_text_secondary"
                 android:textSize="11.5sp"
                 tools:text="El equipo de cocina iniciará la preparación de los platos." />
         </LinearLayout>

@@ -1,11 +1,12 @@
 package com.yalazas.app.ui.admin
 
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -83,45 +84,34 @@ class AdaptadorVentas(
             // Total
             tvTotal.text = "S/ ${String.format(Locale.US, "%.2f", order.total)}"
 
-            // Estilos del Badge y Card por Estado
             val statusEnum = OrderStatus.desdeTexto(order.status)
             val allowedTransitions = OrderStatus.obtenerTransicionesPermitidas(order.status)
+            val estilo = PaletaEstadosVenta.para(statusEnum)
+            tvTotal.setTextColor(color(if (statusEnum == OrderStatus.CANCELADO) R.color.admin_status_cancelled else R.color.admin_ui_amount))
+            cardView.setCardBackgroundColor(color(estilo.tarjeta))
+            cardView.strokeColor = color(estilo.borde)
+            tvStatus.setTextColor(color(estilo.textoEstado))
+            tvStatus.background = createPillDrawable(color(estilo.fondoEstado))
+            btnStatus.backgroundTintList = ColorStateList.valueOf(color(estilo.boton))
 
             when (statusEnum) {
                 OrderStatus.CANCELADO -> {
-                    cardView.setCardBackgroundColor(Color.parseColor("#201012"))
-                    cardView.strokeColor = Color.parseColor("#FF5252")
                     tvStatus.text = "❌ CANCELADO"
-                    tvStatus.setTextColor(Color.parseColor("#FF5252"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#48151A"))
                 }
                 OrderStatus.PENDIENTE -> {
-                    cardView.setCardBackgroundColor(Color.parseColor("#17201B"))
-                    cardView.strokeColor = Color.parseColor("#FFD54F")
                     tvStatus.text = "🟡 PENDIENTE"
-                    tvStatus.setTextColor(Color.parseColor("#FFD54F"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#383212"))
                 }
                 OrderStatus.EN_PROCESO -> {
-                    cardView.setCardBackgroundColor(Color.parseColor("#0F1E24"))
-                    cardView.strokeColor = Color.parseColor("#29B6F6")
                     tvStatus.text = "👨‍🍳 EN COCINA"
-                    tvStatus.setTextColor(Color.parseColor("#29B6F6"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#10374A"))
+                }
+                OrderStatus.LISTO_PARA_ENTREGA -> {
+                    tvStatus.text = "📦 LISTO"
                 }
                 OrderStatus.EN_CAMINO -> {
-                    cardView.setCardBackgroundColor(Color.parseColor("#181222"))
-                    cardView.strokeColor = Color.parseColor("#AB47BC")
                     tvStatus.text = "🛵 EN CAMINO"
-                    tvStatus.setTextColor(Color.parseColor("#AB47BC"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#38194A"))
                 }
                 OrderStatus.ENTREGADO -> {
-                    cardView.setCardBackgroundColor(Color.parseColor("#112217"))
-                    cardView.strokeColor = Color.parseColor("#4CAF50")
                     tvStatus.text = "✅ ENTREGADO"
-                    tvStatus.setTextColor(Color.parseColor("#4CAF50"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#143E23"))
                 }
             }
 
@@ -130,6 +120,8 @@ class AdaptadorVentas(
             btnDetails.setOnClickListener { onDetailsClick(order, saleNumber) }
             btnStatus.setOnClickListener { onChangeStatusClick(order) }
         }
+
+        private fun color(id: Int): Int = ContextCompat.getColor(itemView.context, id)
 
         private fun createPillDrawable(bgColor: Int): GradientDrawable {
             return GradientDrawable().apply {

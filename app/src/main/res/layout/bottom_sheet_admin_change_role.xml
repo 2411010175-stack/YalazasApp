@@ -68,7 +68,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textColor="#9EADA4"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="12sp"
                     tools:text="alex@yalazas.com" />
             </LinearLayout>
@@ -94,7 +94,7 @@
             android:layout_height="1dp"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="14dp"
-            android:background="#24332B" />
+            android:background="@color/admin_ui_divider" />
 
         <!-- Section Title: Asignar Nuevo Rol -->
         <TextView
@@ -111,7 +111,7 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="12dp"
             android:text="El rol define los permisos y accesos del usuario en la aplicación."
-            android:textColor="#9EADA4"
+            android:textColor="@color/admin_ui_text_secondary"
             android:textSize="12sp" />
 
         <!-- Contenedor de Tarjetas de Roles -->
@@ -131,7 +131,7 @@
                 app:cardBackgroundColor="#18221D"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#2C3B33"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -169,7 +169,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Acceso total a finanzas, carta, ofertas y usuarios."
-                            android:textColor="#9EADA4"
+                            android:textColor="@color/admin_ui_text_secondary"
                             android:textSize="11.5sp" />
                     </LinearLayout>
 
@@ -194,7 +194,7 @@
                 app:cardBackgroundColor="#18221D"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#2C3B33"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -232,7 +232,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Panel de comandas, cocina y preparación de órdenes."
-                            android:textColor="#9EADA4"
+                            android:textColor="@color/admin_ui_text_secondary"
                             android:textSize="11.5sp" />
                     </LinearLayout>
 
@@ -257,7 +257,7 @@
                 app:cardBackgroundColor="#18221D"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#2C3B33"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -295,7 +295,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Toma de pedidos en salón, mesas y atención directa."
-                            android:textColor="#9EADA4"
+                            android:textColor="@color/admin_ui_text_secondary"
                             android:textSize="11.5sp" />
                     </LinearLayout>
 
@@ -320,7 +320,7 @@
                 app:cardBackgroundColor="#18221D"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#2C3B33"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -358,7 +358,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Gestión de envíos, ruta de delivery y entrega a clientes."
-                            android:textColor="#9EADA4"
+                            android:textColor="@color/admin_ui_text_secondary"
                             android:textSize="11.5sp" />
                     </LinearLayout>
 
@@ -383,7 +383,7 @@
                 app:cardBackgroundColor="#18221D"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="0dp"
-                app:strokeColor="#2C3B33"
+                app:strokeColor="@color/admin_ui_border"
                 app:strokeWidth="1.5dp">
 
                 <LinearLayout
@@ -421,7 +421,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Usuario estándar: pedidos de la carta, promociones y rastreo."
-                            android:textColor="#9EADA4"
+                            android:textColor="@color/admin_ui_text_secondary"
                             android:textSize="11.5sp" />
                     </LinearLayout>
 
@@ -444,7 +444,7 @@
             app:cardBackgroundColor="#131C17"
             app:cardCornerRadius="12dp"
             app:cardElevation="0dp"
-            app:strokeColor="#24332B"
+            app:strokeColor="@color/admin_ui_divider"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -504,7 +504,7 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:text="Cancelar"
-                android:textColor="#9EADA4"
+                android:textColor="@color/admin_ui_text_secondary"
                 android:textSize="13sp"
                 app:cornerRadius="12dp"
                 app:strokeColor="#38483F"

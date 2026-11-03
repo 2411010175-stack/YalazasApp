@@ -142,6 +142,13 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
                         tvDesc.text = "El equipo de cocina iniciará la preparación de los platos."
                         rb.buttonTintList = ColorStateList.valueOf(Color.parseColor("#29B6F6"))
                     }
+                    OrderStatus.LISTO_PARA_ENTREGA -> {
+                        tvIcon.text = "📦"
+                        tvTitle.text = "Avanzar a: LISTO PARA ENTREGA"
+                        tvTitle.setTextColor(Color.parseColor("#FFAB40"))
+                        tvDesc.text = "Cocina terminó y el pedido puede ser recogido."
+                        rb.buttonTintList = ColorStateList.valueOf(Color.parseColor("#FFAB40"))
+                    }
                     OrderStatus.EN_CAMINO -> {
                         tvIcon.text = "🛵"
                         tvTitle.text = "Avanzar a: EN CAMINO"
@@ -189,6 +196,13 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
                                 card.setCardBackgroundColor(Color.parseColor("#0C1D26"))
                                 btnConfirm.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#29B6F6"))
                                 btnConfirm.text = "Avanzar a Cocina"
+                                btnConfirm.setTextColor(Color.BLACK)
+                            }
+                            OrderStatus.LISTO_PARA_ENTREGA -> {
+                                card.strokeColor = Color.parseColor("#FFAB40")
+                                card.setCardBackgroundColor(Color.parseColor("#2B2010"))
+                                btnConfirm.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FFAB40"))
+                                btnConfirm.text = "Marcar como Listo"
                                 btnConfirm.setTextColor(Color.BLACK)
                             }
                             OrderStatus.EN_CAMINO -> {
@@ -268,6 +282,11 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
     private fun actualizarInsigniaEstado(tvBadge: TextView, status: String) {
         val upper = status.uppercase(Locale.getDefault())
         when {
+            upper.contains("LISTO") -> {
+                tvBadge.text = "● LISTO PARA ENTREGA"
+                tvBadge.setTextColor(Color.parseColor("#FFAB40"))
+                tvBadge.background = crearFondoInsignia(Color.parseColor("#3A2B12"))
+            }
             upper.contains("PENDIENTE") -> {
                 tvBadge.text = "● PENDIENTE"
                 tvBadge.setTextColor(Color.parseColor("#FFD54F"))
@@ -318,7 +337,7 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
         val inactiveLineColor = Color.parseColor("#2C3B33")
 
         val isStep1Active = statusEnum != OrderStatus.CANCELADO
-        val isStep2Active = statusEnum in listOf(OrderStatus.EN_PROCESO, OrderStatus.EN_CAMINO, OrderStatus.ENTREGADO)
+        val isStep2Active = statusEnum in listOf(OrderStatus.EN_PROCESO, OrderStatus.LISTO_PARA_ENTREGA, OrderStatus.EN_CAMINO, OrderStatus.ENTREGADO)
         val isStep3Active = statusEnum in listOf(OrderStatus.EN_CAMINO, OrderStatus.ENTREGADO)
         val isStep4Active = statusEnum == OrderStatus.ENTREGADO
 

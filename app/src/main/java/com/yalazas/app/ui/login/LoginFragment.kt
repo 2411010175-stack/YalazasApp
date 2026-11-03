@@ -1,12 +1,13 @@
 package com.yalazas.app.ui.login
 
 import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
-import android.graphics.Color
+import android.content.DialogInterface
 import android.os.Bundle
+import android.util.Patterns
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.widget.Toast
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -15,6 +16,7 @@ import com.yalazas.app.R
 import com.yalazas.app.databinding.FragmentLoginBinding
 import com.yalazas.app.modelovista.EstadoAutenticacion
 import com.yalazas.app.modelovista.ModeloVistaAutenticacion
+import com.yalazas.app.modelovista.TipoErrorIngreso
 
 /** Recoge las credenciales y observa el resultado del inicio de sesión. */
 class LoginFragment : Fragment(R.layout.fragment_login) {
@@ -62,6 +64,9 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             if (email.isEmpty()) {
                 binding.inputEmailLayout.error = "Ingresa un correo"
                 hasError = true
+            } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                binding.inputEmailLayout.error = "Ingresa un correo válido"
+                hasError = true
             } else {
                 binding.inputEmailLayout.error = null
             }
@@ -104,17 +109,49 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
                 is EstadoAutenticacion.Error -> {
                     binding.progressBar.visibility = View.GONE
                     binding.btnLogin.isEnabled = true
-
-                    // Mostrar error visual más claro
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Error de Acceso")
-                        .setMessage(state.message)
-                        .setIcon(android.R.drawable.ic_dialog_alert)
-                        .setPositiveButton("Entendido", null)
-                        .show()
+                    mostrarErrorIngreso(state)
+                    modeloVista.limpiarError()
                 }
             }
         }
+    }
+
+    /** Aviso coherente con los colores de Yalazas y con el tipo de fallo recibido. */
+    private fun mostrarErrorIngreso(error: EstadoAutenticacion.Error) {
+        val tipo = error.tipo
+        when (tipo) {
+            TipoErrorIngreso.CREDENCIALES -> {
+                binding.inputEmailLayout.error = "Verifica tu correo"
+                binding.inputPassLayout.error = "Verifica tu contraseña"
+            }
+            TipoErrorIngreso.CORREO_INVALIDO -> {
+                binding.inputEmailLayout.error = "Ingresa un correo válido"
+                binding.inputPassLayout.error = null
+            }
+            else -> {
+                binding.inputEmailLayout.error = null
+                binding.inputPassLayout.error = null
+            }
+        }
+
+        val contenido = layoutInflater.inflate(R.layout.dialogo_error_ingreso, null)
+        contenido.findViewById<TextView>(R.id.tvTituloErrorIngreso).text = tipo.titulo
+        contenido.findViewById<TextView>(R.id.tvMensajeErrorIngreso).text = error.message
+
+        val dialogo = MaterialAlertDialogBuilder(requireContext())
+            .setView(contenido)
+            .setPositiveButton(
+                if (tipo == TipoErrorIngreso.CREDENCIALES) "Intentar de nuevo" else "Entendido"
+            ) { _, _ ->
+                if (_binding != null) {
+                    if (tipo == TipoErrorIngreso.CREDENCIALES) binding.inputPass.requestFocus()
+                    if (tipo == TipoErrorIngreso.CORREO_INVALIDO) binding.inputEmail.requestFocus()
+                }
+            }
+            .show()
+        dialogo.getButton(DialogInterface.BUTTON_POSITIVE).setTextColor(
+            ContextCompat.getColor(requireContext(), R.color.yalaza_pink)
+        )
     }
 
     private fun navigateBasedOnRole() {
@@ -124,6 +161,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
         when (role) {
             com.yalazas.app.model.Role.ADMIN -> findNavController().navigate(R.id.nav_admin_dashboard)
             com.yalazas.app.model.Role.REPARTIDOR -> findNavController().navigate(R.id.nav_delivery_orders)
+            com.yalazas.app.model.Role.COCINERO -> findNavController().navigate(R.id.nav_cocina)
             else -> findNavController().navigate(R.id.action_login_to_home)
         }
     }

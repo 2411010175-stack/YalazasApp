@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardComanda"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="6dp"
+    android:layout_marginBottom="12dp"
+    app:cardBackgroundColor="@color/yalaza_surface"
+    app:cardCornerRadius="18dp"
+    app:strokeColor="@color/yalaza_border"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/barraComanda"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:background="@color/yalaza_pink" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvCodigoComanda"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    tools:text="Pedido #A4B92C" />
+
+                <TextView
+                    android:id="@+id/tvTiempoComanda"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="8dp"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="⏱ 12 min" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvServicioComanda"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/yalaza_text_secondary"
+                android:textSize="14sp"
+                tools:text="🛵 Delivery · 12:30" />
+
+            <TextView
+                android:id="@+id/tvEstadoComanda"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_delivery_address_pill"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="7dp"
+                android:textColor="@color/yalaza_orange"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="👨‍🍳 En preparación" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="15dp"
+                android:background="@color/yalaza_border" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="PLATOS DEL PEDIDO"
+                android:textColor="@color/yalaza_lime_dark"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvProductosComanda"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="9dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/white"
+                android:textSize="17sp"
+                tools:text="2 × Alitas BBQ\n   Salsa tártara" />
+
+            <TextView
+                android:id="@+id/tvNotaComanda"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_admin_note_card"
+                android:padding="11dp"
+                android:textColor="@color/yalaza_yellow"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="📝 Nota: Sin picante" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAccionComanda"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="16dp"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="14dp"
+                tools:text="¡Pedido listo! ✅" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

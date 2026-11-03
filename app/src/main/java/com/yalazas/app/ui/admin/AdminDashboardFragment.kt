@@ -11,10 +11,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.yalazas.app.R
 import com.yalazas.app.model.OrderItem
-import com.yalazas.app.model.OrderStatus
 import com.yalazas.app.repositorio.ServiciosFirebase
 import com.yalazas.app.ui.admin.view.SalesChartView
 import java.text.SimpleDateFormat
@@ -35,6 +35,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
     // Cached raw orders data for quick filtering
     private var cachedOrders = listOf<RawOrderData>()
+    private var datosConfirmados = false
 
     private data class RawOrderData(
         val id: String,
@@ -53,6 +54,8 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         super.onViewCreated(view, savedInstanceState)
 
         salesChartView = view.findViewById(R.id.salesChartView)
+        cachedOrders = emptyList()
+        datosConfirmados = false
 
         // 1. Configurar botón de Ajustes (Engranaje)
         view.findViewById<ImageButton>(R.id.btnAdminSettings).setOnClickListener {
@@ -93,14 +96,14 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         val btnMM = view.findViewById<TextView>(R.id.btnFilterMM)
         val btnAA = view.findViewById<TextView>(R.id.btnFilterAA)
 
-        val orange = ContextCompat.getColor(requireContext(), R.color.admin_nav_orange)
+        val acento = ContextCompat.getColor(requireContext(), R.color.admin_ui_accent)
         val white = ContextCompat.getColor(requireContext(), R.color.white)
 
         fun updateButtons(active: ChartFilter) {
             currentFilter = active
-            btnDD.setTextColor(if (active == ChartFilter.DD) orange else white)
-            btnMM.setTextColor(if (active == ChartFilter.MM) orange else white)
-            btnAA.setTextColor(if (active == ChartFilter.AA) orange else white)
+            btnDD.setTextColor(if (active == ChartFilter.DD) acento else white)
+            btnMM.setTextColor(if (active == ChartFilter.MM) acento else white)
+            btnAA.setTextColor(if (active == ChartFilter.AA) acento else white)
             updateChartData()
         }
 
@@ -118,24 +121,22 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         ordersListener?.remove()
         ordersListener = db.collection("orders")
             .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
+            .addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+                if (!isAdded || this@AdminDashboardFragment.view !== view) return@addSnapshotListener
                 if (error != null || snapshot == null) {
-                    tvTotalSales.text = "0"
-                    tvDailySales.text = "0"
-                    tvPendingOrders.text = "0"
+                    tvTotalSales.text = "—"
+                    tvDailySales.text = "—"
+                    tvPendingOrders.text = "—"
                     salesAdapter.submitList(emptyList())
                     cachedOrders = emptyList()
-                    updateChartData()
+                    datosConfirmados = false
+                    salesChartView.mostrarMensaje("No se pudieron cargar las ventas")
                     updateAdminBadge(0)
                     return@addSnapshotListener
                 }
 
-                var validTotalSalesCount = 0
-                var pendingCount = 0
-                var dailySalesCount = 0
-
-                val todayCal = Calendar.getInstance()
-                val orderCal = Calendar.getInstance()
+                // La caché local puede mostrar cifras antiguas antes de responder el servidor.
+                if (snapshot.metadata.isFromCache || snapshot.metadata.hasPendingWrites()) return@addSnapshotListener
 
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                 val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
@@ -145,20 +146,6 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
                 for ((index, doc) in snapshot.documents.withIndex()) {
                     val status = doc.getString("status") ?: "PENDIENTE"
-                    val statusEnum = OrderStatus.desdeTexto(status)
-                    val isCancelled = (statusEnum == OrderStatus.CANCELADO)
-
-                    if (statusEnum == OrderStatus.PENDIENTE ||
-                        statusEnum == OrderStatus.EN_PROCESO ||
-                        statusEnum == OrderStatus.EN_CAMINO
-                    ) {
-                        pendingCount++
-                    }
-
-                    // Solo sumar a ventas totales válidas si NO está cancelado
-                    if (!isCancelled) {
-                        validTotalSalesCount++
-                    }
 
                     val total = doc.getDouble("total") ?: 0.0
                     val customer = doc.getString("customerName") ?: "Cliente"
@@ -166,7 +153,8 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                     val address = doc.getString("address") ?: ""
                     val reference = doc.getString("reference") ?: ""
                     val comment = doc.getString("comment") ?: ""
-                    val timestamp = doc.getTimestamp("timestamp")?.toDate() ?: Date()
+                    val timestamp = doc.getTimestamp("timestamp")?.toDate()
+                    val fechaPedido = timestamp ?: Date(0)
 
                     // Parse items
                     val itemsRaw = (doc.get("items") as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
@@ -180,14 +168,6 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                         )
                     }
 
-                    // Verificar si es del día de hoy y no cancelado
-                    orderCal.time = timestamp
-                    val isToday = todayCal.get(Calendar.YEAR) == orderCal.get(Calendar.YEAR) &&
-                            todayCal.get(Calendar.DAY_OF_YEAR) == orderCal.get(Calendar.DAY_OF_YEAR)
-                    if (isToday && !isCancelled) {
-                        dailySalesCount++
-                    }
-
                     val rawOrder = RawOrderData(
                         id = doc.id,
                         total = total,
@@ -198,7 +178,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                         reference = reference,
                         comment = comment,
                         items = orderItems,
-                        date = timestamp
+                        date = fechaPedido
                     )
                     parsedOrders.add(rawOrder)
 
@@ -209,9 +189,11 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                         AdminSaleItem(
                             id = doc.id,
                             saleNumber = saleNumber,
-                            date = dateFormat.format(timestamp),
-                            time = timeFormat.format(timestamp),
+                            date = timestamp?.let(dateFormat::format) ?: "Sin fecha",
+                            time = timestamp?.let(timeFormat::format).orEmpty(),
                             total = total,
+                            deliveryFee = (doc.get("deliveryFee") as? Number)?.toDouble() ?: 0.0,
+                            isDelivery = doc.getBoolean("isDelivery") == true,
                             customerName = customer,
                             phone = phone,
                             address = address,
@@ -224,14 +206,19 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                     )
                 }
 
-                cachedOrders = parsedOrders
+                val indicadores = EstadisticasVentasAdmin.calcular(
+                    parsedOrders.map { PedidoParaResumen(it.status, it.date) }
+                )
+                // El gráfico solo representa ingresos de pedidos completados.
+                cachedOrders = parsedOrders.filter { EstadisticasVentasAdmin.esVentaRealizada(it.status) }
+                datosConfirmados = true
 
-                tvTotalSales.text = validTotalSalesCount.toString()
-                tvDailySales.text = dailySalesCount.toString()
-                tvPendingOrders.text = pendingCount.toString()
+                tvTotalSales.text = indicadores.ventasRealizadas.toString()
+                tvDailySales.text = indicadores.ventasDelDia.toString()
+                tvPendingOrders.text = indicadores.pedidosEnCurso.toString()
                 salesAdapter.submitList(salesItemList)
                 updateChartData()
-                updateAdminBadge(pendingCount)
+                updateAdminBadge(indicadores.pedidosEnCurso)
             }
     }
 
@@ -247,6 +234,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
     }
 
     private fun updateChartData() {
+        if (!datosConfirmados) return
         when (currentFilter) {
             ChartFilter.DD -> buildDailyChart()
             ChartFilter.MM -> buildMonthlyChart()
@@ -271,9 +259,6 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
         val orderCal = Calendar.getInstance()
         for (order in cachedOrders) {
-            // Excluir órdenes canceladas del monto en gráficas
-            if (OrderStatus.desdeTexto(order.status) == OrderStatus.CANCELADO) continue
-
             orderCal.time = order.date
             for (i in 0 until daysCount) {
                 val targetCal = dates[i]
@@ -285,7 +270,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
             }
         }
 
-        // Gráfica con serie única de Ventas en Soles (Línea Verde)
+        // Gráfica de ingresos de pedidos entregados, en soles.
         salesChartView.setChartData(
             labels = labels,
             period = "Días",
@@ -301,9 +286,6 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         val orderCal = Calendar.getInstance()
 
         for (order in cachedOrders) {
-            // Excluir órdenes canceladas del monto en gráficas
-            if (OrderStatus.desdeTexto(order.status) == OrderStatus.CANCELADO) continue
-
             orderCal.time = order.date
             if (orderCal.get(Calendar.YEAR) == currentYear) {
                 val month = orderCal.get(Calendar.MONTH) // 0 to 11
@@ -326,9 +308,6 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
 
         val orderCal = Calendar.getInstance()
         for (order in cachedOrders) {
-            // Excluir órdenes canceladas del monto en gráficas
-            if (OrderStatus.desdeTexto(order.status) == OrderStatus.CANCELADO) continue
-
             orderCal.time = order.date
             val orderYear = orderCal.get(Calendar.YEAR)
             val index = years.indexOf(orderYear)

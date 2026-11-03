@@ -176,6 +176,7 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
     private fun confirmLogout() {
         DialogoCerrarSesion.crear("¿Deseas cerrar tu turno y salir de tu cuenta de repartidor?")
             .definirAccionConfirmacion {
+                requireContext().stopService(Intent(requireContext(), ServicioUbicacionRepartidor::class.java))
                 RepositorioAutenticacion.cerrarSesion()
                 Toast.makeText(requireContext(), "Sesión de repartidor cerrada", Toast.LENGTH_SHORT).show()
                 try {

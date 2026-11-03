@@ -4,7 +4,12 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseUser
+import com.yalazas.app.repositorio.CuentaDesactivadaException
 import com.yalazas.app.repositorio.RepositorioAutenticacion
 import kotlinx.coroutines.launch
 
@@ -13,7 +18,10 @@ sealed class EstadoAutenticacion {
     object Inactivo : EstadoAutenticacion()
     object Cargando : EstadoAutenticacion()
     data class Exito(val user: FirebaseUser) : EstadoAutenticacion()
-    data class Error(val message: String) : EstadoAutenticacion()
+    data class Error(
+        val message: String,
+        val tipo: TipoErrorIngreso = TipoErrorIngreso.GENERAL
+    ) : EstadoAutenticacion()
 }
 
 /** Expone a la interfaz los resultados del repositorio de autenticación. */
@@ -35,7 +43,10 @@ class ModeloVistaAutenticacion : ViewModel() {
 
                 if (repository.currentProfile?.active == false) {
                     repository.cerrarSesion()
-                    _estadoAutenticacion.value = EstadoAutenticacion.Error("Cuenta desactivada. Comunícate con el administrador.")
+                    _estadoAutenticacion.value = EstadoAutenticacion.Error(
+                        TipoErrorIngreso.CUENTA_DESACTIVADA.mensaje,
+                        TipoErrorIngreso.CUENTA_DESACTIVADA
+                    )
                 } else {
                     _estadoAutenticacion.value = EstadoAutenticacion.Exito(user)
                 }
@@ -57,8 +68,28 @@ class ModeloVistaAutenticacion : ViewModel() {
             if (result.isSuccess) {
                 _estadoAutenticacion.value = EstadoAutenticacion.Exito(result.getOrThrow())
             } else {
-                _estadoAutenticacion.value = EstadoAutenticacion.Error(result.exceptionOrNull()?.message ?: "Error de autenticación")
+                val error = result.exceptionOrNull()
+                val tipo = when (error) {
+                    is CuentaDesactivadaException -> TipoErrorIngreso.CUENTA_DESACTIVADA
+                    is FirebaseNetworkException -> TipoErrorIngreso.SIN_CONEXION
+                    is FirebaseAuthException -> {
+                        val clasificado = TipoErrorIngreso.desdeCodigo(error.errorCode)
+                        if (clasificado != TipoErrorIngreso.GENERAL) clasificado
+                        else if (error is FirebaseAuthInvalidCredentialsException ||
+                            error is FirebaseAuthInvalidUserException
+                        ) TipoErrorIngreso.CREDENCIALES else TipoErrorIngreso.GENERAL
+                    }
+                    else -> TipoErrorIngreso.GENERAL
+                }
+                _estadoAutenticacion.value = EstadoAutenticacion.Error(tipo.mensaje, tipo)
             }
+        }
+    }
+
+    /** Evita que una alerta ya mostrada vuelva a abrirse al recrear la pantalla. */
+    fun limpiarError() {
+        if (_estadoAutenticacion.value is EstadoAutenticacion.Error) {
+            _estadoAutenticacion.value = EstadoAutenticacion.Inactivo
         }
     }
 

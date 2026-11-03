@@ -1,22 +1,29 @@
 package com.yalazas.app.ui.delivery
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.databinding.FragmentDeliveryOrdersBinding
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
 import com.yalazas.app.repositorio.RepositorioAutenticacion
+import com.yalazas.app.repositorio.RepositorioEstadosPedido
+import com.yalazas.app.repositorio.ParadaPedido
 import com.yalazas.app.repositorio.ServiciosFirebase
 import com.yalazas.app.ui.dialogos.DialogoTomarVariosPedidos
 import com.yalazas.app.ui.dialogos.DialogoMarcarEntregado
 import com.yalazas.app.ui.dialogos.DialogoTomarPedido
 import com.yalazas.app.utilidades.OptimizadorRutasEntrega
-import java.util.Locale
 
 /** Escucha pedidos y permite tomarlos o marcarlos como entregados. */
 class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
@@ -29,6 +36,18 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
     private var allOrders: List<Order> = emptyList()
     private var currentTab: Int = 0 // 0 = Por Recoger, 1 = En Ruta
+    private var permisoSolicitado = false
+
+    private val solicitarUbicacion = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permisos ->
+        if (permisos.values.any { it }) {
+            iniciarServicioUbicacion()
+        } else if (isAdded) {
+            _binding?.tvDeliveryDriverStatus?.text = "🟠 Ubicación desactivada para tus clientes"
+            Toast.makeText(requireContext(), "Activa la ubicación para que tus clientes puedan seguir el reparto.", Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -154,8 +173,58 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
                     actualizarMetricasYPestanas()
                     filtrarYMostrarPedidos()
+                    verificarSeguimientoUbicacion()
                 }
             }
+    }
+
+    /** El servicio permanece activo al abrir otra app mientras haya pedidos en ruta. */
+    private fun verificarSeguimientoUbicacion() {
+        val uid = ServiciosFirebase.auth.currentUser?.uid.orEmpty()
+        val hayEntrega = allOrders.any {
+            it.status == OrderStatus.EN_CAMINO.name && it.deliveryDriverId == uid
+        }
+        if (!hayEntrega) {
+            requireContext().stopService(Intent(requireContext(), ServicioUbicacionRepartidor::class.java))
+            binding.tvDeliveryDriverStatus.text = "🟢 En Turno • Repartidor Oficial"
+            return
+        }
+        solicitarOIniciarSeguimiento()
+    }
+
+    private fun solicitarOIniciarSeguimiento() {
+        val tienePermiso = listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            .any { ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED }
+        if (tienePermiso) {
+            iniciarServicioUbicacion()
+        } else if (!permisoSolicitado) {
+            permisoSolicitado = true
+            binding.tvDeliveryDriverStatus.text = "🟠 Activa ubicación para compartir tu ruta"
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Ubicación durante el reparto")
+                .setMessage("El cliente podrá ver tu posición mientras llevas su pedido. El seguimiento termina al completar tus entregas o cerrar sesión.")
+                .setPositiveButton("Compartir ubicación") { _, _ ->
+                    solicitarUbicacion.launch(arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ))
+                }
+                .setNegativeButton("Ahora no", null)
+                .show()
+        }
+    }
+
+    private fun iniciarServicioUbicacion() {
+        if (!isAdded || _binding == null) return
+        try {
+            ContextCompat.startForegroundService(
+                requireContext(), Intent(requireContext(), ServicioUbicacionRepartidor::class.java)
+            )
+            binding.tvDeliveryDriverStatus.text = "🟢 En ruta • seguimiento habilitado"
+        } catch (error: RuntimeException) {
+            binding.tvDeliveryDriverStatus.text = "🟠 No se pudo activar la ubicación"
+            Toast.makeText(requireContext(), "No se pudo iniciar la ubicación del reparto.", Toast.LENGTH_LONG).show()
+        }
     }
 
     /** Cuenta los pedidos disponibles y los que ya están en ruta. */
@@ -163,12 +232,12 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
 
         val availableCount = allOrders.count {
-            it.status == OrderStatus.EN_PROCESO.name && it.deliveryDriverId.isNullOrEmpty()
+            it.status == OrderStatus.LISTO_PARA_ENTREGA.name && it.deliveryDriverId.isNullOrEmpty()
         }
 
         val inRouteCount = allOrders.count {
             it.status == OrderStatus.EN_CAMINO.name &&
-                    (it.deliveryDriverId == currentUid || it.deliveryDriverId.isNullOrEmpty())
+                    it.deliveryDriverId == currentUid
         }
 
         binding.tvMetricAvailableCount.text = availableCount.toString()
@@ -185,13 +254,13 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         val filteredList = if (currentTab == 0) {
             // Disponibles para recoger en cocina
             allOrders.filter {
-                it.status == OrderStatus.EN_PROCESO.name && it.deliveryDriverId.isNullOrEmpty()
+                it.status == OrderStatus.LISTO_PARA_ENTREGA.name && it.deliveryDriverId.isNullOrEmpty()
             }
         } else {
             // Pedidos en camino del repartidor actual, ordenados por secuencia optimizada (routeOrderIndex)
             allOrders.filter {
                 it.status == OrderStatus.EN_CAMINO.name &&
-                        (it.deliveryDriverId == currentUid || it.deliveryDriverId.isNullOrEmpty())
+                        it.deliveryDriverId == currentUid
             }.sortedWith(
                 compareBy<Order> { if (it.routeOrderIndex > 0) it.routeOrderIndex else Int.MAX_VALUE }
                     .thenBy { it.timestamp?.toDate()?.time ?: 0L }
@@ -227,32 +296,16 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
     /** Asigna el pedido al repartidor actual y lo pasa a EN_CAMINO. */
     private fun takeSingleOrder(order: Order) {
-        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
-        val driverName = RepositorioAutenticacion.currentProfile?.name ?: "Repartidor Yalazas"
-        val driverPhone = RepositorioAutenticacion.currentProfile?.phone ?: ""
-
-        val db = ServiciosFirebase.firestore
-        val updates = mapOf(
-            "status" to OrderStatus.EN_CAMINO.name,
-            "deliveryDriverId" to currentUid,
-            "deliveryDriverName" to driverName,
-            "deliveryDriverPhone" to driverPhone,
-            "routeOrderIndex" to 1
-        )
-
-        db.collection("orders").document(order.id)
-            .update(updates)
-            .addOnSuccessListener {
-                if (isAdded) {
+        RepositorioEstadosPedido.tomarParaReparto(listOf(ParadaPedido(order.id, 1))) { resultado ->
+            if (!isAdded || _binding == null) return@tomarParaReparto
+            resultado.onSuccess {
                     Toast.makeText(requireContext(), "🛵 ¡Pedido tomado con éxito! Buen viaje.", Toast.LENGTH_SHORT).show()
                     switchTab(1)
-                }
+                    solicitarOIniciarSeguimiento()
+            }.onFailure { error ->
+                Toast.makeText(requireContext(), "Error al tomar pedido: ${error.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener { e ->
-                if (isAdded) {
-                    Toast.makeText(requireContext(), "Error al tomar pedido: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                }
-            }
+        }
     }
 
     private fun confirmBatchTakeOrders(ordersToTake: List<Order>) {
@@ -264,51 +317,28 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     /** Calcula la secuencia y asigna los pedidos en una sola operación de Firestore. */
     private fun executeBatchRouteOptimization(ordersToTake: List<Order>) {
         binding.progressDelivery.visibility = View.VISIBLE
-        val currentUid = ServiciosFirebase.auth.currentUser?.uid ?: ""
-        val driverName = RepositorioAutenticacion.currentProfile?.name ?: "Repartidor Yalazas"
-        val driverPhone = RepositorioAutenticacion.currentProfile?.phone ?: ""
-
-        // 1. Ejecutamos el algoritmo de optimización de ruta y urgencia
+        // La optimización solo decide la secuencia; State valida todos los pedidos antes de asignarlos.
         val sequencedOrders = OptimizadorRutasEntrega.optimizarSecuenciaEntregas(ordersToTake)
-
-        // 2. Aplicamos un Batch Write en Firestore para actualizar todos los documentos atómicamente
-        val db = ServiciosFirebase.firestore
-        val batch = db.batch()
-
-        sequencedOrders.forEach { order ->
-            val docRef = db.collection("orders").document(order.id)
-            val updates = mapOf(
-                "status" to OrderStatus.EN_CAMINO.name,
-                "deliveryDriverId" to currentUid,
-                "deliveryDriverName" to driverName,
-                "deliveryDriverPhone" to driverPhone,
-                "routeOrderIndex" to order.routeOrderIndex
-            )
-            batch.update(docRef, updates)
-        }
-
-        batch.commit()
-            .addOnSuccessListener {
-                if (isAdded) {
-                    binding.progressDelivery.visibility = View.GONE
+        val paradas = sequencedOrders.map { ParadaPedido(it.id, it.routeOrderIndex) }
+        RepositorioEstadosPedido.tomarParaReparto(paradas) { resultado ->
+            if (!isAdded || _binding == null) return@tomarParaReparto
+            binding.progressDelivery.visibility = View.GONE
+            resultado.onSuccess {
                     Toast.makeText(
                         requireContext(),
                         "🚀 ¡Ruta de ${sequencedOrders.size} entregas optimizada con éxito!",
                         Toast.LENGTH_LONG
                     ).show()
                     switchTab(1) // Ir a Mis Entregas en Ruta
-                }
+                    solicitarOIniciarSeguimiento()
+            }.onFailure { error ->
+                Toast.makeText(
+                    requireContext(),
+                    "Error al optimizar ruta: ${error.localizedMessage}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
-            .addOnFailureListener { e ->
-                if (isAdded) {
-                    binding.progressDelivery.visibility = View.GONE
-                    Toast.makeText(
-                        requireContext(),
-                        "Error al optimizar ruta: ${e.localizedMessage}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
+        }
     }
 
     private fun confirmMarkDelivered(order: Order) {
@@ -319,24 +349,14 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
     /** Marca la entrega y el pago en el documento del pedido. */
     private fun markOrderDelivered(order: Order) {
-        val db = ServiciosFirebase.firestore
-        val updates = mapOf(
-            "status" to OrderStatus.ENTREGADO.name,
-            "paymentStatus" to "PAGADO"
-        )
-
-        db.collection("orders").document(order.id)
-            .update(updates)
-            .addOnSuccessListener {
-                if (isAdded) {
+        RepositorioEstadosPedido.marcarEntregado(order.id) { resultado ->
+            if (!isAdded || _binding == null) return@marcarEntregado
+            resultado.onSuccess {
                     Toast.makeText(requireContext(), "🎉 ¡Pedido entregado con éxito! Registrado en tu historial.", Toast.LENGTH_LONG).show()
-                }
+            }.onFailure { error ->
+                Toast.makeText(requireContext(), "Error al actualizar estado: ${error.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener { e ->
-                if (isAdded) {
-                    Toast.makeText(requireContext(), "Error al actualizar estado: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                }
-            }
+        }
     }
 
     override fun onDestroyView() {

@@ -2,7 +2,7 @@ package com.yalazas.app.ui.admin
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.graphics.Color
+import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
@@ -12,24 +12,21 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.yalazas.app.R
-import com.yalazas.app.model.AuditLog
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderItem
 import com.yalazas.app.model.OrderStatus
-import com.yalazas.app.repositorio.RepositorioAutenticacion
-import com.yalazas.app.repositorio.ServiciosFirebase
+import com.yalazas.app.repositorio.RepositorioEstadosPedido
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 /** Muestra el detalle de una venta y sus acciones administrativas. */
 class HojaDetalleVenta : BottomSheetDialogFragment() {
-
-    private val db = ServiciosFirebase.firestore
 
     private var orderId: String = ""
     private var saleNumber: String = ""
@@ -42,6 +39,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
     private var reference: String = ""
     private var comment: String = ""
     private var total: Double = 0.0
+    private var deliveryFee: Double = 0.0
+    private var isDelivery: Boolean = false
     private var items: ArrayList<OrderItem> = arrayListOf()
 
     var onStatusUpdated: ((String) -> Unit)? = null
@@ -62,6 +61,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
             reference = it.getString(ARG_REFERENCE, "")
             comment = it.getString(ARG_COMMENT, "")
             total = it.getDouble(ARG_TOTAL, 0.0)
+            deliveryFee = it.getDouble(ARG_DELIVERY_FEE, 0.0)
+            isDelivery = it.getBoolean(ARG_IS_DELIVERY, false)
             @Suppress("DEPRECATION")
             val parcelableList = it.getParcelableArrayList<OrderItem>(ARG_ITEMS)
             if (parcelableList != null) {
@@ -95,6 +96,9 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         val tvItemsCount = view.findViewById<TextView>(R.id.tvSheetItemsCount)
         val containerProducts = view.findViewById<LinearLayout>(R.id.containerSheetProducts)
         val tvTotalAmount = view.findViewById<TextView>(R.id.tvSheetTotalAmount)
+        val tvProductsAmount = view.findViewById<TextView>(R.id.tvSheetProductsAmount)
+        val tvDeliveryFee = view.findViewById<TextView>(R.id.tvSheetDeliveryFee)
+        val tvDeliveryLabel = view.findViewById<TextView>(R.id.tvSheetDeliveryLabel)
         val btnChangeStatus = view.findViewById<MaterialButton>(R.id.btnSheetChangeStatus)
         val btnClose = view.findViewById<MaterialButton>(R.id.btnSheetClose)
 
@@ -102,6 +106,9 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         tvSaleNumber.text = if (saleNumber.startsWith("Venta")) saleNumber else "Venta N° $saleNumber"
         tvDateTime.text = if (time.isNotBlank()) "📅 $date a las $time hrs" else "📅 $date"
         updateStatusBadge(status)
+        btnChangeStatus.backgroundTintList = ColorStateList.valueOf(
+            color(PaletaEstadosVenta.para(OrderStatus.desdeTexto(status)).boton)
+        )
 
         // 2. Datos del Cliente
         tvCustomer.text = customerName.ifBlank { "Cliente No Identificado" }
@@ -191,14 +198,17 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         } else {
             val emptyTv = TextView(requireContext()).apply {
                 text = "• Sin productos desglosados en este registro"
-                setTextColor(Color.parseColor("#9EADA4"))
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.admin_ui_text_secondary))
                 textSize = 13f
                 setPadding(0, 8, 0, 8)
             }
             containerProducts.addView(emptyTv)
         }
 
-        // 4. Total a cobrar
+        // 4. El total guardado ya incluye envío; solo se desglosa para explicarlo.
+        tvProductsAmount.text = "S/ ${String.format(Locale.US, "%.2f", (total - deliveryFee).coerceAtLeast(0.0))}"
+        tvDeliveryLabel.text = if (isDelivery) "Delivery" else "Envío (recojo en local)"
+        tvDeliveryFee.text = "S/ ${String.format(Locale.US, "%.2f", deliveryFee)}"
         tvTotalAmount.text = "S/ ${String.format(Locale.US, "%.2f", total)}"
 
         // 5. Botones de Acción
@@ -214,38 +224,45 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
     private fun updateStatusBadge(currentStatus: String) {
         val upper = currentStatus.uppercase(Locale.getDefault())
         when {
+            upper.contains("LISTO") -> {
+                tvStatusBadge.text = "📦 LISTO PARA ENTREGA"
+                tvStatusBadge.setTextColor(color(R.color.admin_status_ready))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_status_ready_bg))
+            }
             upper.contains("PENDIENTE") -> {
                 tvStatusBadge.text = "🟡 PENDIENTE"
-                tvStatusBadge.setTextColor(Color.parseColor("#FFD54F"))
-                tvStatusBadge.background = createPillDrawable(Color.parseColor("#383212"))
+                tvStatusBadge.setTextColor(color(R.color.admin_status_pending))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_status_pending_bg))
             }
             upper.contains("PROCESO") || upper.contains("COCIN") -> {
                 tvStatusBadge.text = "👨‍🍳 EN COCINA"
-                tvStatusBadge.setTextColor(Color.parseColor("#29B6F6"))
-                tvStatusBadge.background = createPillDrawable(Color.parseColor("#10374A"))
+                tvStatusBadge.setTextColor(color(R.color.admin_status_cooking))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_status_cooking_bg))
             }
             upper.contains("CAMINO") || upper.contains("REPART") -> {
                 tvStatusBadge.text = "🛵 EN CAMINO"
-                tvStatusBadge.setTextColor(Color.parseColor("#AB47BC"))
-                tvStatusBadge.background = createPillDrawable(Color.parseColor("#38194A"))
+                tvStatusBadge.setTextColor(color(R.color.admin_status_road))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_status_road_bg))
             }
             upper.contains("ENTREG") -> {
                 tvStatusBadge.text = "✅ ENTREGADO"
-                tvStatusBadge.setTextColor(Color.parseColor("#4CAF50"))
-                tvStatusBadge.background = createPillDrawable(Color.parseColor("#143E23"))
+                tvStatusBadge.setTextColor(color(R.color.admin_status_delivered))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_status_delivered_bg))
             }
             upper.contains("CANCEL") -> {
                 tvStatusBadge.text = "❌ CANCELADO"
-                tvStatusBadge.setTextColor(Color.parseColor("#FF5252"))
-                tvStatusBadge.background = createPillDrawable(Color.parseColor("#4A151B"))
+                tvStatusBadge.setTextColor(color(R.color.admin_status_cancelled))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_status_cancelled_bg))
             }
             else -> {
                 tvStatusBadge.text = "• $upper"
-                tvStatusBadge.setTextColor(Color.parseColor("#9EADA4"))
-                tvStatusBadge.background = createPillDrawable(Color.parseColor("#24332B"))
+                tvStatusBadge.setTextColor(color(R.color.admin_ui_text_secondary))
+                tvStatusBadge.background = createPillDrawable(color(R.color.admin_ui_divider))
             }
         }
     }
+
+    private fun color(id: Int): Int = ContextCompat.getColor(requireContext(), id)
 
     private fun createPillDrawable(bgColor: Int): GradientDrawable {
         return GradientDrawable().apply {
@@ -288,39 +305,25 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
 
     private fun applyStatusUpdate(newStatus: String) {
         if (orderId.isBlank()) {
-            status = newStatus
-            updateStatusBadge(newStatus)
-            onStatusUpdated?.invoke(newStatus)
+            Toast.makeText(requireContext(), "Esta venta no tiene un pedido asociado.", Toast.LENGTH_SHORT).show()
             return
         }
-
-        val currentAdminId = RepositorioAutenticacion.currentProfile?.uid ?: "ADMIN"
-        val updates = mapOf(
-            "status" to newStatus,
-            "updatedAt" to System.currentTimeMillis()
-        )
-
-        db.collection("orders").document(orderId)
-            .update(updates)
-            .addOnSuccessListener {
-                val log = AuditLog(
-                    id = db.collection("auditoria").document().id,
-                    usuarioAfectadoId = orderId,
-                    usuarioAdministradorId = currentAdminId,
-                    accion = "CAMBIO_ESTADO_PEDIDO",
-                    rolAnterior = status,
-                    rolNuevo = newStatus
-                )
-                db.collection("auditoria").document(log.id).set(log)
-
+        val destino = OrderStatus.values().firstOrNull { it.key == newStatus }
+        if (destino == null) {
+            Toast.makeText(requireContext(), "Estado de destino inválido", Toast.LENGTH_SHORT).show()
+            return
+        }
+        RepositorioEstadosPedido.cambiarAdministrador(orderId, destino) { resultado ->
+            if (!isAdded || view == null) return@cambiarAdministrador
+            resultado.onSuccess {
                 status = newStatus
                 updateStatusBadge(newStatus)
                 onStatusUpdated?.invoke(newStatus)
-                Toast.makeText(requireContext(), "Estado actualizado a $newStatus", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Estado actualizado a ${destino.label}", Toast.LENGTH_SHORT).show()
+            }.onFailure { error ->
+                Toast.makeText(requireContext(), "Error al actualizar estado: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
             }
-            .addOnFailureListener { e ->
-                Toast.makeText(requireContext(), "Error al actualizar estado: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+        }
     }
 
     companion object {
@@ -335,6 +338,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         private const val ARG_REFERENCE = "arg_reference"
         private const val ARG_COMMENT = "arg_comment"
         private const val ARG_TOTAL = "arg_total"
+        private const val ARG_DELIVERY_FEE = "arg_delivery_fee"
+        private const val ARG_IS_DELIVERY = "arg_is_delivery"
         private const val ARG_ITEMS = "arg_items"
 
         fun crear(
@@ -349,6 +354,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
             reference: String,
             comment: String,
             total: Double,
+            deliveryFee: Double,
+            isDelivery: Boolean,
             items: List<OrderItem>
         ): HojaDetalleVenta {
             val fragment = HojaDetalleVenta()
@@ -364,6 +371,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
                 putString(ARG_REFERENCE, reference)
                 putString(ARG_COMMENT, comment)
                 putDouble(ARG_TOTAL, total)
+                putDouble(ARG_DELIVERY_FEE, deliveryFee)
+                putBoolean(ARG_IS_DELIVERY, isDelivery)
                 putParcelableArrayList(ARG_ITEMS, ArrayList(items))
             }
             fragment.arguments = args
@@ -387,6 +396,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
                 reference = order.reference,
                 comment = order.comment,
                 total = order.total,
+                deliveryFee = order.deliveryFee,
+                isDelivery = order.isDelivery,
                 items = order.items
             )
         }
@@ -404,6 +415,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
                 reference = saleItem.reference,
                 comment = saleItem.comment,
                 total = saleItem.total,
+                deliveryFee = saleItem.deliveryFee,
+                isDelivery = saleItem.isDelivery,
                 items = saleItem.items
             )
         }

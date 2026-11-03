@@ -6,10 +6,10 @@
     android:layout_marginStart="16dp"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="#18231E"
+    app:cardBackgroundColor="@color/admin_ui_surface"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
-    app:strokeColor="#2C3B33"
+    app:strokeColor="@color/admin_ui_border"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -64,7 +64,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:text="correo@ejemplo.com"
-                    android:textColor="#9EADA4"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="13sp" />
             </LinearLayout>
 
@@ -79,7 +79,7 @@
                 android:paddingEnd="8dp"
                 android:paddingBottom="3dp"
                 android:text="🟢 Activo"
-                android:textColor="#4CAF50"
+                android:textColor="@color/admin_status_delivered"
                 android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -90,7 +90,7 @@
             android:layout_height="1dp"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="12dp"
-            android:background="#24332B" />
+            android:background="@color/admin_ui_divider" />
 
         <!-- Fila Inferior: Rol Actual + Botón Cambiar Rol -->
         <LinearLayout
@@ -110,7 +110,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Rol: "
-                    android:textColor="#9EADA4"
+                    android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="12sp" />
 
                 <TextView
@@ -133,7 +133,7 @@
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="38dp"
-                android:backgroundTint="#24332B"
+                android:backgroundTint="@color/admin_ui_button_secondary"
                 android:text="Cambiar Rol"
                 android:textColor="@color/white"
                 android:textSize="12sp"

@@ -1,12 +1,12 @@
 package com.yalazas.app.ui.admin
 
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.yalazas.app.R
@@ -20,6 +20,8 @@ data class AdminSaleItem(
     val date: String = "20/04/2026",
     val time: String = "20:05",
     val total: Double = 0.0,
+    val deliveryFee: Double = 0.0,
+    val isDelivery: Boolean = false,
     val customerName: String = "",
     val phone: String = "",
     val address: String = "",
@@ -70,66 +72,35 @@ class AdaptadorVentasRecientes(
             tvTotal.text = "S/ ${String.format(Locale.US, "%.2f", sale.total)}"
 
             val statusEnum = OrderStatus.desdeTexto(sale.status)
+            val estilo = PaletaEstadosVenta.para(statusEnum)
+            // El fondo y el botón distinguen el estado; la fecha conserva el mismo contraste.
+            card.setCardBackgroundColor(color(estilo.tarjeta))
+            card.strokeColor = color(estilo.borde)
+            tvDate.setTextColor(color(R.color.admin_ui_text_secondary))
+            tvTime.setTextColor(color(R.color.admin_ui_text_secondary))
+            tvTotal.setTextColor(color(if (statusEnum == OrderStatus.CANCELADO) R.color.admin_status_cancelled else R.color.admin_ui_amount))
+            btnDetails.background = createButtonDrawable(color(estilo.boton))
+            tvStatus.setTextColor(color(estilo.textoEstado))
+            tvStatus.background = createPillDrawable(color(estilo.fondoEstado))
+
             when (statusEnum) {
                 OrderStatus.CANCELADO -> {
-                    // Estado Cancelado: Tema Rojo Destacado con puntito
-                    card.setCardBackgroundColor(Color.parseColor("#261114"))
-                    card.strokeColor = Color.parseColor("#FF5252")
                     tvStatus.text = "● CANCEL."
-                    tvStatus.setTextColor(Color.parseColor("#FF5252"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#4A151B"))
-                    tvDate.setTextColor(Color.parseColor("#FF8A80"))
-                    tvTime.setTextColor(Color.parseColor("#FF8A80"))
-                    tvTotal.setTextColor(Color.parseColor("#FF5252"))
-                    btnDetails.background = createButtonDrawable(Color.parseColor("#6E1B24"))
                 }
                 OrderStatus.PENDIENTE -> {
-                    // Estado Pendiente: Tema Amarillo Oro con puntito
-                    card.setCardBackgroundColor(Color.parseColor("#1B1910"))
-                    card.strokeColor = Color.parseColor("#FFD54F")
                     tvStatus.text = "● PENDIENTE"
-                    tvStatus.setTextColor(Color.parseColor("#FFD54F"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#383212"))
-                    tvDate.setTextColor(Color.parseColor("#FFE082"))
-                    tvTime.setTextColor(Color.parseColor("#FFE082"))
-                    tvTotal.setTextColor(Color.parseColor("#FFD54F"))
-                    btnDetails.background = createButtonDrawable(Color.parseColor("#A66B08"))
                 }
                 OrderStatus.EN_PROCESO -> {
-                    // Estado En Cocina: Tema Azul / Celeste con puntito
-                    card.setCardBackgroundColor(Color.parseColor("#0C1B24"))
-                    card.strokeColor = Color.parseColor("#29B6F6")
                     tvStatus.text = "● COCINA"
-                    tvStatus.setTextColor(Color.parseColor("#29B6F6"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#10374A"))
-                    tvDate.setTextColor(Color.parseColor("#81D4FA"))
-                    tvTime.setTextColor(Color.parseColor("#81D4FA"))
-                    tvTotal.setTextColor(Color.parseColor("#29B6F6"))
-                    btnDetails.background = createButtonDrawable(Color.parseColor("#145B7F"))
+                }
+                OrderStatus.LISTO_PARA_ENTREGA -> {
+                    tvStatus.text = "● LISTO"
                 }
                 OrderStatus.EN_CAMINO -> {
-                    // Estado En Camino: Tema Púrpura / Repartidor con puntito
-                    card.setCardBackgroundColor(Color.parseColor("#1B1024"))
-                    card.strokeColor = Color.parseColor("#AB47BC")
                     tvStatus.text = "● CAMINO"
-                    tvStatus.setTextColor(Color.parseColor("#AB47BC"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#38194A"))
-                    tvDate.setTextColor(Color.parseColor("#CE93D8"))
-                    tvTime.setTextColor(Color.parseColor("#CE93D8"))
-                    tvTotal.setTextColor(Color.parseColor("#AB47BC"))
-                    btnDetails.background = createButtonDrawable(Color.parseColor("#5A247A"))
                 }
                 OrderStatus.ENTREGADO -> {
-                    // Estado Entregado: Tema Verde Éxito con puntito
-                    card.setCardBackgroundColor(Color.parseColor("#0D1F15"))
-                    card.strokeColor = Color.parseColor("#4CAF50")
                     tvStatus.text = "● ENTREG."
-                    tvStatus.setTextColor(Color.parseColor("#4CAF50"))
-                    tvStatus.background = createPillDrawable(Color.parseColor("#143E23"))
-                    tvDate.setTextColor(Color.parseColor("#A5D6A7"))
-                    tvTime.setTextColor(Color.parseColor("#A5D6A7"))
-                    tvTotal.setTextColor(Color.parseColor("#4CAF50"))
-                    btnDetails.background = createButtonDrawable(Color.parseColor("#1B6330"))
                 }
             }
 
@@ -137,6 +108,8 @@ class AdaptadorVentasRecientes(
                 onDetailsClick(sale)
             }
         }
+
+        private fun color(id: Int): Int = ContextCompat.getColor(itemView.context, id)
 
         private fun createPillDrawable(bgColor: Int): GradientDrawable {
             return GradientDrawable().apply {

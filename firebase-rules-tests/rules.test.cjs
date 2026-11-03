@@ -14,6 +14,7 @@ const {
   getDoc,
   getDocs,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -67,6 +68,7 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
         ['other', 'CLIENTE', true],
         ['driver', 'REPARTIDOR', true],
         ['driver2', 'REPARTIDOR', true],
+        ['cook', 'COCINERO', true],
         ['blocked', 'CLIENTE', false]
       ]) {
         await setDoc(doc(db, 'users', uid), { uid, role, active, name: uid });
@@ -85,6 +87,7 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     const other = env.authenticatedContext('other').firestore();
     const driver = env.authenticatedContext('driver').firestore();
     const driver2 = env.authenticatedContext('driver2').firestore();
+    const cook = env.authenticatedContext('cook').firestore();
     const blocked = env.authenticatedContext('blocked').firestore();
     const anonymous = env.unauthenticatedContext().firestore();
 
@@ -124,6 +127,8 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     await assertSucceeds(getDocs(query(collection(driver, 'orders'), where('isDelivery', '==', true))));
     await assertFails(getDocs(collection(driver, 'orders')));
     await assertFails(getDoc(doc(driver, 'orders', 'pickup')));
+    await assertSucceeds(getDocs(query(collection(cook, 'orders'), where('status', 'in', ['PENDIENTE', 'EN_PROCESO', 'LISTO_PARA_ENTREGA']))));
+    await assertFails(getDocs(collection(cook, 'orders')));
     await assertSucceeds(updateDoc(doc(admin, 'users', 'other'), {
       role: 'REPARTIDOR', active: true, updatedAt: Date.now()
     }));
@@ -142,22 +147,119 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     await assertFails(updateDoc(doc(admin, 'orders', 'existing'), {
       status: 'ENTREGADO', updatedAt: Date.now()
     }));
-    await assertSucceeds(updateDoc(doc(admin, 'orders', 'existing'), {
+    await assertFails(updateDoc(doc(driver, 'orders', 'existing'), {
+      status: 'EN_CAMINO', deliveryDriverId: 'driver',
+      deliveryDriverName: 'driver', deliveryDriverPhone: '', routeOrderIndex: 1
+    }));
+    await assertFails(updateDoc(doc(customer, 'orders', 'existing'), {
+      status: 'EN_PROCESO', updatedAt: Date.now()
+    }));
+    await assertSucceeds(updateDoc(doc(cook, 'orders', 'existing'), {
       status: 'EN_PROCESO', updatedAt: Date.now()
     }));
     await assertFails(updateDoc(doc(customer, 'orders', 'existing'), {
       status: 'CANCELADO', updatedAt: Date.now()
     }));
+    await assertFails(updateDoc(doc(driver, 'orders', 'existing'), {
+      status: 'EN_CAMINO', deliveryDriverId: 'driver',
+      deliveryDriverName: 'driver', deliveryDriverPhone: '', routeOrderIndex: 1
+    }));
+    await assertSucceeds(updateDoc(doc(cook, 'orders', 'existing'), {
+      status: 'LISTO_PARA_ENTREGA', updatedAt: Date.now()
+    }));
+    await assertSucceeds(updateDoc(doc(cook, 'orders', 'existing'), {
+      status: 'EN_PROCESO', updatedAt: Date.now()
+    }));
+    await assertSucceeds(updateDoc(doc(cook, 'orders', 'existing'), {
+      status: 'LISTO_PARA_ENTREGA', updatedAt: Date.now()
+    }));
+    await assertFails(updateDoc(doc(cook, 'orders', 'existing'), {
+      status: 'EN_CAMINO', updatedAt: Date.now()
+    }));
     await assertSucceeds(updateDoc(doc(driver, 'orders', 'existing'), {
       status: 'EN_CAMINO', deliveryDriverId: 'driver',
       deliveryDriverName: 'driver', deliveryDriverPhone: '', routeOrderIndex: 1
     }));
+    await assertFails(updateDoc(doc(cook, 'orders', 'existing'), {
+      status: 'EN_PROCESO', updatedAt: Date.now()
+    }));
     await assertFails(updateDoc(doc(driver2, 'orders', 'existing'), {
       deliveryDriverId: 'driver2'
     }));
+
+    // Solo el repartidor asignado publica la posición; solo el dueño del pedido la ve.
+    const ubicacion = () => ({
+      latitude: -13.0618, longitude: -76.3520,
+      accuracyMeters: 12, updatedAt: serverTimestamp()
+    });
+    const rutaDriver = doc(driver, 'orders', 'existing', 'tracking', 'actual');
+    await assertFails(setDoc(doc(driver, 'orders', 'new', 'tracking', 'actual'), ubicacion()));
+    await assertFails(setDoc(doc(driver2, 'orders', 'existing', 'tracking', 'actual'), ubicacion()));
+    await assertSucceeds(setDoc(rutaDriver, ubicacion()));
+    await assertSucceeds(getDoc(doc(customer, 'orders', 'existing', 'tracking', 'actual')));
+    await assertFails(getDoc(doc(other, 'orders', 'existing', 'tracking', 'actual')));
+    await assertFails(setDoc(rutaDriver, { ...ubicacion(), latitude: 91 }));
+    await assertFails(setDoc(rutaDriver, { ...ubicacion(), extra: 'no permitido' }));
+
     await assertSucceeds(updateDoc(doc(driver, 'orders', 'existing'), {
       status: 'ENTREGADO', paymentStatus: 'PAGADO'
     }));
+    await assertFails(getDoc(doc(customer, 'orders', 'existing', 'tracking', 'actual')));
+    await assertFails(setDoc(rutaDriver, ubicacion()));
+
+    // Una ruta múltiple no debe tomar parcialmente pedidos si uno dejó de estar listo.
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, 'orders', 'batch-ready'), {
+        ...order('customer'), status: 'LISTO_PARA_ENTREGA', timestamp: new Date()
+      });
+      await setDoc(doc(db, 'orders', 'batch-pending'), {
+        ...order('customer'), timestamp: new Date()
+      });
+    });
+    async function tomarRuta() {
+      return runTransaction(driver, async (tx) => {
+        const primero = doc(driver, 'orders', 'batch-ready');
+        const segundo = doc(driver, 'orders', 'batch-pending');
+        await tx.get(primero);
+        await tx.get(segundo);
+        tx.update(primero, {
+          status: 'EN_CAMINO', deliveryDriverId: 'driver',
+          deliveryDriverName: 'driver', deliveryDriverPhone: '', routeOrderIndex: 1
+        });
+        tx.update(segundo, {
+          status: 'EN_CAMINO', deliveryDriverId: 'driver',
+          deliveryDriverName: 'driver', deliveryDriverPhone: '', routeOrderIndex: 2
+        });
+      });
+    }
+    await assertFails(tomarRuta());
+    assert.equal((await getDoc(doc(driver, 'orders', 'batch-ready'))).data().status, 'LISTO_PARA_ENTREGA');
+    await env.withSecurityRulesDisabled(async (context) => {
+      await updateDoc(doc(context.firestore(), 'orders', 'batch-pending'), {
+        status: 'LISTO_PARA_ENTREGA'
+      });
+    });
+    await assertSucceeds(tomarRuta());
+
+    // Administración registra el pedido y la auditoría en una sola transacción.
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'orders', 'admin-flow'), {
+        ...order('customer'), timestamp: new Date()
+      });
+    });
+    await assertSucceeds(runTransaction(admin, async (tx) => {
+      const pedido = doc(admin, 'orders', 'admin-flow');
+      const log = doc(admin, 'auditoria', 'state-admin-flow');
+      const actual = await tx.get(pedido);
+      tx.update(pedido, { status: 'EN_PROCESO', updatedAt: Date.now() });
+      tx.set(log, {
+        id: 'state-admin-flow', usuarioAfectadoId: actual.data().userId,
+        usuarioAdministradorId: 'admin', accion: 'CAMBIO_ESTADO_PEDIDO',
+        rolAnterior: actual.data().status, rolNuevo: 'EN_PROCESO'
+      });
+    }));
+    assert.equal((await getDoc(doc(admin, 'auditoria', 'state-admin-flow'))).data().rolAnterior, 'PENDIENTE');
 
     const adminImage = ref(env.authenticatedContext('admin').storage(), 'products/test.jpg');
     const customerImage = ref(env.authenticatedContext('customer').storage(), 'products/forged.jpg');

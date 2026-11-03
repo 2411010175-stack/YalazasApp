@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialogo_error_ingreso"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="18dp">
+
+    <TextView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_logout_icon_circle"
+        android:contentDescription="Aviso de acceso"
+        android:gravity="center"
+        android:text="🔒"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/tvTituloErrorIngreso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:textColor="@color/white"
+        android:textSize="21sp"
+        android:textStyle="bold"
+        tools:text="Revisa tus datos" />
+
+    <TextView
+        android:id="@+id/tvMensajeErrorIngreso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:textColor="@color/yalaza_text_secondary"
+        android:textSize="15sp"
+        tools:text="El correo o la contraseña son incorrectos. Verifica ambos datos e inténtalo de nuevo." />
+</LinearLayout>
