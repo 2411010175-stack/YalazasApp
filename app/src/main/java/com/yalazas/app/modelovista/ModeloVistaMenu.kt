@@ -30,17 +30,34 @@ class ModeloVistaMenu : ViewModel() {
     /** Recibe cada cambio del catálogo y vuelve a aplicar los filtros activos. */
     suspend fun observarProductos() {
         if (!catalogoRecibido) _estadoMenu.value = EstadoMenu.Cargando
-        repositorio.observarProductos().collect { resultado ->
+        repositorio.observarCatalogoCompacto().collect { resultado ->
             if (resultado.isSuccess) {
                 todosLosProductos = resultado.getOrThrow()
                 catalogoRecibido = true
                 aplicarFiltros()
             } else {
+                todosLosProductos = emptyList()
+                catalogoRecibido = false
                 _estadoMenu.value = EstadoMenu.Error(
                     resultado.exceptionOrNull()?.message ?: "Error al cargar el menú"
                 )
             }
         }
+    }
+
+    /** Completa la tarjeta vigente con la descripción antes de abrirla o comprarla. */
+    suspend fun completarProducto(id: String): Product? {
+        val tarjeta = todosLosProductos.firstOrNull { it.id == id && it.isAvailable } ?: return null
+        val completo = repositorio.obtenerProductoCompleto(id) ?: return null
+        if (!completo.isAvailable) return null
+        val precioBaseTarjeta = if (tarjeta.isOffer && !completo.isOffer) tarjeta.originalPrice
+            else tarjeta.price
+        if (completo.price != precioBaseTarjeta) return null
+        return completo.copy(
+            price = tarjeta.price, originalPrice = tarjeta.originalPrice,
+            isOffer = tarjeta.isOffer, offerTag = tarjeta.offerTag,
+            availableSauces = tarjeta.availableSauces
+        )
     }
 
     /** Selecciona una categoría sin volver a descargar los productos. */

@@ -98,6 +98,9 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     await assertSucceeds(getDoc(doc(anonymous, 'products', 'p1')));
     await assertFails(setDoc(doc(customer, 'products', 'p2'), { name: 'Falso' }));
     await assertSucceeds(setDoc(doc(admin, 'products', 'p2'), { name: 'Oferta' }));
+    await assertFails(setDoc(doc(customer, 'catalog_cards', 'p2'), { name: 'Falso' }));
+    await assertSucceeds(setDoc(doc(admin, 'catalog_cards', 'p2'), { name: 'Oferta' }));
+    await assertSucceeds(getDoc(doc(anonymous, 'catalog_cards', 'p2')));
 
     // Solo administración cambia las mesas; el mesero conserva las cinco iniciales hasta configurarlas.
     const salon = (db) => doc(db, 'settings', 'salon');

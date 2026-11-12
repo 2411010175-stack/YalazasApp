@@ -38,6 +38,41 @@ class CalculadoraInsumosTest {
         assertFalse(CalculadoraInsumos.evaluar(receta, emptyMap()).disponible)
     }
 
+    @Test fun productoSinRecetaNoSePublica() {
+        val producto = Product(id = "bbq", name = "Alitas BBQ")
+        assertFalse(CalculadoraInsumos.evaluarProducto(null, producto, emptyMap()).disponible)
+    }
+
+    @Test fun recetaCompletaConStockMantieneVisibleElPlato() {
+        val producto = Product(id = "bbq", name = "Alitas BBQ")
+        val insumos = mapOf(
+            "alitas" to Insumo("alitas", "Alitas", "u", 30.0),
+            "papa" to Insumo("papa", "Papa", "g", 800.0),
+            "bbq" to Insumo("bbq", "Salsa BBQ", "ml", 500.0)
+        )
+        assertTrue(CalculadoraInsumos.evaluarProducto(receta, producto, insumos).disponible)
+    }
+
+    @Test fun recetaIncompletaNoSePublicaAunqueHayaStock() {
+        val producto = Product(id = "bbq", name = "Alitas BBQ")
+        val insumos = mapOf("alitas" to Insumo("alitas", "Alitas", "u", 30.0))
+        val incompleta = RecetaProducto("bbq", listOf(
+            IngredienteReceta("alitas", 6.0), IngredienteReceta("papa", 200.0)))
+        assertFalse(CalculadoraInsumos.evaluarProducto(incompleta, producto, insumos).disponible)
+    }
+
+    @Test fun salsasAnunciadasExigenConsumoConfigurado() {
+        val producto = Product(id = "bbq", allowsSauces = true, maxSauces = 2)
+        val insumos = mapOf("alitas" to Insumo("alitas", "Alitas", "u", 30.0))
+        val incompleta = RecetaProducto("bbq", listOf(IngredienteReceta("alitas", 6.0)))
+        assertFalse(CalculadoraInsumos.evaluarProducto(incompleta, producto, insumos).disponible)
+    }
+
+    @Test fun noAceptaSalsasSiLaRecetaNoLasDescuenta() {
+        val producto = Product(id = "bbq")
+        assertEquals(null, CalculadoraInsumos.demandaArticulo(receta, producto, listOf("BBQ Clásica")))
+    }
+
     @Test fun salsaElegidaConsumeVeinticincoMlYLaSegundaEsOpcional() {
         val producto = Product(id = "bbq", name = "Alitas BBQ", allowsSauces = true,
             maxSauces = 2, availableSauces = listOf("BBQ Clásica", "Acevichada"))

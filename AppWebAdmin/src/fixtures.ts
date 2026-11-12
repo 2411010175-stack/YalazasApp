@@ -62,4 +62,5 @@ export const datosDemo: Datos = {
     { productId: 'demo-papas', ingredients: [{ ingredientId: 'demo-papas', quantity: 250 }], sauceSlotsMl: [], sauceIngredients: {} },
   ],
   promociones: [], mesas: [1, 2, 3, 4, 5, 6, 7, 8],
+  tarifa: { version: 0, baseCents: 300, includedMeters: 1500, extraKmCents: 100 },
 };

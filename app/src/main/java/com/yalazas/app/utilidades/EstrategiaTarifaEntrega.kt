@@ -7,16 +7,25 @@ fun interface EstrategiaTarifaEntrega {
     fun calcular(distanciaKm: Double): Double
 }
 
-/** S/ 3 hasta 1,5 km y S/ 1 por cada kilómetro adicional iniciado. */
+/** Montos en céntimos y distancia en metros evitan errores de redondeo al guardar. */
+data class ConfiguracionTarifaEntrega(
+    val version: Int = 0,
+    val baseCents: Int = 300,
+    val includedMeters: Int = 1500,
+    val extraKmCents: Int = 100
+) {
+    fun valida(): Boolean = version >= 0 && baseCents in 0..10000 &&
+        includedMeters in 1..50000 && extraKmCents in 0..10000
+}
+
+/** Política por distancia; la configuración llega de Firestore sin cambiar el algoritmo. */
 class TarifaPorDistancia(
-    private val tarifaBase: Double = 3.0,
-    private val distanciaIncluidaKm: Double = 1.5,
-    private val costoKmAdicional: Double = 1.0
+    private val configuracion: ConfiguracionTarifaEntrega = ConfiguracionTarifaEntrega()
 ) : EstrategiaTarifaEntrega {
     override fun calcular(distanciaKm: Double): Double {
-        if (distanciaKm <= distanciaIncluidaKm) return tarifaBase
-        val kilometrosAdicionales = ceil(distanciaKm - distanciaIncluidaKm)
-        return tarifaBase + kilometrosAdicionales * costoKmAdicional
+        require(configuracion.valida() && distanciaKm.isFinite() && distanciaKm >= 0.0)
+        val extra = ceil(distanciaKm - configuracion.includedMeters / 1000.0).toInt().coerceAtLeast(0)
+        return (configuracion.baseCents + extra * configuracion.extraKmCents) / 100.0
     }
 }
 

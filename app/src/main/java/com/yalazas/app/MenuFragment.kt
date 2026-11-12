@@ -109,20 +109,36 @@ class MenuFragment : Fragment(R.layout.fragment_menu) {
         productAdapter = AdaptadorProductos(
             isAdminMode = false,
             onItemClick = { product ->
-                HojaDetalleProducto.crear(product)
-                    .show(parentFragmentManager, HojaDetalleProducto.TAG)
+                abrirProducto(product.id) { completo ->
+                    HojaDetalleProducto.crear(completo)
+                        .show(parentFragmentManager, HojaDetalleProducto.TAG)
+                }
             },
             onActionClick = { product, clickedView ->
-                if (product.allowsSauces && product.maxSauces > 0) {
-                    HojaSeleccionSalsas.crear(product)
-                        .show(parentFragmentManager, HojaSeleccionSalsas.TAG)
-                } else {
-                    RepositorioCarrito.agregarProducto(product)
-                    (activity as? MainActivity)?.animarAgregadoAlCarrito(clickedView)
+                abrirProducto(product.id) { completo ->
+                    if (completo.allowsSauces && completo.maxSauces > 0) {
+                        HojaSeleccionSalsas.crear(completo)
+                            .show(parentFragmentManager, HojaSeleccionSalsas.TAG)
+                    } else {
+                        RepositorioCarrito.agregarProducto(completo)
+                        (activity as? MainActivity)?.animarAgregadoAlCarrito(clickedView)
+                    }
                 }
             }
         )
         recyclerView.adapter = productAdapter
+    }
+
+    private fun abrirProducto(id: String, alAbrir: (com.yalazas.app.model.Product) -> Unit) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val completo = modeloVista.completarProducto(id)
+                if (completo != null && isAdded) alAbrir(completo)
+                else if (isAdded) Toast.makeText(requireContext(), "El producto ya no está disponible.", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                if (isAdded) Toast.makeText(requireContext(), "No se pudo cargar el producto. Revisa tu conexión.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     /** Refleja en pantalla la carga, los productos filtrados o un error. */

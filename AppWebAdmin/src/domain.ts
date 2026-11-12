@@ -34,6 +34,7 @@ export interface Pedido {
   isDelivery: boolean;
   deliveryDistanceKm: number;
   deliveryFee: number;
+  deliveryTariffVersion?: number;
   routeOrderIndex: number;
   serviceType: string;
   tableNumber: number;
@@ -96,6 +97,19 @@ export interface Promocion {
   active: boolean;
 }
 
+export interface TarifaDelivery {
+  version: number;
+  baseCents: number;
+  includedMeters: number;
+  extraKmCents: number;
+  updatedAt?: unknown;
+  updatedBy?: string;
+}
+
+export const tarifaPredeterminada: TarifaDelivery = {
+  version: 0, baseCents: 300, includedMeters: 1500, extraKmCents: 100,
+};
+
 export interface Datos {
   pedidos: Pedido[];
   usuarios: Usuario[];
@@ -104,14 +118,18 @@ export interface Datos {
   recetas: Receta[];
   promociones: Promocion[];
   mesas: number[];
+  tarifa: TarifaDelivery;
 }
 
 export const datosVacios: Datos = {
   pedidos: [], usuarios: [], productos: [], insumos: [], recetas: [], promociones: [], mesas: [1, 2, 3, 4, 5],
+  tarifa: tarifaPredeterminada,
 };
 
 export const ESTADOS = ['PENDIENTE', 'EN_PROCESO', 'LISTO_PARA_ENTREGA', 'EN_CAMINO', 'ENTREGADO', 'CANCELADO'] as const;
 export const METODOS = ['EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'] as const;
+export const salsasPredeterminadas = ['Acevichada', 'BBQ Clásica', 'Búfalo Picante', 'Maracuyá Dulce',
+  'Honey Mustard', 'Mango Habanero', 'Ajo Parmesano', 'Tártara Especial'];
 export const ROLES = ['CLIENTE', 'MESERO', 'COCINERO', 'REPARTIDOR', 'ADMINISTRADOR'] as const;
 
 export function fecha(valor: unknown): Date | null {
@@ -163,10 +181,28 @@ export function precioProducto(p: Producto, datos: Datos): number {
   return promo?.offerPrice ?? p.price;
 }
 
+export function motivoRecetaIncompleta(p: Producto, receta: Receta | undefined, insumos: Insumo[]): string | null {
+  if (!receta) return 'Sin receta configurada';
+  if (receta.productId !== p.id) return 'La receta no corresponde al producto';
+  const ids = receta.ingredients.map(i => i.ingredientId);
+  if ((!ids.length && !receta.sauceSlotsMl.length) || ids.some(id => !id) ||
+      new Set(ids).size !== ids.length || receta.ingredients.some(i => !Number.isFinite(i.quantity) || i.quantity <= 0 ||
+        !insumos.some(stock => stock.id === i.ingredientId)) ||
+      (p.allowsSauces && (!receta.sauceSlotsMl.length || p.maxSauces < 1 || receta.sauceSlotsMl.length < p.maxSauces)) ||
+      (!p.allowsSauces && receta.sauceSlotsMl.length > 0) ||
+      receta.sauceSlotsMl.some(ml => !Number.isFinite(ml) || ml <= 0) ||
+      (receta.sauceSlotsMl.length > 0 && !Object.entries(receta.sauceIngredients).some(([nombre, id]) =>
+        (p.availableSauces.length ? p.availableSauces : salsasPredeterminadas).includes(nombre) &&
+        insumos.some(i => i.id === id && i.unit === 'ml')))) return 'Receta incompleta';
+  return null;
+}
+
 export function disponibilidad(p: Producto, datos: Datos): { disponible: boolean; porciones: number; limite: string } {
   if (!p.isAvailable) return { disponible: false, porciones: 0, limite: 'Pausado manualmente' };
   const receta = datos.recetas.find(r => r.productId === p.id);
-  if (!receta) return { disponible: true, porciones: 0, limite: 'Sin receta configurada' };
+  const motivo = motivoRecetaIncompleta(p, receta, datos.insumos);
+  if (motivo) return { disponible: false, porciones: 0, limite: motivo };
+  if (!receta) return { disponible: false, porciones: 0, limite: 'Sin receta configurada' };
   const capacidades = receta.ingredients.map(linea => {
     const i = datos.insumos.find(x => x.id === linea.ingredientId);
     return { nombre: i?.name ?? 'Insumo faltante', porciones: i && linea.quantity > 0 && i.stock >= i.pauseThreshold
@@ -174,7 +210,9 @@ export function disponibilidad(p: Producto, datos: Datos): { disponible: boolean
   });
   if (receta.sauceSlotsMl.length) {
     const primera = receta.sauceSlotsMl[0];
-    const mejores = Object.values(receta.sauceIngredients).map(id => datos.insumos.find(i => i.id === id))
+    const mejores = Object.entries(receta.sauceIngredients)
+      .filter(([nombre]) => (p.availableSauces.length ? p.availableSauces : salsasPredeterminadas).includes(nombre))
+      .map(([, id]) => datos.insumos.find(i => i.id === id))
       .filter((i): i is Insumo => !!i && i.unit === 'ml' && i.stock >= i.pauseThreshold);
     capacidades.push({ nombre: 'Salsas disponibles', porciones: primera > 0 ? Math.max(0, ...mejores.map(i => Math.floor(i.stock / primera))) : 0 });
   }

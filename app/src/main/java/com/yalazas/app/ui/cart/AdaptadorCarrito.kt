@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.yalazas.app.R
 import com.yalazas.app.model.ArticuloCarrito
+import com.yalazas.app.utilidades.ImagenCatalogo
 import java.util.Locale
 
 /** Dibuja cada artículo del carrito y comunica cambios de cantidad. */
@@ -81,8 +82,9 @@ class AdaptadorCarrito(
             price.text = "S/ ${String.format(Locale.US, "%.2f", item.subtotal)}"
             quantity.text = item.quantity.toString()
 
-            image.load(item.product.imageUrl) {
+            image.load(ImagenCatalogo.miniatura(item.product.imageUrl, 160, 160)) {
                 crossfade(true)
+                size(160, 160)
                 placeholder(android.R.color.darker_gray)
                 error(android.R.drawable.ic_menu_report_image)
             }

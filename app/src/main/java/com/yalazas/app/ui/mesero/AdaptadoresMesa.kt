@@ -13,6 +13,7 @@ import com.yalazas.app.databinding.ItemProductoMesaBinding
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
 import com.yalazas.app.model.Product
+import com.yalazas.app.utilidades.ImagenCatalogo
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -87,8 +88,9 @@ class AdaptadorProductosMesa(private val alElegir: (Product) -> Unit) :
                 binding.tvDescripcionProductoMesa.visibility = View.GONE
             }
             if (producto.imageUrl.isNotBlank()) {
-                binding.ivProductoMesa.load(producto.imageUrl) {
+                binding.ivProductoMesa.load(ImagenCatalogo.miniatura(producto.imageUrl, 160, 160)) {
                     crossfade(true)
+                    size(160, 160)
                     placeholder(R.drawable.welcome_food_logo)
                     error(R.drawable.welcome_food_logo)
                 }

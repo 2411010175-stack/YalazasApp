@@ -254,9 +254,8 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
         val catalogoVisible = allProducts.map { producto ->
             val oferta = promociones[producto.id]?.aplicarA(producto) ?: producto
             val receta = recetas[producto.id]
-            if (receta == null) oferta else oferta.copy(
-                isAvailable = oferta.isAvailable && CalculadoraInsumos.evaluarProducto(receta, oferta, insumos).disponible
-            )
+            oferta.copy(isAvailable = oferta.isAvailable &&
+                CalculadoraInsumos.evaluarProducto(receta, oferta, insumos).disponible)
         }
         val filtered = if (lower.isEmpty()) {
             catalogoVisible

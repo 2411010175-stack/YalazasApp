@@ -263,7 +263,11 @@ class MeseroDashboardFragment : Fragment(R.layout.fragment_mesero) {
                 repositorioProductos.observarProductos().collect { resultado ->
                     if (_binding == null) return@collect
                     resultado.onSuccess { catalogo = it; filtrarCatalogo() }
-                        .onFailure { binding.tvSinProductosMesa.text = "No se pudo cargar la carta. Revisa tu conexión." }
+                        .onFailure {
+                            catalogo = emptyList()
+                            filtrarCatalogo()
+                            binding.tvSinProductosMesa.text = "No se pudo verificar el inventario. Revisa tu conexión."
+                        }
                 }
             }
         }

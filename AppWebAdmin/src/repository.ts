@@ -6,13 +6,76 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import {
-  datosVacios, disponibilidad, pedidoAbierto, precioProducto, type Datos, type Insumo,
+  datosVacios, disponibilidad, motivoRecetaIncompleta, pedidoAbierto, precioProducto,
+  salsasPredeterminadas, tarifaPredeterminada, type Datos, type Insumo, type TarifaDelivery,
   type Pedido, type PedidoItem, type Producto, type Receta, type Usuario,
 } from './domain';
 
 function base(): Firestore {
   if (!db) throw new Error('Configura Firebase antes de guardar cambios.');
   return db;
+}
+
+/** Proyección pública sin la descripción extensa; el detalle se lee de products. */
+function tarjetaCatalogo(p: Producto) {
+  return {
+    name: p.name ?? '', tagline: p.tagline ?? '',
+    description: (p.description ?? '').slice(0, 120), price: p.price ?? 0,
+    originalPrice: p.originalPrice ?? 0, isOffer: p.isOffer ?? false, offerTag: p.offerTag ?? '',
+    imageUrl: p.imageUrl ?? '', category: p.category ?? '', isAvailable: p.isAvailable ?? true,
+    allowsSauces: p.allowsSauces ?? false, maxSauces: p.maxSauces ?? 0,
+    availableSauces: p.availableSauces ?? [],
+  };
+}
+
+let migracionCatalogo: Promise<void> | undefined;
+/** El primer ingreso administrativo crea las tarjetas existentes antes de activar su lectura. */
+function prepararCatalogoCompacto(): Promise<void> {
+  if (migracionCatalogo) return migracionCatalogo;
+  migracionCatalogo = (async () => {
+    const firestore = base();
+    const meta = doc(firestore, 'catalog_cards', '_meta');
+    if ((await getDocFromServer(meta)).data()?.ready === true) return;
+    const existentes = await getDocsFromServer(collection(firestore, 'products'));
+    const documentos = existentes.docs;
+    for (let inicio = 0; inicio < documentos.length; inicio += 10) {
+      await Promise.all(documentos.slice(inicio, inicio + 10).map(producto =>
+        runTransaction(firestore, async tx => {
+          const fuente = doc(firestore, 'products', producto.id);
+          const tarjeta = doc(firestore, 'catalog_cards', producto.id);
+          const actual = await tx.get(fuente);
+          if (actual.exists()) tx.set(tarjeta,
+            tarjetaCatalogo({ ...actual.data(), id: actual.id } as Producto));
+          else tx.delete(tarjeta);
+        })));
+    }
+    await setDoc(meta, { ready: true, updatedAt: serverTimestamp() });
+  })().catch(error => { migracionCatalogo = undefined; throw error; });
+  return migracionCatalogo;
+}
+
+async function clavePedidoPOS(uid: string, order: object): Promise<string> {
+  const datos = new TextEncoder().encode(`${uid}:${JSON.stringify(order)}`);
+  const hash = await crypto.subtle.digest('SHA-256', datos);
+  return `yalazas-pedido-${Array.from(new Uint8Array(hash)).map(x => x.toString(16).padStart(2, '0')).join('')}`;
+}
+function urlPedidos(): string {
+  const url = (import.meta.env.VITE_ORDER_API_URL || '').trim();
+  if (url && !url.startsWith('https://')) throw new Error('La API de pedidos debe usar HTTPS.');
+  return url;
+}
+
+async function enviarPedidoApi(payload: object): Promise<{ id: string; total?: number }> {
+  const token = await auth?.currentUser?.getIdToken();
+  if (!token) throw new Error('Inicia sesión para registrar el pedido.');
+  const respuesta = await fetch(urlPedidos(), {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  const datos = await respuesta.json() as { id?: string; total?: number; error?: string };
+  if (!respuesta.ok) throw new Error(datos.error || 'No se pudo registrar el pedido.');
+  if (!datos.id) throw new Error('El servidor no devolvió el código del pedido.');
+  return { id: datos.id, total: datos.total };
 }
 
 export async function entrar(email: string, password: string): Promise<void> {
@@ -43,13 +106,15 @@ export function escucharDatos(alCambiar: (datos: Datos, cargadas: Set<keyof Dato
   const limpiezas: Unsubscribe[] = [];
   const emitir = () => alCambiar({ ...datos }, new Set(cargadas));
 
-  function escucharColeccion<K extends Exclude<keyof Datos, 'mesas'>>(
+  function escucharColeccion<K extends Exclude<keyof Datos, 'mesas' | 'tarifa'>>(
     nombre: string, clave: K, idCampo: string,
   ) {
     limpiezas.push(onSnapshot(collection(firestore, nombre), { includeMetadataChanges: true }, snapshot => {
       if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
       const registros = snapshot.docs.map(documento => ({ ...documento.data(), [idCampo]: documento.id }));
       (datos[clave] as unknown[]) = registros;
+      if (nombre === 'products') void prepararCatalogoCompacto()
+        .catch(error => alError('catalog_cards', error as Error));
       cargadas.add(clave);
       emitir();
     }, error => alError(nombre, error)));
@@ -67,7 +132,39 @@ export function escucharDatos(alCambiar: (datos: Datos, cargadas: Set<keyof Dato
     cargadas.add('mesas');
     emitir();
   }, error => alError('mesas', error)));
+  limpiezas.push(onSnapshot(doc(firestore, 'settings', 'deliveryTariff'),
+    { includeMetadataChanges: true }, snapshot => {
+      if (snapshot.metadata.fromCache || snapshot.metadata.hasPendingWrites) return;
+      datos.tarifa = snapshot.exists() ? snapshot.data() as TarifaDelivery : tarifaPredeterminada;
+      cargadas.add('tarifa');
+      emitir();
+    }, error => alError('tarifa de reparto', error)));
   return () => limpiezas.forEach(limpiar => limpiar());
+}
+
+/** Publica una revisión y conserva su copia histórica en una sola transacción. */
+export async function guardarTarifaDelivery(nueva: TarifaDelivery, adminUid: string): Promise<number> {
+  const campos = [nueva.baseCents, nueva.includedMeters, nueva.extraKmCents];
+  if (!campos.every(Number.isInteger) || nueva.baseCents < 0 || nueva.baseCents > 10000 ||
+    nueva.includedMeters < 1 || nueva.includedMeters > 50000 ||
+    nueva.extraKmCents < 0 || nueva.extraKmCents > 10000) {
+    throw new Error('Revisa los importes y la distancia incluida.');
+  }
+  return runTransaction(base(), async tx => {
+    const actual = doc(base(), 'settings', 'deliveryTariff');
+    const previo = await tx.get(actual);
+    const version = previo.exists() ? Number(previo.data().version) : 0;
+    if (version !== nueva.version) throw new Error('La tarifa cambió en otro panel. Recarga los valores.');
+    const siguiente = version + 1;
+    const historial = doc(base(), 'delivery_tariff_versions', String(siguiente));
+    if ((await tx.get(historial)).exists()) throw new Error('La versión ya existe. Vuelve a cargar.');
+    const datos = { version: siguiente, baseCents: nueva.baseCents,
+      includedMeters: nueva.includedMeters, extraKmCents: nueva.extraKmCents,
+      updatedAt: serverTimestamp(), updatedBy: adminUid };
+    tx.set(actual, datos);
+    tx.set(historial, datos);
+    return siguiente;
+  });
 }
 
 function auditoria(uid: string, usuarioAfectadoId: string, accion: string, antes = '', despues = '') {
@@ -79,6 +176,10 @@ function auditoria(uid: string, usuarioAfectadoId: string, accion: string, antes
 }
 
 export async function cambiarEstadoPedido(id: string, destino: string, uid: string): Promise<void> {
+  if (destino === 'CANCELADO' && urlPedidos()) {
+    await enviarPedidoApi({ action: 'cancel', orderId: id });
+    return;
+  }
   const firestore = base();
   const ref = doc(firestore, 'orders', id);
   const siguientes: Record<string, string[]> = {
@@ -153,11 +254,18 @@ export async function guardarUsuario(objetivo: Usuario, cambios: {
 export async function guardarProducto(p: Producto): Promise<void> {
   if (!p.name.trim() || !Number.isFinite(p.price) || p.price <= 0) throw new Error('Nombre y precio válidos son obligatorios.');
   const ref = p.id ? doc(base(), 'products', p.id) : doc(collection(base(), 'products'));
-  await setDoc(ref, { ...p, id: ref.id, name: p.name.trim(), category: p.category.trim() });
+  const limpio = { ...p, id: ref.id, name: p.name.trim(), category: p.category.trim() };
+  const lote = writeBatch(base());
+  lote.set(ref, limpio);
+  lote.set(doc(base(), 'catalog_cards', ref.id), tarjetaCatalogo(limpio));
+  await lote.commit();
 }
 
 export async function pausarProducto(p: Producto, pausar: boolean): Promise<void> {
-  await updateDoc(doc(base(), 'products', p.id), { isAvailable: !pausar });
+  const lote = writeBatch(base());
+  lote.update(doc(base(), 'products', p.id), { isAvailable: !pausar });
+  lote.set(doc(base(), 'catalog_cards', p.id), { isAvailable: !pausar }, { merge: true });
+  await lote.commit();
 }
 
 export async function eliminarProducto(id: string): Promise<void> {
@@ -165,6 +273,7 @@ export async function eliminarProducto(id: string): Promise<void> {
   lote.delete(doc(base(), 'recipes', id));
   lote.delete(doc(base(), 'promotions', id));
   lote.delete(doc(base(), 'products', id));
+  lote.delete(doc(base(), 'catalog_cards', id));
   await lote.commit();
 }
 
@@ -204,6 +313,15 @@ export async function guardarReceta(r: Receta): Promise<void> {
       r.sauceSlotsMl.some(cantidad => !Number.isFinite(cantidad) || cantidad <= 0)) {
     throw new Error('La receta contiene cantidades inválidas.');
   }
+  const [productoDoc, insumosSnapshot] = await Promise.all([
+    getDocFromServer(doc(base(), 'products', r.productId)),
+    getDocsFromServer(collection(base(), 'ingredients')),
+  ]);
+  if (!productoDoc.exists()) throw new Error('El producto ya no existe.');
+  const producto = { ...productoDoc.data(), id: productoDoc.id } as Producto;
+  const insumosActuales = insumosSnapshot.docs.map(x => ({ ...x.data(), id: x.id } as Insumo));
+  const motivo = motivoRecetaIncompleta(producto, r, insumosActuales);
+  if (motivo) throw new Error(`Completa la receta antes de guardarla: ${motivo}.`);
   await setDoc(doc(base(), 'recipes', r.productId), {
     ...r,
     sauceIngredients: Object.fromEntries(Object.entries(r.sauceIngredients).filter(([, id]) => id)),
@@ -239,13 +357,26 @@ export async function quitarMesa(numero: number): Promise<void> {
 }
 
 export interface LineaPOS { producto: Producto; cantidad: number; salsas: string[]; nota: string }
-const salsasPredeterminadas = ['Acevichada', 'BBQ Clásica', 'Búfalo Picante', 'Maracuyá Dulce',
-  'Honey Mustard', 'Mango Habanero', 'Ajo Parmesano', 'Tártara Especial'];
-
 export async function registrarVentaPOS(lineas: LineaPOS[], metodo: string, recibido: number,
   cliente: string, telefono: string, adminUid: string, datos: Datos): Promise<string> {
   if (!lineas.length) throw new Error('Agrega al menos un producto.');
   if (!['EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA'].includes(metodo)) throw new Error('Selecciona un medio de pago.');
+  if (urlPedidos()) {
+    const expectedTotal = Math.round(lineas.reduce((sum, linea) => sum +
+      (precioProducto(linea.producto, datos) + Math.max(0, linea.salsas.length -
+        (linea.producto.maxSauces || 0))) * linea.cantidad, 0) * 100) / 100;
+    const order = { pos: true, serviceType: 'RETIRO', isDelivery: false,
+      customerName: cliente, phone: telefono, address: 'Mostrador', paymentMethod: metodo,
+      paymentAmount: recibido, expectedTotal,
+      items: lineas.map(linea => ({ productId: linea.producto.id, quantity: linea.cantidad,
+        notes: linea.nota, selectedSauces: linea.salsas })) };
+    const clave = await clavePedidoPOS(adminUid, order);
+    const requestId = localStorage.getItem(clave) || crypto.randomUUID().replaceAll('-', '');
+    localStorage.setItem(clave, requestId);
+    const resultado = await enviarPedidoApi({ action: 'create', order: { ...order, requestId } });
+    localStorage.removeItem(clave);
+    return resultado.id;
+  }
   // Consulta el servidor justo antes del cobro: el catálogo y las existencias pueden cambiar.
   const firestore = base();
   const [catalogo, recetas, insumos, promociones] = await Promise.all([
@@ -270,16 +401,21 @@ export async function registrarVentaPOS(lineas: LineaPOS[], metodo: string, reci
       throw new Error(`El precio de ${producto.name} cambió. Vacía el pedido y vuelve a agregarlo.`);
     }
     const receta = actuales.recetas.find(r => r.productId === producto.id);
+    if (!receta) throw new Error(`Configura la receta de ${producto.name} antes de venderlo.`);
     if (linea.salsas.length !== new Set(linea.salsas).size ||
         linea.salsas.some(s => !(producto.availableSauces.length ? producto.availableSauces : salsasPredeterminadas).includes(s))) {
       throw new Error(`Revisa las salsas de ${producto.name}.`);
     }
-    if (receta?.sauceSlotsMl.length && !linea.salsas.length) throw new Error(`Elige al menos una salsa para ${producto.name}.`);
-    const ingredientes = [...(receta?.ingredients ?? [])];
+    if (receta.sauceSlotsMl.length && !linea.salsas.length) throw new Error(`Elige al menos una salsa para ${producto.name}.`);
+    if (!receta.sauceSlotsMl.length && linea.salsas.length) throw new Error(`${producto.name} no tiene salsas configuradas en su receta.`);
+    const ingredientes = [...receta.ingredients];
     linea.salsas.forEach((salsa, indice) => {
-      if (!receta?.sauceSlotsMl.length) return;
+      if (!receta.sauceSlotsMl.length) return;
       const id = receta.sauceIngredients[salsa];
-      if (!id) throw new Error(`La salsa ${salsa} ya no está disponible.`);
+      const insumoSalsa = actuales.insumos.find(i => i.id === id);
+      if (!insumoSalsa || insumoSalsa.unit !== 'ml' || insumoSalsa.stock < insumoSalsa.pauseThreshold) {
+        throw new Error(`La salsa ${salsa} ya no está disponible.`);
+      }
       ingredientes.push({ ingredientId: id, quantity: receta.sauceSlotsMl[Math.min(indice, receta.sauceSlotsMl.length - 1)] });
     });
     ingredientes.forEach(i => demanda.set(i.ingredientId, (demanda.get(i.ingredientId) ?? 0) + i.quantity * linea.cantidad));

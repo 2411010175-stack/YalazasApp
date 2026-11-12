@@ -13,6 +13,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.yalazas.app.R
 import com.yalazas.app.model.Product
+import com.yalazas.app.utilidades.ImagenCatalogo
 import java.util.Locale
 
 /** Dibuja productos del menú y aplica su presentación visual según disponibilidad y ofertas. */
@@ -101,11 +102,13 @@ class AdaptadorProductos(
             tagline.setTextColor(accent)
 
             description.text = product.description
+            description.visibility = if (product.description.isBlank()) View.GONE else View.VISIBLE
             price.text = "S/ ${String.format(Locale.US, "%.2f", product.price)}"
             price.setTextColor(accent)
 
-            image.load(product.imageUrl) {
+            image.load(ImagenCatalogo.miniatura(product.imageUrl, 320, 320)) {
                 crossfade(true)
+                size(320, 320)
                 placeholder(android.R.color.darker_gray)
                 error(android.R.drawable.ic_menu_report_image)
             }

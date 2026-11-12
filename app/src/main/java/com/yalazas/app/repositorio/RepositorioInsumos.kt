@@ -2,6 +2,7 @@ package com.yalazas.app.repositorio
 
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.yalazas.app.model.Insumo
 import com.yalazas.app.model.RecetaProducto
 import com.yalazas.app.model.Product
@@ -40,11 +41,13 @@ object RepositorioInsumos {
         batch.set(recetas.document(receta.productId), receta)
         if (producto != null && receta.sauceSlotsMl.isNotEmpty() &&
             (!producto.allowsSauces || producto.maxSauces < receta.sauceSlotsMl.size || producto.availableSauces.isEmpty())) {
-            batch.update(db.collection("products").document(producto.id), mapOf(
+            val cambios = mapOf(
                 "allowsSauces" to true,
                 "maxSauces" to maxOf(producto.maxSauces, receta.sauceSlotsMl.size),
                 "availableSauces" to producto.availableSauces.ifEmpty { Product.DEFAULT_YALAZA_SAUCES }
-            ))
+            )
+            batch.update(db.collection("products").document(producto.id), cambios)
+            batch.set(db.collection("catalog_cards").document(producto.id), cambios, SetOptions.merge())
         }
         batch.commit().addOnSuccessListener { onResult(Result.success(Unit)) }
             .addOnFailureListener { onResult(Result.failure(it)) }

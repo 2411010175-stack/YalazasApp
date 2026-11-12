@@ -28,6 +28,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.SetOptions
 import com.yalazas.app.R
 import com.yalazas.app.model.CalculadoraInsumos
 import com.yalazas.app.model.IngredienteReceta
@@ -52,6 +53,8 @@ class AdminInsumosFragment : Fragment(R.layout.fragment_admin_insumos) {
     private var productos = emptyList<Product>()
     private var vistaActiva: View? = null
     private var insumosCargados = false
+    private var recetasCargadas = false
+    private var productosCargados = false
     private var filtro = Filtro.TODOS
 
     private enum class Filtro { TODOS, BAJOS, AGOTADOS }
@@ -82,7 +85,7 @@ class AdminInsumosFragment : Fragment(R.layout.fragment_admin_insumos) {
             { insumos = it.sortedBy(Insumo::name); insumosCargados = true; dibujar() }, ::mostrarError
         )
         registros += RepositorioInsumos.escucharRecetas(
-            { recetas = it; dibujar() }, ::mostrarError
+            { recetas = it; recetasCargadas = true; dibujar() }, ::mostrarError
         )
         registros += db.collection("products").addSnapshotListener { snapshot, error ->
             if (error != null) mostrarError(error)
@@ -90,6 +93,7 @@ class AdminInsumosFragment : Fragment(R.layout.fragment_admin_insumos) {
                 productos = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(Product::class.java)?.apply { id = doc.id }
                 }.sortedBy(Product::name)
+                productosCargados = true
                 dibujar()
             }
         }
@@ -199,12 +203,28 @@ class AdminInsumosFragment : Fragment(R.layout.fragment_admin_insumos) {
     private fun dibujarRecetas() {
         val root = vistaActiva ?: return
         val contenedor = root.findViewById<LinearLayout>(R.id.contenedorRecetas)
+        if (!insumosCargados || !recetasCargadas || !productosCargados) return
         contenedor.removeAllViews()
+        val porId = insumos.associateBy(Insumo::id)
+        val pendientes = productos.mapNotNull { producto ->
+            CalculadoraInsumos.motivoRecetaIncompleta(
+                recetas.firstOrNull { it.productId == producto.id }, producto, porId
+            )?.let { producto to it }
+        }
+        if (pendientes.isNotEmpty()) {
+            contenedor.addView(tarjetaMensaje(
+                "${pendientes.size} producto(s) aún no pueden mostrarse en la carta. " +
+                    "Configura o corrige sus recetas:"
+            ))
+            pendientes.forEach { (producto, motivo) ->
+                contenedor.addView(filaSeleccion(producto.name,
+                    "$motivo · Toca para configurar la receta") { dialogoReceta(producto) })
+            }
+        }
         if (recetas.isEmpty()) {
             contenedor.addView(tarjetaMensaje("Aún no hay recetas configuradas. Cada receta permitirá calcular porciones y pausar platos."))
             return
         }
-        val porId = insumos.associateBy(Insumo::id)
         recetas.sortedBy { receta -> productos.firstOrNull { it.id == receta.productId }?.name.orEmpty() }.forEach { receta ->
             val producto = productos.firstOrNull { it.id == receta.productId }
             val resultado = if (producto == null) CalculadoraInsumos.evaluar(receta, porId)
@@ -582,9 +602,17 @@ class AdminInsumosFragment : Fragment(R.layout.fragment_admin_insumos) {
                 aviso("Agrega insumos fijos o vincula al menos una salsa.")
             } else if (admiteSalsas && mapeo.isEmpty()) {
                 aviso("Vincula al menos una salsa con un insumo en ml.")
-            } else guardar(boton, hoja) { fin ->
-                RepositorioInsumos.guardarReceta(RecetaProducto(producto.id, lineas,
-                    volumenes.filterNotNull(), mapeo), fin, producto)
+            } else {
+                val nuevaReceta = RecetaProducto(producto.id, lineas, volumenes.filterNotNull(), mapeo)
+                val productoConfigurado = if (admiteSalsas) producto.copy(
+                    allowsSauces = true, maxSauces = maxOf(producto.maxSauces, numeroSalsas)
+                ) else producto
+                val motivo = CalculadoraInsumos.motivoRecetaIncompleta(
+                    nuevaReceta, productoConfigurado, insumos.associateBy(Insumo::id))
+                if (motivo != null) aviso("Completa la receta antes de guardarla: $motivo")
+                else guardar(boton, hoja) { fin ->
+                    RepositorioInsumos.guardarReceta(nuevaReceta, fin, producto)
+                }
             }
         }, LinearLayout.LayoutParams(0, dp(52), if (actual == null) 1f else 1.45f))
         mostrar(hoja)
@@ -690,11 +718,17 @@ class AdminInsumosFragment : Fragment(R.layout.fragment_admin_insumos) {
         ))
         if (numeroSalsas > 0 && (!producto.allowsSauces ||
                 producto.maxSauces < numeroSalsas || producto.availableSauces.isEmpty())) {
+            val opciones = opcionesSalsa(producto)
             batch.update(db.collection("products").document(producto.id), mapOf(
                 "allowsSauces" to true,
                 "maxSauces" to maxOf(producto.maxSauces, numeroSalsas),
-                "availableSauces" to opcionesSalsa(producto)
+                "availableSauces" to opciones
             ))
+            batch.set(db.collection("catalog_cards").document(producto.id), mapOf(
+                "allowsSauces" to true,
+                "maxSauces" to maxOf(producto.maxSauces, numeroSalsas),
+                "availableSauces" to opciones
+            ), SetOptions.merge())
         }
         batch.commit().addOnSuccessListener { if (isAdded) aviso("Receta creada. Registra el stock para publicar el plato.") }
             .addOnFailureListener { if (isAdded) mostrarError(it) }

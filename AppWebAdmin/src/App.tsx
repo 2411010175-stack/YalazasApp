@@ -136,7 +136,7 @@ export default function App() {
   if (revisando) return <div className="cargando"><div><div className="spinner-border text-danger mb-3" role="status" /><div>Verificando acceso de administración…</div></div></div>;
   if (!perfil) return usuario ? <div className="login-panel min-vh-100"><div className="login-form text-center"><Marca /><h2 className="mt-4">Acceso restringido</h2><p className="text-secondary">{accesoError || 'Esta cuenta no puede abrir el panel.'}</p><button className={botonRosa} onClick={() => void salir()}>Cerrar sesión</button></div></div> : <Login error={accesoError} onEntrar={login} />;
 
-  const listo = demo || ['pedidos', 'usuarios', 'productos', 'insumos', 'recetas', 'mesas'].every(x => cargadas.has(x as keyof Datos));
+  const listo = demo || ['pedidos', 'usuarios', 'productos', 'insumos', 'recetas', 'mesas', 'tarifa'].every(x => cargadas.has(x as keyof Datos));
   const props = { datos, uid: perfil.uid, demo, ejecutar, ir };
   return <div className="app">
     <Sidebar pagina={pagina} ir={ir} abierto={menuAbierto} cerrar={() => setMenuAbierto(false)} avisos={m.revisiones} />

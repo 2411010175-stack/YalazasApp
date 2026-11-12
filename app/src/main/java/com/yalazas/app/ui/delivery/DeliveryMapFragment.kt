@@ -303,7 +303,7 @@ class DeliveryMapFragment : Fragment(R.layout.fragment_delivery_map) {
         } else {
             0.0
         }
-        val fee = if (order.deliveryFee > 0) order.deliveryFee else CalculadoraTarifaEntrega.calcularTarifaEntrega(distKm, order.isDelivery)
+        val fee = order.deliveryFee
         if (distKm > 0) {
             val distStr = CalculadoraTarifaEntrega.formatearDistancia(distKm)
             binding.tvPreviewDistanceFee.text = "📏 $distStr • Costo Envío: S/ %.2f".format(Locale.getDefault(), fee)

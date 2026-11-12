@@ -31,9 +31,10 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
         longitud: Double,
         esDelivery: Boolean,
         distanciaKm: Double,
-        tarifa: Double
+        tarifa: Double,
+        tarifaVersion: Int = 0
     ) = apply {
-        entrega = DatosEntrega(direccion, referencia, latitud, longitud, esDelivery, distanciaKm, tarifa)
+        entrega = DatosEntrega(direccion, referencia, latitud, longitud, esDelivery, distanciaKm, tarifa, tarifaVersion)
     }
 
     fun agregarComentario(nuevoComentario: String) = apply {
@@ -51,7 +52,7 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
         tipoServicio = "MESA"
         numeroMesa = mesa
         nombreCliente = cliente.trim()
-        entrega = DatosEntrega("Mesa $mesa", "Salón", 0.0, 0.0, false, 0.0, 0.0)
+        entrega = DatosEntrega("Mesa $mesa", "Salón", 0.0, 0.0, false, 0.0, 0.0, 0)
         pago = DatosPago("POR_DEFINIR", 0.0)
     }
 
@@ -81,6 +82,7 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
             isDelivery = datosEntrega.esDelivery,
             deliveryDistanceKm = datosEntrega.distanciaKm,
             deliveryFee = datosEntrega.tarifa,
+            deliveryTariffVersion = datosEntrega.tarifaVersion,
             serviceType = tipoServicio.ifBlank { if (datosEntrega.esDelivery) "DELIVERY" else "RETIRO" },
             tableNumber = numeroMesa,
             customerName = nombreCliente
@@ -99,7 +101,8 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
         val longitud: Double,
         val esDelivery: Boolean,
         val distanciaKm: Double,
-        val tarifa: Double
+        val tarifa: Double,
+        val tarifaVersion: Int
     )
 
     private data class DatosPago(val metodo: String, val montoEfectivo: Double)

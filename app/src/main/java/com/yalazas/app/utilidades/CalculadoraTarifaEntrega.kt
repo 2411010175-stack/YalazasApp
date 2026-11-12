@@ -15,7 +15,6 @@ object CalculadoraTarifaEntrega {
     const val NOMBRE_LOCAL = "Yalazas Fast Food - Local Central"
     const val DIRECCION_LOCAL = "Av. Ramos 318, Imperial, Cañete"
 
-    private val tarifaDelivery: EstrategiaTarifaEntrega = TarifaPorDistancia()
     private val tarifaRecojo: EstrategiaTarifaEntrega = TarifaRetiroEnLocal
 
     /**
@@ -45,8 +44,11 @@ object CalculadoraTarifaEntrega {
     }
 
     /** Selecciona la estrategia según la modalidad sin cambiar a quienes llaman este método. */
-    fun calcularTarifaEntrega(distanceKm: Double, isDelivery: Boolean): Double {
-        val estrategia = if (isDelivery) tarifaDelivery else tarifaRecojo
+    fun calcularTarifaEntrega(
+        distanceKm: Double, isDelivery: Boolean,
+        configuracion: ConfiguracionTarifaEntrega = ConfiguracionTarifaEntrega()
+    ): Double {
+        val estrategia = if (isDelivery) TarifaPorDistancia(configuracion) else tarifaRecojo
         return calcularTarifaEntrega(distanceKm, estrategia)
     }
 

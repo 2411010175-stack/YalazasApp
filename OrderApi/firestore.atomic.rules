@@ -1,0 +1,486 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(profilePath());
+    }
+
+    function accountEnabled() {
+      return signedIn() && (!hasProfile() || get(profilePath()).data.get('active', true) == true);
+    }
+
+    function hasRole(role) {
+      return hasProfile()
+        && get(profilePath()).data.get('active', true) == true
+        && get(profilePath()).data.get('role', 'CLIENTE') == role;
+    }
+
+    function admin() {
+      return hasRole('ADMIN') || hasRole('ADMINISTRADOR');
+    }
+
+    function driver() {
+      return hasRole('REPARTIDOR');
+    }
+
+    function kitchen() {
+      return hasRole('COCINERO');
+    }
+
+    function waiter() {
+      return hasRole('MESERO');
+    }
+
+    function validRole(role) {
+      return role in ['ADMIN', 'ADMINISTRADOR', 'COCINERO', 'MESERO', 'REPARTIDOR', 'CLIENTE'];
+    }
+
+    function nextStatus(from, to) {
+      return (from == 'PENDIENTE' && to in ['EN_PROCESO', 'CANCELADO'])
+        || (from == 'EN_PROCESO' && to in ['LISTO_PARA_ENTREGA', 'CANCELADO'])
+        || (from == 'LISTO_PARA_ENTREGA' && to in ['EN_CAMINO', 'CANCELADO'])
+        || (from == 'EN_CAMINO' && to in ['ENTREGADO', 'CANCELADO']);
+    }
+
+    function statusFieldsOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
+    function validDeliveryTariff() {
+      return request.resource.data.keys().hasOnly([
+          'version', 'baseCents', 'includedMeters', 'extraKmCents', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.keys().hasAll([
+          'version', 'baseCents', 'includedMeters', 'extraKmCents', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.version is int
+        && request.resource.data.version >= 1
+        && request.resource.data.baseCents is int
+        && request.resource.data.baseCents >= 0
+        && request.resource.data.baseCents <= 10000
+        && request.resource.data.includedMeters is int
+        && request.resource.data.includedMeters >= 1
+        && request.resource.data.includedMeters <= 50000
+        && request.resource.data.extraKmCents is int
+        && request.resource.data.extraKmCents >= 0
+        && request.resource.data.extraKmCents <= 10000
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function versionTarifaRegistrada() {
+      let ruta = /databases/$(database)/documents/delivery_tariff_versions/$(request.resource.data.version);
+      return !exists(ruta) && existsAfter(ruta)
+        && getAfter(ruta).data == request.resource.data;
+    }
+
+    match /users/{userId} {
+      allow get: if admin() || (signedIn() && request.auth.uid == userId);
+      allow list: if admin();
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'CLIENTE'
+        && request.resource.data.active == true
+        && request.resource.data.get('vehicleType', '') == ''
+        && request.resource.data.get('vehiclePlate', '') == ''
+        && request.resource.data.get('vehicleModel', '') == '';
+      allow update: if (
+        signedIn()
+        && request.auth.uid == userId
+        && resource.data.get('active', true) == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'phone', 'address', 'reference', 'latitude', 'longitude', 'updatedAt'
+        ])
+      ) || (
+        admin()
+        && request.auth.uid != userId
+        && request.resource.data.uid == userId
+        && validRole(request.resource.data.role)
+        && request.resource.data.active is bool
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'uid', 'role', 'active', 'updatedAt',
+          'vehicleType', 'vehiclePlate', 'vehicleModel'
+        ])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'vehicleType', 'vehiclePlate', 'vehicleModel'
+        ]) || (
+          request.resource.data.role == 'REPARTIDOR'
+          && request.resource.data.vehicleType is string
+          && request.resource.data.vehicleType.size() <= 40
+          && request.resource.data.vehiclePlate is string
+          && request.resource.data.vehiclePlate.size() <= 20
+          && request.resource.data.vehicleModel is string
+          && request.resource.data.vehicleModel.size() <= 60
+          && ((request.resource.data.vehicleType == ''
+              && request.resource.data.vehiclePlate == ''
+              && request.resource.data.vehicleModel == '')
+            || (request.resource.data.vehicleType != ''
+              && request.resource.data.vehiclePlate != ''))
+        ))
+      );
+      allow delete: if false;
+
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if admin();
+    }
+
+    match /catalog_cards/{cardId} {
+      allow read: if true;
+      allow create, update, delete: if admin();
+    }
+
+    // Administración define las mesas; el mesero solo consulta la lista vigente.
+    match /settings/{settingId} {
+      allow get: if (settingId == 'salon' && (admin() || waiter()))
+        || (settingId == 'deliveryTariff' && signedIn());
+      allow list, delete: if false;
+      allow create, update: if settingId == 'salon'
+        && admin()
+        && request.resource.data.keys().hasOnly(['tableNumbers', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['tableNumbers', 'updatedAt'])
+        && request.resource.data.tableNumbers is list
+        && request.resource.data.tableNumbers.size() <= 200
+        && request.resource.data.updatedAt == request.time;
+      allow create: if settingId == 'deliveryTariff' && admin()
+        && validDeliveryTariff() && request.resource.data.version == 1
+        && versionTarifaRegistrada();
+      allow update: if settingId == 'deliveryTariff' && admin()
+        && validDeliveryTariff() && request.resource.data.version == resource.data.version + 1
+        && versionTarifaRegistrada();
+    }
+
+    match /delivery_tariff_versions/{versionId} {
+      allow get, list: if admin();
+      allow create: if admin() && validDeliveryTariff()
+        && getAfter(/databases/$(database)/documents/settings/deliveryTariff).data == request.resource.data;
+      allow update, delete: if false;
+    }
+
+    // La carta necesita leer existencias y recetas para ocultar platos agotados.
+    // Solo administración puede modificar stock, umbrales y cantidades de receta.
+    match /ingredients/{ingredientId} {
+      allow read: if signedIn();
+      allow create, update: if admin()
+        && request.resource.data.id == ingredientId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.unit in ['u', 'g', 'ml']
+        && request.resource.data.stock is number
+        && request.resource.data.stock >= 0
+        && request.resource.data.lowThreshold is number
+        && request.resource.data.lowThreshold >= 0
+        && request.resource.data.pauseThreshold is number
+        && request.resource.data.pauseThreshold >= 0;
+      allow delete: if admin();
+    }
+
+    match /recipes/{productId} {
+      allow read: if signedIn();
+      allow create, update: if admin()
+        && request.resource.data.productId == productId
+        && exists(/databases/$(database)/documents/products/$(productId))
+        && request.resource.data.ingredients is list
+        && request.resource.data.ingredients.size() <= 30
+        && request.resource.data.get('sauceSlotsMl', []) is list
+        && request.resource.data.get('sauceSlotsMl', []).size() <= 8
+        && request.resource.data.get('sauceIngredients', {}) is map
+        && (request.resource.data.ingredients.size() > 0
+            || request.resource.data.get('sauceSlotsMl', []).size() > 0);
+      allow delete: if admin();
+    }
+
+    // Las promociones de productos existentes se guardan fuera del producto base.
+    match /promotions/{productId} {
+      allow read: if true;
+      allow create, update: if admin()
+        && exists(/databases/$(database)/documents/products/$(productId))
+        && request.resource.data.keys().hasOnly(['productId', 'offerPrice', 'offerTag', 'active'])
+        && request.resource.data.keys().hasAll(['productId', 'offerPrice', 'offerTag', 'active'])
+        && request.resource.data.productId == productId
+        && request.resource.data.offerPrice is number
+        && request.resource.data.offerPrice > 0
+        && request.resource.data.offerPrice < get(/databases/$(database)/documents/products/$(productId)).data.price
+        && request.resource.data.offerTag is string
+        && request.resource.data.offerTag.size() <= 40
+        && request.resource.data.active is bool;
+      allow delete: if admin();
+    }
+
+    match /orders/{orderId} {
+      allow get: if admin()
+        || (accountEnabled() && resource.data.userId == request.auth.uid)
+        || (kitchen() && resource.data.status in ['PENDIENTE', 'EN_PROCESO', 'LISTO_PARA_ENTREGA'])
+        || (waiter() && resource.data.get('serviceType', '') == 'MESA')
+        || (driver() && resource.data.isDelivery == true);
+      // Las consultas del cliente deben filtrar por userId; las del repartidor, por isDelivery.
+      allow list: if admin()
+        || (accountEnabled() && resource.data.userId == request.auth.uid)
+        || (kitchen() && resource.data.status in ['PENDIENTE', 'EN_PROCESO', 'LISTO_PARA_ENTREGA'])
+        || (waiter() && resource.data.get('serviceType', '') == 'MESA')
+        || (driver() && resource.data.isDelivery == true);
+
+      // Activar solamente después de publicar OrderApi y configurar sus clientes.
+      // Las escrituras del Admin SDK pasan por la API y no por estas reglas.
+      allow create: if false && accountEnabled()
+        && request.resource.data.keys().hasAll([
+          'userId', 'customerName', 'phone', 'address', 'total', 'items',
+          'status', 'paymentMethod', 'paymentAmount', 'paymentChange',
+          'paymentStatus', 'isDelivery', 'deliveryDistanceKm', 'deliveryFee',
+          'timestamp', 'deliveryDriverId', 'deliveryDriverName',
+          'deliveryDriverPhone', 'routeOrderIndex'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PENDIENTE'
+        && (
+          (request.resource.data.paymentStatus == 'PENDIENTE'
+            && request.resource.data.paymentMethod in ['EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA', 'POR_DEFINIR']
+            && request.resource.data.get('paymentVerifiedBy', '') == ''
+            && !request.resource.data.keys().hasAny(['paymentVerifiedAt']))
+          || (
+            // El POS web registra el cobro presencial, pero deja el pedido pendiente para cocina.
+            admin()
+            && request.resource.data.get('serviceType', '') == 'RETIRO'
+            && request.resource.data.isDelivery == false
+            && request.resource.data.paymentStatus == 'PAGADO'
+            && request.resource.data.paymentMethod in ['EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA']
+            && request.resource.data.get('paymentProofStatus', '') == ''
+            && request.resource.data.paymentVerifiedBy == request.auth.uid
+            && request.resource.data.paymentVerifiedAt == request.time
+            && request.resource.data.paymentAmount >= request.resource.data.total
+            && ((request.resource.data.paymentMethod == 'EFECTIVO'
+                && request.resource.data.paymentChange == request.resource.data.paymentAmount - request.resource.data.total)
+              || (request.resource.data.paymentMethod != 'EFECTIVO'
+                && request.resource.data.paymentAmount == request.resource.data.total
+                && request.resource.data.paymentChange == 0))
+          )
+        )
+        && request.resource.data.deliveryDriverId == ''
+        && request.resource.data.deliveryDriverName == ''
+        && request.resource.data.deliveryDriverPhone == ''
+        && request.resource.data.routeOrderIndex == 0
+        && request.resource.data.isDelivery is bool
+        && request.resource.data.total is number
+        && request.resource.data.total > 0
+        && request.resource.data.paymentAmount is number
+        && request.resource.data.paymentAmount >= 0
+        && request.resource.data.paymentChange is number
+        && request.resource.data.paymentChange >= 0
+        && request.resource.data.deliveryDistanceKm is number
+        && request.resource.data.deliveryDistanceKm >= 0
+        && request.resource.data.deliveryFee is number
+        && request.resource.data.deliveryFee >= 0
+        && (request.resource.data.isDelivery == true || request.resource.data.deliveryFee == 0)
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 50
+        && request.resource.data.timestamp == request.time
+        && (
+          (request.resource.data.get('serviceType', '') == 'MESA'
+            && waiter()
+            && request.resource.data.get('tableNumber', 0) is int
+            && request.resource.data.tableNumber > 0
+            && request.resource.data.tableNumber <= 200
+            && ((!exists(/databases/$(database)/documents/settings/salon)
+                && request.resource.data.tableNumber in [1, 2, 3, 4, 5])
+              || (exists(/databases/$(database)/documents/settings/salon)
+                && request.resource.data.tableNumber in
+                  get(/databases/$(database)/documents/settings/salon).data.tableNumbers))
+            && request.resource.data.get('waiterId', '') == request.auth.uid
+            && request.resource.data.get('waiterName', '') is string
+            && request.resource.data.isDelivery == false
+            && request.resource.data.deliveryDistanceKm == 0
+            && request.resource.data.deliveryFee == 0
+            && request.resource.data.paymentMethod == 'POR_DEFINIR'
+            && request.resource.data.paymentAmount == 0
+            && request.resource.data.paymentChange == 0
+            && request.resource.data.get('paymentVerifiedBy', '') == '')
+          || (request.resource.data.get('serviceType', '') in ['', 'DELIVERY', 'RETIRO']
+            && request.resource.data.get('tableNumber', 0) == 0
+            && request.resource.data.get('waiterId', '') == ''
+            && request.resource.data.paymentMethod != 'POR_DEFINIR')
+        );
+
+      // Los pedidos gestionados por la API solo pueden cancelarse a través de ella,
+      // para que la devolución de insumos ocurra en la misma transacción.
+      allow update: if (resource.data.get('inventoryVersion', 0) != 1
+        || request.resource.data.status != 'CANCELADO') && ((
+        admin()
+        && statusFieldsOnly()
+        && nextStatus(resource.data.status, request.resource.data.status)
+        && (resource.data.get('serviceType', '') != 'MESA' || request.resource.data.status == 'CANCELADO')
+      ) || (
+        kitchen()
+        && statusFieldsOnly()
+        && ((resource.data.status == 'PENDIENTE' && request.resource.data.status == 'EN_PROCESO')
+          || (resource.data.status == 'EN_PROCESO' && request.resource.data.status == 'LISTO_PARA_ENTREGA')
+          || (resource.data.status == 'LISTO_PARA_ENTREGA' && request.resource.data.status == 'EN_PROCESO'))
+      ) || (
+        accountEnabled()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status == 'PENDIENTE'
+        && resource.data.get('serviceType', '') != 'MESA'
+        && request.resource.data.status == 'CANCELADO'
+        && statusFieldsOnly()
+      ) || (
+        // Subida atómica: el cliente no puede marcar la revisión sin enviar bytes nuevos.
+        accountEnabled()
+        && resource.data.userId == request.auth.uid
+        && resource.data.paymentMethod in ['YAPE', 'PLIN', 'TRANSFERENCIA']
+        && resource.data.paymentStatus == 'PENDIENTE'
+        && resource.data.status != 'CANCELADO'
+        && resource.data.get('paymentProofStatus', '') in ['', 'RECHAZADO']
+        && request.resource.data.paymentProofStatus == 'EN_REVISION'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentProofStatus'])
+        && getAfter(/databases/$(database)/documents/orders/$(orderId)/privado/comprobante).data.subidoPor == request.auth.uid
+        && getAfter(/databases/$(database)/documents/orders/$(orderId)/privado/comprobante).data.subidoEn == request.time
+      ) || (
+        // Solo administración confirma dinero recibido o solicita otro comprobante.
+        admin()
+        && resource.data.paymentMethod in ['YAPE', 'PLIN', 'TRANSFERENCIA']
+        && resource.data.paymentStatus == 'PENDIENTE'
+        && resource.data.status != 'CANCELADO'
+        && resource.data.get('paymentProofStatus', '') == 'EN_REVISION'
+        && exists(/databases/$(database)/documents/orders/$(orderId)/privado/comprobante)
+        && request.resource.data.paymentProofStatus in ['APROBADO', 'RECHAZADO']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'paymentProofStatus', 'paymentStatus', 'paymentVerifiedBy', 'paymentVerifiedAt'
+        ])
+        && ((request.resource.data.paymentProofStatus == 'RECHAZADO'
+            && request.resource.data.paymentStatus == 'PENDIENTE'
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['paymentVerifiedBy', 'paymentVerifiedAt']))
+          || (request.resource.data.paymentProofStatus == 'APROBADO'
+            && request.resource.data.paymentStatus == 'PAGADO'
+            && request.resource.data.paymentVerifiedBy == request.auth.uid
+            && request.resource.data.paymentVerifiedAt == request.time))
+      ) || (
+        waiter()
+        && resource.data.get('serviceType', '') == 'MESA'
+        && resource.data.isDelivery == false
+        && resource.data.status == 'LISTO_PARA_ENTREGA'
+        && resource.data.paymentStatus == 'PENDIENTE'
+        && request.resource.data.status == 'ENTREGADO'
+        && request.resource.data.paymentStatus == 'PAGADO'
+        && request.resource.data.paymentMethod in ['EFECTIVO', 'YAPE', 'PLIN', 'TRANSFERENCIA', 'TARJETA']
+        && request.resource.data.paymentVerifiedBy == request.auth.uid
+        && request.resource.data.paymentVerifiedAt == request.time
+        && request.resource.data.paymentAmount is number
+        && request.resource.data.paymentChange is number
+        && ((request.resource.data.paymentMethod == 'EFECTIVO'
+          && request.resource.data.paymentAmount >= resource.data.total
+          && request.resource.data.paymentChange == request.resource.data.paymentAmount - resource.data.total)
+          || (request.resource.data.paymentMethod != 'EFECTIVO'
+            && request.resource.data.paymentAmount == resource.data.total
+            && request.resource.data.paymentChange == 0))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'paymentStatus', 'paymentMethod', 'paymentAmount',
+          'paymentChange', 'paymentVerifiedBy', 'paymentVerifiedAt', 'updatedAt'
+        ])
+      ) || (
+        driver()
+        && resource.data.isDelivery == true
+        && resource.data.status == 'LISTO_PARA_ENTREGA'
+        && resource.data.deliveryDriverId == ''
+        && request.resource.data.status == 'EN_CAMINO'
+        && request.resource.data.deliveryDriverId == request.auth.uid
+        && request.resource.data.routeOrderIndex is int
+        && request.resource.data.routeOrderIndex > 0
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'deliveryDriverId', 'deliveryDriverName',
+          'deliveryDriverPhone', 'routeOrderIndex'
+        ])
+      ) || (
+        driver()
+        && resource.data.isDelivery == true
+        && resource.data.status == 'EN_CAMINO'
+        && resource.data.deliveryDriverId == request.auth.uid
+        && request.resource.data.status == 'ENTREGADO'
+        && (
+          (resource.data.paymentMethod == 'EFECTIVO'
+            && resource.data.paymentStatus == 'PENDIENTE'
+            && request.resource.data.paymentStatus == 'PAGADO'
+            && request.resource.data.paymentVerifiedBy == request.auth.uid
+            && request.resource.data.paymentVerifiedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'paymentStatus', 'paymentVerifiedBy', 'paymentVerifiedAt'
+            ]))
+          || (resource.data.paymentMethod in ['YAPE', 'PLIN', 'TRANSFERENCIA']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        )
+      ));
+      allow delete: if false;
+
+      // El Blob queda separado del pedido; cocina y reparto nunca leen esta ruta.
+      match /privado/{documento} {
+        allow get: if documento == 'comprobante' && (
+          admin() || (accountEnabled() && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid)
+        );
+        allow list, delete: if false;
+        allow create, update: if documento == 'comprobante'
+          && accountEnabled()
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.paymentMethod in ['YAPE', 'PLIN', 'TRANSFERENCIA']
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.paymentStatus == 'PENDIENTE'
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.status != 'CANCELADO'
+          && get(/databases/$(database)/documents/orders/$(orderId)).data.get('paymentProofStatus', '') in ['', 'RECHAZADO']
+          && getAfter(/databases/$(database)/documents/orders/$(orderId)).data.paymentProofStatus == 'EN_REVISION'
+          && request.resource.data.keys().hasOnly(['imagen', 'mime', 'subidoPor', 'subidoEn'])
+          && request.resource.data.keys().hasAll(['imagen', 'mime', 'subidoPor', 'subidoEn'])
+          && request.resource.data.imagen is bytes
+          && request.resource.data.imagen.size() > 0
+          && request.resource.data.imagen.size() <= 716800
+          && request.resource.data.mime == 'image/jpeg'
+          && request.resource.data.subidoPor == request.auth.uid
+          && request.resource.data.subidoEn == request.time;
+      }
+
+      // Posición del repartidor por pedido: el cliente solo ve su entrega activa.
+      match /tracking/{trackingId} {
+        function pedido() {
+          return get(/databases/$(database)/documents/orders/$(orderId)).data;
+        }
+
+        allow get: if trackingId == 'actual' && (
+          admin() || (accountEnabled() && pedido().userId == request.auth.uid && pedido().status == 'EN_CAMINO')
+        );
+        allow list: if false;
+        allow create, update: if trackingId == 'actual'
+          && driver()
+          && pedido().isDelivery == true
+          && pedido().status == 'EN_CAMINO'
+          && pedido().deliveryDriverId == request.auth.uid
+          && request.resource.data.keys().hasOnly(['latitude', 'longitude', 'accuracyMeters', 'updatedAt'])
+          && request.resource.data.keys().hasAll(['latitude', 'longitude', 'accuracyMeters', 'updatedAt'])
+          && request.resource.data.latitude is number
+          && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
+          && request.resource.data.longitude is number
+          && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180
+          && request.resource.data.accuracyMeters is number
+          && request.resource.data.accuracyMeters >= 0 && request.resource.data.accuracyMeters <= 200
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if false;
+      }
+    }
+
+    match /auditoria/{logId} {
+      allow read, create: if admin();
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

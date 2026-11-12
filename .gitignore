@@ -23,6 +23,10 @@ settings.local.json
 /functions/.env*
 !/functions/.env.example
 /functions/.secret.local
+/OrderApi/node_modules/
+/OrderApi/.env
+/OrderApi/*.json.key
+/OrderApi/service-account*.json
 /AppWebAdmin/node_modules/
 /AppWebAdmin/dist/
 /AppWebAdmin/*.tsbuildinfo

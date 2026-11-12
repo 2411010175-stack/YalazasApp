@@ -26,4 +26,14 @@ class EstrategiaTarifaEntregaTest {
 
         assertEquals(2.0, CalculadoraTarifaEntrega.calcularTarifaEntrega(8.0, tarifaPromocional), 0.001)
     }
+
+    @Test
+    fun laVersionPublicadaCambiaElImporteSinCambiarLaEstrategia() {
+        val configuracion = ConfiguracionTarifaEntrega(
+            version = 2, baseCents = 450, includedMeters = 2000, extraKmCents = 125
+        )
+        assertEquals(4.50, CalculadoraTarifaEntrega.calcularTarifaEntrega(2.0, true, configuracion), 0.001)
+        assertEquals(5.75, CalculadoraTarifaEntrega.calcularTarifaEntrega(2.001, true, configuracion), 0.001)
+        assertEquals(0.0, CalculadoraTarifaEntrega.calcularTarifaEntrega(8.0, false, configuracion), 0.001)
+    }
 }

@@ -2,10 +2,10 @@ package com.yalazas.app.repositorio
 
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Source
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.yalazas.app.model.CalculadoraInsumos
 import com.yalazas.app.model.Insumo
 import com.yalazas.app.model.RecetaProducto
+import com.yalazas.app.model.Product
 import com.yalazas.app.model.ArticuloCarrito
 import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderStatus
@@ -28,6 +28,7 @@ data class SolicitudPedido(
     val isDelivery: Boolean,
     val deliveryDistanceKm: Double,
     val deliveryFee: Double,
+    val deliveryTariffVersion: Int = 0,
     val serviceType: String = "",
     val tableNumber: Int = 0,
     val customerName: String = ""
@@ -67,6 +68,14 @@ object RepositorioPedidos {
             return
         }
 
+        if (ApiPedidosAtomicos.configurada) {
+            ApiPedidosAtomicos.crear(request) { resultado ->
+                resultado.onSuccess { if (request.serviceType != "MESA") RepositorioCarrito.vaciarCarrito() }
+                onResult(resultado)
+            }
+            return
+        }
+
         val profile = request.profile
         val total = request.totalAmount
         val enMesa = request.serviceType == "MESA"
@@ -96,6 +105,7 @@ object RepositorioPedidos {
             "isDelivery" to request.isDelivery,
             "deliveryDistanceKm" to request.deliveryDistanceKm,
             "deliveryFee" to request.deliveryFee,
+            "deliveryTariffVersion" to request.deliveryTariffVersion,
             "routeOrderIndex" to 0,
             "serviceType" to request.serviceType.ifBlank { if (request.isDelivery) "DELIVERY" else "RETIRO" },
             "tableNumber" to request.tableNumber,
@@ -137,6 +147,24 @@ object RepositorioPedidos {
                         referenciaPedido.id
                     }.addOnSuccessListener { id -> onResult(Result.success(id)) }
                         .addOnFailureListener { error -> onResult(Result.failure(error)) }
+                } else if (request.isDelivery) {
+                    // Una tarifa modificada mientras el cliente confirmaba invalida el importe anterior.
+                    val referenciaTarifa = db.collection("settings").document("deliveryTariff")
+                    val referenciaPedido = db.collection("orders").document()
+                    db.runTransaction { tx ->
+                        val vigente = RepositorioTarifasEntrega.desde(tx.get(referenciaTarifa))
+                        val calculado = com.yalazas.app.utilidades.TarifaPorDistancia(vigente)
+                            .calcular(request.deliveryDistanceKm)
+                        require(request.deliveryTariffVersion == vigente.version &&
+                            abs(request.deliveryFee - calculado) < 0.001) {
+                            "La tarifa cambió. Revisa el total antes de confirmar."
+                        }
+                        tx.set(referenciaPedido, orderData)
+                        referenciaPedido.id
+                    }.addOnSuccessListener { id ->
+                        RepositorioCarrito.vaciarCarrito()
+                        onResult(Result.success(id))
+                    }.addOnFailureListener { onResult(Result.failure(it)) }
                 } else {
                     db.collection("orders").add(orderData)
                         .addOnSuccessListener { document ->
@@ -152,50 +180,64 @@ object RepositorioPedidos {
     /** Verifica la demanda agregada de la cesta antes de registrar el pedido. */
     private fun validarExistencias(items: List<ArticuloCarrito>, onResult: (Result<Unit>) -> Unit) {
         val db = ServiciosFirebase.firestore
-        db.collection("recipes").get(Source.SERVER).addOnSuccessListener { recetasSnapshot ->
-            val recetas = recetasSnapshot.documents.mapNotNull { doc ->
-                doc.toObject(RecetaProducto::class.java)?.apply { productId = doc.id }
-            }.associateBy(RecetaProducto::productId)
-            if (items.none { it.product.id in recetas }) {
-                onResult(Result.success(Unit))
-                return@addOnSuccessListener
-            }
-            db.collection("ingredients").get(Source.SERVER).addOnSuccessListener stockOk@{ snapshot ->
-                val insumos = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(Insumo::class.java)?.apply { id = doc.id }
-                }.associateBy(Insumo::id)
-                val demanda = mutableMapOf<String, Double>()
-                for (item in items) {
-                    val receta = recetas[item.product.id] ?: continue
-                    val estado = CalculadoraInsumos.evaluarProducto(receta, item.product, insumos)
-                    if (!estado.disponible) {
-                        onResult(Result.failure(IllegalStateException("${item.product.name} está agotado. Actualiza el pedido.")))
-                        return@stockOk
+        db.collection("products").get(Source.SERVER).addOnSuccessListener { productosSnapshot ->
+            val productos = productosSnapshot.documents.mapNotNull { doc ->
+                doc.toObject(Product::class.java)?.apply { id = doc.id }
+            }.associateBy(Product::id)
+            db.collection("recipes").get(Source.SERVER).addOnSuccessListener { recetasSnapshot ->
+                val recetas = recetasSnapshot.documents.mapNotNull { doc ->
+                    doc.toObject(RecetaProducto::class.java)?.apply { productId = doc.id }
+                }.associateBy(RecetaProducto::productId)
+                db.collection("ingredients").get(Source.SERVER).addOnSuccessListener stockOk@{ snapshot ->
+                    val insumos = snapshot.documents.mapNotNull { doc ->
+                        doc.toObject(Insumo::class.java)?.apply { id = doc.id }
+                    }.associateBy(Insumo::id)
+                    val demanda = mutableMapOf<String, Double>()
+                    for (item in items) {
+                        val producto = productos[item.product.id]
+                        val receta = recetas[item.product.id]
+                        if (producto == null || !producto.isAvailable || receta == null) {
+                            onResult(Result.failure(IllegalStateException(
+                                "${item.product.name} ya no está disponible. Actualiza el pedido.")))
+                            return@stockOk
+                        }
+                        val estado = CalculadoraInsumos.evaluarProducto(receta, producto, insumos)
+                        if (!estado.disponible) {
+                            onResult(Result.failure(IllegalStateException(
+                                "${producto.name} no tiene insumos suficientes o su receta está incompleta. Actualiza el pedido.")))
+                            return@stockOk
+                        }
+                        if (item.selectedSauces.any {
+                                it !in CalculadoraInsumos.salsasDisponibles(receta, producto, insumos)
+                            }) {
+                            onResult(Result.failure(IllegalStateException(
+                                "Las salsas de ${producto.name} ya no están disponibles. Actualiza el pedido.")))
+                            return@stockOk
+                        }
+                        val lineas = CalculadoraInsumos.demandaArticulo(receta, producto, item.selectedSauces)
+                        if (lineas == null) {
+                            onResult(Result.failure(IllegalStateException(
+                                "Revisa las salsas de ${producto.name} antes de confirmar.")))
+                            return@stockOk
+                        }
+                        for (linea in lineas) {
+                            demanda[linea.ingredientId] = (demanda[linea.ingredientId] ?: 0.0) +
+                                linea.quantity * item.quantity
+                        }
                     }
-                    val lineas = CalculadoraInsumos.demandaArticulo(receta, item.product, item.selectedSauces)
-                    if (lineas == null) {
-                        onResult(Result.failure(IllegalStateException("Las salsas de ${item.product.name} ya no están disponibles. Actualiza el pedido.")))
-                        return@stockOk
+                    val insuficiente = demanda.entries.firstOrNull { (id, cantidad) ->
+                        val insumo = insumos[id]
+                        insumo == null || !cantidad.isFinite() || cantidad <= 0.0 ||
+                            insumo.stock < cantidad || insumo.stock < insumo.pauseThreshold
                     }
-                    for (linea in lineas) {
-                        demanda[linea.ingredientId] = (demanda[linea.ingredientId] ?: 0.0) + linea.quantity * item.quantity
-                    }
-                }
-                val insuficiente = demanda.entries.firstOrNull { (id, cantidad) ->
-                    val insumo = insumos[id]
-                    insumo == null || insumo.stock < cantidad || insumo.stock < insumo.pauseThreshold
-                }
-                if (insuficiente != null) {
-                    val nombre = insumos[insuficiente.key]?.name ?: "Un insumo"
-                    onResult(Result.failure(IllegalStateException("$nombre no alcanza para este pedido. Reduce cantidades o actualiza la carta.")))
-                } else onResult(Result.success(Unit))
+                    if (insuficiente != null) {
+                        val nombre = insumos[insuficiente.key]?.name ?: "Un insumo"
+                        onResult(Result.failure(IllegalStateException(
+                            "$nombre no alcanza para este pedido. Reduce cantidades o actualiza la carta.")))
+                    } else onResult(Result.success(Unit))
+                }.addOnFailureListener { onResult(Result.failure(it)) }
             }.addOnFailureListener { onResult(Result.failure(it)) }
-        }.addOnFailureListener { error ->
-            if (error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                // Compatibilidad con instalaciones que aún no publicaron las reglas de Insumos.
-                onResult(Result.success(Unit))
-            } else onResult(Result.failure(error))
-        }
+        }.addOnFailureListener { onResult(Result.failure(it)) }
     }
 
     /** Devuelve un mensaje ante datos inválidos o `null` si la solicitud es coherente. */
@@ -218,7 +260,8 @@ object RepositorioPedidos {
             return "El pedido debe contener productos válidos."
         }
         if (request.address.isBlank()) return "Falta la dirección del pedido."
-        if (!request.deliveryDistanceKm.isFinite() || !request.deliveryFee.isFinite() ||
+        if (request.deliveryTariffVersion < 0 ||
+            !request.deliveryDistanceKm.isFinite() || !request.deliveryFee.isFinite() ||
             request.deliveryDistanceKm < 0.0 || request.deliveryFee < 0.0 ||
             (!request.isDelivery && request.deliveryFee != 0.0)
         ) {

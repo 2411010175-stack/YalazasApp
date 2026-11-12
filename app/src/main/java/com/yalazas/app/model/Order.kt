@@ -30,6 +30,7 @@ data class Order(
     val isDelivery: Boolean = true,
     val deliveryDistanceKm: Double = 0.0,
     val deliveryFee: Double = 0.0,
+    val deliveryTariffVersion: Int = 0,
     val routeOrderIndex: Int = 0,
     val serviceType: String = "",
     val tableNumber: Int = 0,

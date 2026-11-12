@@ -13,7 +13,7 @@ val configuracionLocal = Properties().apply {
     val archivo = rootProject.file("local.properties")
     if (archivo.exists()) archivo.inputStream().use { load(it) }
 }
-fun valorCloudinary(clave: String): String = configuracionLocal.getProperty(clave, "")
+fun valorConfiguracionLocal(clave: String): String = configuracionLocal.getProperty(clave, "")
     .replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
@@ -27,8 +27,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${valorCloudinary("CLOUDINARY_CLOUD_NAME")}\"")
-        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${valorCloudinary("CLOUDINARY_UPLOAD_PRESET")}\"")
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${valorConfiguracionLocal("CLOUDINARY_CLOUD_NAME")}\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${valorConfiguracionLocal("CLOUDINARY_UPLOAD_PRESET")}\"")
+        buildConfigField("String", "ORDER_API_URL", "\"${valorConfiguracionLocal("ORDER_API_URL")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

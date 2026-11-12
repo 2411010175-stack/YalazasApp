@@ -21,6 +21,10 @@ object RepositorioEstadosPedido {
 
     /** Cliente: únicamente su propio pedido pendiente puede pasar a cancelado. */
     fun cancelarPropio(pedidoId: String, onResult: (Result<Unit>) -> Unit) {
+        if (ApiPedidosAtomicos.configurada) {
+            ApiPedidosAtomicos.cancelar(pedidoId, onResult)
+            return
+        }
         val uid = uidActual
         if (uid.isNullOrBlank() || pedidoId.isBlank()) {
             onResult(Result.failure(IllegalArgumentException("Pedido o sesión inválidos.")))
@@ -74,6 +78,10 @@ object RepositorioEstadosPedido {
 
     /** Administración: avanza un estado y registra la auditoría en la misma transacción. */
     fun cambiarAdministrador(pedidoId: String, destino: OrderStatus, onResult: (Result<Unit>) -> Unit) {
+        if (destino == OrderStatus.CANCELADO && ApiPedidosAtomicos.configurada) {
+            ApiPedidosAtomicos.cancelar(pedidoId, onResult)
+            return
+        }
         val uid = uidActual
         if (uid.isNullOrBlank() || pedidoId.isBlank()) {
             onResult(Result.failure(IllegalArgumentException("Pedido o sesión inválidos.")))

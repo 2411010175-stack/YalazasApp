@@ -177,7 +177,8 @@ class AdaptadorPedidosReparto(
                 0.0
             }
 
-            val fee = if (order.deliveryFee > 0) order.deliveryFee else CalculadoraTarifaEntrega.calcularTarifaEntrega(distKm, order.isDelivery)
+            // El pedido conserva el importe de su propia versión; no se recalcula con la tarifa actual.
+            val fee = order.deliveryFee
             if (distKm > 0) {
                 val distStr = CalculadoraTarifaEntrega.formatearDistancia(distKm)
                 binding.tvDeliveryDistanceFeeBadge.visibility = View.VISIBLE

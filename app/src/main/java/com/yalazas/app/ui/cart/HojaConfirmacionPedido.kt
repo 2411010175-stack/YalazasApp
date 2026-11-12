@@ -22,13 +22,16 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.repositorio.ConstructorPedido
 import com.yalazas.app.repositorio.RepositorioAutenticacion
 import com.yalazas.app.repositorio.RepositorioCarrito
 import com.yalazas.app.repositorio.RepositorioPedidos
+import com.yalazas.app.repositorio.RepositorioTarifasEntrega
 import com.yalazas.app.ui.ubicacion.HojaSeleccionUbicacion
 import com.yalazas.app.utilidades.CalculadoraTarifaEntrega
+import com.yalazas.app.utilidades.ConfiguracionTarifaEntrega
 import com.yalazas.app.utilidades.FachadaPagos
 import java.util.Locale
 import kotlin.math.abs
@@ -47,6 +50,10 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
     private var currentDeliveryFee: Double = 0.0
     private var cartSubtotal: Double = 0.0
     private var finalTotal: Double = 0.0
+    private var politicaTarifa = ConfiguracionTarifaEntrega()
+    private var tarifaConfirmada = false
+    private var enviandoPedido = false
+    private var escuchaTarifa: ListenerRegistration? = null
 
     // Métoodo de pago elegido y datos necesarios para calcular el vuelto.
     private var selectedPaymentMethod: String = "EFECTIVO"
@@ -177,7 +184,8 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
                     0.0
                 }
 
-                currentDeliveryFee = CalculadoraTarifaEntrega.calcularTarifaEntrega(deliveryDistanceKm, isDelivery = true)
+                currentDeliveryFee = CalculadoraTarifaEntrega.calcularTarifaEntrega(
+                    deliveryDistanceKm, isDelivery = true, politicaTarifa)
                 finalTotal = cartSubtotal + currentDeliveryFee
 
                 tvAddressTitle.text = "📍 Dirección de Entrega"
@@ -200,8 +208,9 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
                 }
 
                 tvEstimatedTime.text = "⏱️ ${CalculadoraTarifaEntrega.estimarTiempoEntrega(deliveryDistanceKm, isDelivery = true)}"
-                tvDeliveryFeeLabel.text = "Costo de Envío (Delivery)"
-                tvDeliveryFeeValue.text = "S/ ${String.format(Locale.US, "%.2f", currentDeliveryFee)}"
+                tvDeliveryFeeLabel.text = "Costo de Envío · tarifa v${politicaTarifa.version}"
+                tvDeliveryFeeValue.text = if (tarifaConfirmada)
+                    "S/ ${String.format(Locale.US, "%.2f", currentDeliveryFee)}" else "Consultando tarifa…"
             } else {
                 // In-store pickup
                 deliveryDistanceKm = 0.0
@@ -224,6 +233,7 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
             tvTotal.text = "S/ ${String.format(Locale.US, "%.2f", finalTotal)}"
             etCashAmount.setText(String.format(Locale.US, "%.2f", finalTotal))
             actualizarCalculoEfectivo()
+            btnSubmit.isEnabled = !enviandoPedido && (!isDelivery || tarifaConfirmada)
         }
 
         // Delivery Mode Switcher Listener
@@ -313,6 +323,24 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
 
         // Initial Calculation
         recalcularTotalesYActualizarVista()
+        escuchaTarifa?.remove()
+        escuchaTarifa = RepositorioTarifasEntrega.escuchar(
+            alCambiar = { configuracion, confirmada ->
+                if (this.view == null) return@escuchar
+                if (tarifaConfirmada && confirmada && politicaTarifa.version != configuracion.version) {
+                    Toast.makeText(requireContext(), "La tarifa cambió. Revisa el nuevo total.", Toast.LENGTH_LONG).show()
+                }
+                politicaTarifa = configuracion
+                tarifaConfirmada = confirmada
+                recalcularTotalesYActualizarVista()
+            },
+            alError = {
+                if (this.view == null) return@escuchar
+                tarifaConfirmada = false
+                recalcularTotalesYActualizarVista()
+                Toast.makeText(requireContext(), "No se pudo consultar la tarifa de reparto.", Toast.LENGTH_LONG).show()
+            }
+        )
 
         // Payment Method Selector Logic
         fun resaltarTarjetaPago(selectedCard: MaterialCardView) {
@@ -401,6 +429,10 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
 
         // Construye el pedido por etapas y comprueba el total mostrado antes de registrarlo.
         btnSubmit.setOnClickListener {
+            if (isDelivery && !tarifaConfirmada) {
+                Toast.makeText(requireContext(), "Espera a que se confirme la tarifa de reparto.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             val currentItems = RepositorioCarrito.items.value ?: emptyList()
             if (currentItems.isEmpty()) {
                 Toast.makeText(requireContext(), "Tu carrito está vacío", Toast.LENGTH_SHORT).show()
@@ -430,7 +462,8 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
                     longitud = if (isDelivery) deliveryLng else CalculadoraTarifaEntrega.LONGITUD_LOCAL,
                     esDelivery = isDelivery,
                     distanciaKm = deliveryDistanceKm,
-                    tarifa = currentDeliveryFee
+                    tarifa = currentDeliveryFee,
+                    tarifaVersion = if (isDelivery) politicaTarifa.version else 0
                 )
                 .agregarComentario(etNotes.text.toString())
                 .configurarPago(selectedPaymentMethod, paymentAmount)
@@ -469,6 +502,7 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
             }
 
             // Show loading state
+            enviandoPedido = true
             btnSubmit.isEnabled = false
             btnSubmit.text = "Registrando tu orden..."
             pbLoading.visibility = View.VISIBLE
@@ -481,7 +515,8 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
                     dismissAllowingStateLoss()
                     onOrderPlacedSuccess?.invoke(orderId, solicitud.totalAmount, effectiveAddress, selectedPaymentMethod)
                 }.onFailure { error ->
-                    btnSubmit.isEnabled = true
+                    enviandoPedido = false
+                    btnSubmit.isEnabled = !isDelivery || tarifaConfirmada
                     btnSubmit.text = "Enviar Pedido a Cocina 🚀"
                     pbLoading.visibility = View.GONE
                     Toast.makeText(
@@ -492,6 +527,12 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
                 }
             }
         }
+    }
+
+    override fun onDestroyView() {
+        escuchaTarifa?.remove()
+        escuchaTarifa = null
+        super.onDestroyView()
     }
 
     override fun onStart() {

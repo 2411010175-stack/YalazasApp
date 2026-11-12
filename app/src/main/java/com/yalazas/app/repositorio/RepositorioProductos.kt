@@ -5,7 +5,8 @@ import com.yalazas.app.model.PromocionProducto
 import com.yalazas.app.model.CalculadoraInsumos
 import com.yalazas.app.model.Insumo
 import com.yalazas.app.model.RecetaProducto
-import com.google.firebase.firestore.FirebaseFirestoreException
+import com.yalazas.app.model.TarjetaCatalogo
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -15,9 +16,15 @@ import kotlinx.coroutines.tasks.await
 class RepositorioProductos {
     private val db = ServiciosFirebase.firestore
     private val productsCollection = db.collection("products")
+    private val tarjetasCollection = db.collection("catalog_cards")
 
     /** Observa el catálogo; al dejar de escucharlo se libera el listener de Firestore. */
-    fun observarProductos(): Flow<Result<List<Product>>> = callbackFlow {
+    fun observarProductos(): Flow<Result<List<Product>>> = observarCatalogo(false)
+
+    /** Usa tarjetas ligeras cuando el catálogo migrado está listo; el legado sigue funcionando. */
+    fun observarCatalogoCompacto(): Flow<Result<List<Product>>> = observarCatalogo(true)
+
+    private fun observarCatalogo(compacto: Boolean): Flow<Result<List<Product>>> = callbackFlow {
         var productosBase: List<Product>? = null
         var promociones = emptyMap<String, PromocionProducto>()
         var insumos: Map<String, Insumo>? = null
@@ -30,35 +37,63 @@ class RepositorioProductos {
             trySend(Result.success(productos.map { producto ->
                 val oferta = promociones[producto.id]?.aplicarA(producto) ?: producto
                 val receta = recetasActuales[producto.id]
-                if (receta == null) oferta else {
-                    val estado = CalculadoraInsumos.evaluarProducto(receta, oferta, existencias)
-                    val opciones = if (receta.sauceSlotsMl.isEmpty()) oferta.availableSauces
-                        else CalculadoraInsumos.salsasDisponibles(receta, oferta, existencias)
-                    oferta.copy(
-                        isAvailable = oferta.isAvailable && estado.disponible,
-                        availableSauces = opciones
-                    )
-                }
+                val estado = CalculadoraInsumos.evaluarProducto(receta, oferta, existencias)
+                val opciones = if (receta == null || receta.sauceSlotsMl.isEmpty()) oferta.availableSauces
+                    else CalculadoraInsumos.salsasDisponibles(receta, oferta, existencias)
+                oferta.copy(
+                    isAvailable = oferta.isAvailable && estado.disponible,
+                    availableSauces = opciones
+                )
             }))
         }
 
-        val registro = productsCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                trySend(Result.failure(error))
-                close()
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null) {
-                try {
-                    productosBase = snapshot.documents.mapNotNull { documento ->
-                        documento.toObject(Product::class.java)?.apply { id = documento.id }
-                    }
-                    publicarCatalogo()
-                } catch (e: Exception) {
-                    trySend(Result.failure(e))
+        var registroProductos: ListenerRegistration? = null
+        var registroTarjetas: ListenerRegistration? = null
+        fun escucharProductosCompletos() {
+            if (registroProductos != null) return
+            registroTarjetas?.remove()
+            registroTarjetas = null
+            productosBase = null
+            registroProductos = productsCollection.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error))
+                    close()
+                } else if (snapshot != null) {
+                    try {
+                        productosBase = snapshot.documents.mapNotNull { documento ->
+                            documento.toObject(Product::class.java)?.apply { id = documento.id }
+                        }
+                        publicarCatalogo()
+                    } catch (e: Exception) { trySend(Result.failure(e)) }
                 }
             }
+        }
+        fun escucharTarjetas() {
+            if (registroTarjetas != null) return
+            registroProductos?.remove()
+            registroProductos = null
+            productosBase = null
+            registroTarjetas = tarjetasCollection.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(Result.failure(error))
+                    close()
+                } else if (snapshot != null) {
+                    try {
+                        productosBase = snapshot.documents.filter { it.id != "_meta" }.mapNotNull { documento ->
+                            documento.toObject(TarjetaCatalogo::class.java)?.aProducto(documento.id)
+                        }
+                        publicarCatalogo()
+                    } catch (e: Exception) { trySend(Result.failure(e)) }
+                }
+            }
+        }
+        val registroMeta = if (compacto) tarjetasCollection.document("_meta")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot?.getBoolean("ready") != true) escucharProductosCompletos()
+                else escucharTarjetas()
+            } else {
+            escucharProductosCompletos()
+            null
         }
 
         val registroPromociones = RepositorioPromociones.escuchar(
@@ -76,27 +111,32 @@ class RepositorioProductos {
         val registroInsumos = RepositorioInsumos.escucharInsumos(
             alCambiar = { insumos = it.associateBy(Insumo::id); publicarCatalogo() },
             alError = { error ->
-                if (error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                    // Durante la migración, conserva el menú anterior hasta publicar las reglas nuevas.
-                    insumos = emptyMap(); publicarCatalogo()
-                } else trySend(Result.failure(error))
+                insumos = null
+                trySend(Result.failure(error))
             }
         )
         val registroRecetas = RepositorioInsumos.escucharRecetas(
             alCambiar = { recetas = it.associateBy(RecetaProducto::productId); publicarCatalogo() },
             alError = { error ->
-                if (error is FirebaseFirestoreException && error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                    recetas = emptyMap(); publicarCatalogo()
-                } else trySend(Result.failure(error))
+                recetas = null
+                trySend(Result.failure(error))
             }
         )
 
         awaitClose {
-            registro.remove()
+            registroMeta?.remove()
+            registroProductos?.remove()
+            registroTarjetas?.remove()
             registroPromociones.remove()
             registroInsumos.remove()
             registroRecetas.remove()
         }
+    }
+
+    /** Obtiene la descripción y el resto de campos solo al abrir o comprar un plato. */
+    suspend fun obtenerProductoCompleto(id: String): Product? {
+        val documento = productsCollection.document(id).get().await()
+        return documento.toObject(Product::class.java)?.apply { this.id = documento.id }
     }
 
     /** Carga datos de ejemplo solo si la colección está vacía; no se ejecuta al abrir el menú. */
@@ -113,7 +153,10 @@ class RepositorioProductos {
             for (p in initial) {
                 val doc = productsCollection.document()
                 p.id = doc.id
-                doc.set(p).await()
+                val lote = db.batch()
+                lote.set(doc, p)
+                lote.set(tarjetasCollection.document(doc.id), TarjetaCatalogo.desde(p))
+                lote.commit().await()
             }
         }
     }

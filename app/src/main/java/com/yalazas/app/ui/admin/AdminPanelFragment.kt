@@ -27,6 +27,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.textfield.TextInputEditText
 import com.yalazas.app.R
 import com.yalazas.app.model.Product
+import com.yalazas.app.model.TarjetaCatalogo
 import com.yalazas.app.repositorio.RepositorioPromociones
 import com.yalazas.app.repositorio.RepositorioImagenes
 import com.yalazas.app.repositorio.ServiciosFirebase
@@ -722,14 +723,19 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
             availableSauces = availableSauces
         )
 
-        docRef.set(product)
+        val lote = db.batch()
+        lote.set(docRef, product)
+        lote.set(db.collection("catalog_cards").document(docRef.id), TarjetaCatalogo.desde(product))
+        lote.commit()
             .addOnSuccessListener {
-                val msg = if (isOffer) {
-                    if (isEdit) "¡Oferta actualizada con éxito!" else "¡Oferta creada y publicada!"
+                val msg = if (!isEdit) {
+                    "Producto guardado. Configura su receta en Insumos para mostrarlo en la carta."
+                } else if (isOffer) {
+                    "¡Oferta actualizada con éxito!"
                 } else {
-                    if (isEdit) "¡Producto actualizado con éxito!" else "¡Producto agregado a la carta!"
+                    "¡Producto actualizado con éxito!"
                 }
-                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
                 findNavController().popBackStack()
             }
             .addOnFailureListener { e ->
@@ -758,7 +764,10 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         btnDelete.isEnabled = false
         progresoGuardado.visibility = View.VISIBLE
 
-        productsCollection.document(productId).delete()
+        val lote = db.batch()
+        lote.delete(productsCollection.document(productId))
+        lote.delete(db.collection("catalog_cards").document(productId))
+        lote.commit()
             .addOnSuccessListener {
                 // La promoción huérfana no se muestra; se intenta retirarla de Firestore.
                 RepositorioPromociones.quitar(productId) { resultado ->

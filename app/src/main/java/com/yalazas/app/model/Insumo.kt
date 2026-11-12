@@ -37,6 +37,33 @@ data class DisponibilidadReceta(
 
 /** Calcula porciones físicas y aplica el umbral rojo sin modificar el producto. */
 object CalculadoraInsumos {
+    /** Una receta incompleta no puede habilitar un plato aunque aún haya stock. */
+    fun motivoRecetaIncompleta(receta: RecetaProducto?, producto: Product, insumos: Map<String, Insumo>): String? {
+        if (receta == null) return "Sin receta configurada"
+        if (receta.productId != producto.id) return "La receta no corresponde al producto"
+        if (receta.ingredients.isEmpty() && receta.sauceSlotsMl.isEmpty()) return "Receta vacía"
+        val ids = receta.ingredients.map { it.ingredientId }
+        if (ids.any(String::isBlank) || ids.size != ids.distinct().size ||
+            receta.ingredients.any { !it.quantity.isFinite() || it.quantity <= 0.0 }) {
+            return "Cantidades o insumos fijos inválidos"
+        }
+        if (ids.any { insumos[it] == null }) return "Falta un insumo de la receta"
+        if (receta.sauceSlotsMl.isEmpty()) {
+            if (producto.allowsSauces) return "Falta configurar el consumo de las salsas"
+            return null
+        }
+        if (!producto.allowsSauces || producto.maxSauces < 1 ||
+            receta.sauceSlotsMl.size < producto.maxSauces ||
+            receta.sauceSlotsMl.any { !it.isFinite() || it <= 0.0 }) {
+            return "Configuración de salsas incompleta"
+        }
+        val opciones = producto.availableSauces.ifEmpty { Product.DEFAULT_YALAZA_SAUCES }
+        if (opciones.none { nombre ->
+                receta.sauceIngredients[nombre]?.let(insumos::get)?.unit == "ml"
+            }) return "Falta vincular una salsa con un insumo en ml"
+        return null
+    }
+
     fun evaluar(receta: RecetaProducto, insumos: Map<String, Insumo>): DisponibilidadReceta {
         if (receta.ingredients.isEmpty()) return DisponibilidadReceta(0, false, "Sin ingredientes", listOf("Receta vacía"))
         val capacidades = receta.ingredients.map { linea ->
@@ -66,7 +93,10 @@ object CalculadoraInsumos {
     }
 
     /** Combina insumos fijos y salsas elegibles cuando el producto admite esa opción. */
-    fun evaluarProducto(receta: RecetaProducto, producto: Product, insumos: Map<String, Insumo>): DisponibilidadReceta {
+    fun evaluarProducto(receta: RecetaProducto?, producto: Product, insumos: Map<String, Insumo>): DisponibilidadReceta {
+        val motivo = motivoRecetaIncompleta(receta, producto, insumos)
+        if (motivo != null) return DisponibilidadReceta(0, false, motivo, listOf(motivo))
+        receta ?: error("La receta se verificó antes de calcular la disponibilidad")
         val base = if (receta.ingredients.isEmpty() && receta.sauceSlotsMl.isNotEmpty())
             DisponibilidadReceta(Int.MAX_VALUE, true, "Salsas", emptyList()) else evaluar(receta, insumos)
         if (receta.sauceSlotsMl.isEmpty()) return base
@@ -83,7 +113,8 @@ object CalculadoraInsumos {
 
     /** Demanda de una línea de pedido con las salsas reales elegidas por el cliente. */
     fun demandaArticulo(receta: RecetaProducto, producto: Product, salsas: List<String>): List<IngredienteReceta>? {
-        if (receta.sauceSlotsMl.isEmpty()) return receta.ingredients
+        if (receta.sauceSlotsMl.isEmpty()) return receta.ingredients.takeIf { salsas.isEmpty() }
+        if (!producto.allowsSauces) return null
         if (salsas.isEmpty() || salsas.size != salsas.distinct().size) return null
         val permitidas = producto.availableSauces.ifEmpty { Product.DEFAULT_YALAZA_SAUCES }
         if (salsas.any { it !in permitidas }) return null
