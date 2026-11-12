@@ -5,6 +5,7 @@ enum class Permission {
     MANAGE_USERS,
     MANAGE_PRODUCTS,
     MANAGE_INVENTORY,
+    MANAGE_TABLES,
     VIEW_FINANCES,
     MANAGE_OFFERS,
     CREATE_ORDER,
@@ -23,6 +24,7 @@ enum class Role(val value: String, val permissions: List<Permission>) {
         Permission.MANAGE_USERS,
         Permission.MANAGE_PRODUCTS,
         Permission.MANAGE_INVENTORY,
+        Permission.MANAGE_TABLES,
         Permission.VIEW_FINANCES,
         Permission.MANAGE_OFFERS
     )),

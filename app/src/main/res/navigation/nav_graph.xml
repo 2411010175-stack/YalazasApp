@@ -73,6 +73,12 @@
         tools:layout="@layout/fragment_admin_inventory" />
 
     <fragment
+        android:id="@+id/nav_admin_insumos"
+        android:name="com.yalazas.app.ui.admin.AdminInsumosFragment"
+        android:label="Insumos"
+        tools:layout="@layout/fragment_admin_insumos" />
+
+    <fragment
         android:id="@+id/nav_admin_sales"
         android:name="com.yalazas.app.ui.admin.AdminSalesFragment"
         android:label="Ventas"
@@ -83,6 +89,12 @@
         android:name="com.yalazas.app.ui.admin.AdminSettingsFragment"
         android:label="Ajustes"
         tools:layout="@layout/fragment_admin_settings" />
+
+    <fragment
+        android:id="@+id/nav_admin_mesas"
+        android:name="com.yalazas.app.ui.admin.AdminMesasFragment"
+        android:label="Mesas del local"
+        tools:layout="@layout/fragment_admin_mesas" />
 
     <fragment
         android:id="@+id/nav_cart"
@@ -107,6 +119,18 @@
         android:name="com.yalazas.app.ui.cocina.CocinaDashboardFragment"
         android:label="Cocina"
         tools:layout="@layout/fragment_cocina" />
+
+    <fragment
+        android:id="@+id/nav_mesero"
+        android:name="com.yalazas.app.ui.mesero.MeseroDashboardFragment"
+        android:label="Mesas"
+        tools:layout="@layout/fragment_mesero" />
+
+    <fragment
+        android:id="@+id/nav_mesero_nueva_comanda"
+        android:name="com.yalazas.app.ui.mesero.MeseroDashboardFragment"
+        android:label="Nuevo pedido de mesa"
+        tools:layout="@layout/fragment_mesero" />
 
     <fragment
         android:id="@+id/nav_profile"

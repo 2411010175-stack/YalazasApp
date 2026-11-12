@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
 import com.yalazas.app.R
 import com.yalazas.app.model.Order
 import java.util.Locale
@@ -55,6 +56,7 @@ class DialogoMarcarEntregado : DialogFragment() {
         val ivPaymentIcon = view.findViewById<ImageView>(R.id.ivDeliveredPaymentIcon)
         val btnCancel = view.findViewById<MaterialButton>(R.id.btnCancelDelivered)
         val btnConfirm = view.findViewById<MaterialButton>(R.id.btnConfirmDelivered)
+        val confirmarEfectivo = view.findViewById<MaterialCheckBox>(R.id.checkCashReceived)
 
         val codeStr = "#${currentOrder.id.takeLast(6).uppercase()}"
         tvCode.text = codeStr
@@ -79,11 +81,16 @@ class DialogoMarcarEntregado : DialogFragment() {
             tvPaymentTitle.setTextColor(Color.parseColor("#FFD54F"))
             tvPaymentAmount.text = "Cobrar al cliente: S/ %.2f".format(Locale.getDefault(), currentOrder.total)
             ivPaymentIcon.setImageResource(R.drawable.ic_cash)
+            confirmarEfectivo.visibility = View.VISIBLE
+            btnConfirm.isEnabled = false
+            confirmarEfectivo.setOnCheckedChangeListener { _, marcado -> btnConfirm.isEnabled = marcado }
         } else {
             val method = currentOrder.paymentMethod.ifBlank { "Digital" }
             tvPaymentTitle.text = "Pago Digital ($method)"
             tvPaymentTitle.setTextColor(Color.parseColor("#40C4FF"))
-            tvPaymentAmount.text = "Monto Verificado: S/ %.2f".format(Locale.getDefault(), currentOrder.total)
+            tvPaymentAmount.text = if (currentOrder.paymentStatus == "PAGADO")
+                "Pago validado por administración: S/ %.2f".format(Locale.getDefault(), currentOrder.total)
+                else "Pago digital pendiente de revisión administrativa"
             ivPaymentIcon.setImageResource(R.drawable.ic_receipt)
         }
 

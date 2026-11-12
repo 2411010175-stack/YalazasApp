@@ -24,6 +24,7 @@ sealed class EstadoPedido(val tipo: OrderStatus) {
     object Listo : EstadoPedido(OrderStatus.LISTO_PARA_ENTREGA) {
         override fun siguientes(rol: Role) = when (rol) {
             Role.COCINERO -> listOf(OrderStatus.EN_PROCESO)
+            Role.MESERO -> listOf(OrderStatus.ENTREGADO)
             Role.REPARTIDOR -> listOf(OrderStatus.EN_CAMINO)
             Role.ADMIN -> listOf(OrderStatus.EN_CAMINO, OrderStatus.CANCELADO)
             else -> emptyList()

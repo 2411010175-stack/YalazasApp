@@ -19,8 +19,12 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.firestore.ListenerRegistration
 import com.yalazas.app.R
 import com.yalazas.app.model.Product
+import com.yalazas.app.model.CalculadoraInsumos
+import com.yalazas.app.model.Insumo
+import com.yalazas.app.model.RecetaProducto
 import com.yalazas.app.model.PromocionProducto
 import com.yalazas.app.repositorio.RepositorioPromociones
+import com.yalazas.app.repositorio.RepositorioInsumos
 import com.yalazas.app.repositorio.ServiciosFirebase
 import com.yalazas.app.ui.menu.AdaptadorProductos
 import java.util.Locale
@@ -31,10 +35,14 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
     private val db = ServiciosFirebase.firestore
     private var productsListener: ListenerRegistration? = null
     private var promotionsListener: ListenerRegistration? = null
+    private var ingredientsListener: ListenerRegistration? = null
+    private var recipesListener: ListenerRegistration? = null
     private lateinit var productAdapter: AdaptadorProductos
 
     private var allProducts = listOf<Product>()
     private var promociones = emptyMap<String, PromocionProducto>()
+    private var insumos = emptyMap<String, Insumo>()
+    private var recetas = emptyMap<String, RecetaProducto>()
     private var currentSearchQuery = ""
 
     private lateinit var tvProductsCount: TextView
@@ -75,6 +83,15 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
         }
         rvInventory.layoutManager = LinearLayoutManager(requireContext())
         rvInventory.adapter = productAdapter
+
+        ingredientsListener = RepositorioInsumos.escucharInsumos(
+            { insumos = it.associateBy(Insumo::id); filtrarProductos(currentSearchQuery) },
+            { if (isAdded) Toast.makeText(requireContext(), "No se pudieron cargar insumos", Toast.LENGTH_SHORT).show() }
+        )
+        recipesListener = RepositorioInsumos.escucharRecetas(
+            { recetas = it.associateBy(RecetaProducto::productId); filtrarProductos(currentSearchQuery) },
+            { if (isAdded) Toast.makeText(requireContext(), "No se pudieron cargar recetas", Toast.LENGTH_SHORT).show() }
+        )
 
         // 4. Búsqueda en tiempo real
         inputSearch.addTextChangedListener(object : android.text.TextWatcher {
@@ -235,7 +252,11 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
     private fun filtrarProductos(query: String) {
         val lower = query.lowercase().trim()
         val catalogoVisible = allProducts.map { producto ->
-            promociones[producto.id]?.aplicarA(producto) ?: producto
+            val oferta = promociones[producto.id]?.aplicarA(producto) ?: producto
+            val receta = recetas[producto.id]
+            if (receta == null) oferta else oferta.copy(
+                isAvailable = oferta.isAvailable && CalculadoraInsumos.evaluarProducto(receta, oferta, insumos).disponible
+            )
         }
         val filtered = if (lower.isEmpty()) {
             catalogoVisible
@@ -257,5 +278,9 @@ class AdminInventoryFragment : Fragment(R.layout.fragment_admin_inventory) {
         productsListener = null
         promotionsListener?.remove()
         promotionsListener = null
+        ingredientsListener?.remove()
+        ingredientsListener = null
+        recipesListener?.remove()
+        recipesListener = null
     }
 }

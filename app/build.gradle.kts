@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,14 @@ plugins {
     alias(libs.plugins.navigation.safeargs)
     id("kotlin-parcelize")
 }
+
+// La subida pública de productos usa solo estos datos no secretos del equipo local.
+val configuracionLocal = Properties().apply {
+    val archivo = rootProject.file("local.properties")
+    if (archivo.exists()) archivo.inputStream().use { load(it) }
+}
+fun valorCloudinary(clave: String): String = configuracionLocal.getProperty(clave, "")
+    .replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "com.yalazas.app"
@@ -16,6 +26,9 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${valorCloudinary("CLOUDINARY_CLOUD_NAME")}\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${valorCloudinary("CLOUDINARY_UPLOAD_PRESET")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +54,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 

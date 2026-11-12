@@ -21,7 +21,8 @@ import java.util.Locale
 /** Dibuja los pedidos del cliente y sus estados actuales. */
 class AdaptadorSeguimientoCliente(
     private val onCancelOrderClick: (Order) -> Unit,
-    private val onViewDriverClick: (Order) -> Unit
+    private val onViewDriverClick: (Order) -> Unit,
+    private val onUploadProofClick: (Order) -> Unit
 ) : ListAdapter<Order, AdaptadorSeguimientoCliente.TrackingViewHolder>(OrderDiffCallback()) {
 
     private val ubicaciones = mutableMapOf<String, UbicacionRepartidor>()
@@ -50,7 +51,7 @@ class AdaptadorSeguimientoCliente(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackingViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_customer_tracking_order, parent, false)
-        return TrackingViewHolder(view, onCancelOrderClick, onViewDriverClick)
+        return TrackingViewHolder(view, onCancelOrderClick, onViewDriverClick, onUploadProofClick)
     }
 
     override fun onBindViewHolder(holder: TrackingViewHolder, position: Int) {
@@ -61,7 +62,8 @@ class AdaptadorSeguimientoCliente(
     class TrackingViewHolder(
         itemView: View,
         private val onCancelOrderClick: (Order) -> Unit,
-        private val onViewDriverClick: (Order) -> Unit
+        private val onViewDriverClick: (Order) -> Unit,
+        private val onUploadProofClick: (Order) -> Unit
     ) : RecyclerView.ViewHolder(itemView) {
 
         private val tvCode: TextView = itemView.findViewById(R.id.tvCustomerOrderCode)
@@ -107,6 +109,8 @@ class AdaptadorSeguimientoCliente(
         private val tvDriverDistance: TextView = itemView.findViewById(R.id.tvTrackingDriverDistance)
         private val tvDriverUpdate: TextView = itemView.findViewById(R.id.tvTrackingDriverUpdate)
         private val btnViewDriverMap: MaterialButton = itemView.findViewById(R.id.btnViewDriverMap)
+        private val btnUploadProof: MaterialButton = itemView.findViewById(R.id.btnCustomerUploadProof)
+        private val tvProofNotice: TextView = itemView.findViewById(R.id.tvCustomerProofNotice)
 
         fun bind(order: Order, ubicacion: UbicacionRepartidor?, errorUbicacion: Boolean) {
             val context = itemView.context
@@ -213,6 +217,22 @@ class AdaptadorSeguimientoCliente(
             tvDeliveryLabel.text = if (order.isDelivery) "Delivery" else "Envío (recojo en local)"
             tvDeliveryFee.text = "S/ ${String.format(Locale.US, "%.2f", order.deliveryFee)}"
             tvTotal.text = "S/ ${String.format(Locale.US, "%.2f", order.total)}"
+
+            // El aviso de rechazo llega con el listener del pedido, sin cambiar su estado de cocina/entrega.
+            val pagoDigital = order.paymentMethod in setOf("YAPE", "PLIN", "TRANSFERENCIA")
+            val puedeEnviar = pagoDigital && order.paymentStatus != "PAGADO" &&
+                statusEnum != OrderStatus.CANCELADO && order.paymentProofStatus in setOf("", "RECHAZADO")
+            btnUploadProof.visibility = if (puedeEnviar) View.VISIBLE else View.GONE
+            btnUploadProof.text = if (order.paymentProofStatus == "RECHAZADO") "Subir otra imagen" else "Adjuntar comprobante de pago"
+            btnUploadProof.setOnClickListener { onUploadProofClick(order) }
+            tvProofNotice.text = when {
+                !pagoDigital || statusEnum == OrderStatus.CANCELADO -> ""
+                order.paymentProofStatus == "RECHAZADO" -> "No pudimos confirmar el pago con esa imagen. Sube otro comprobante legible."
+                order.paymentProofStatus == "EN_REVISION" -> "Comprobante recibido. Administración comprobará el pago."
+                order.paymentStatus == "PAGADO" -> "Pago validado por administración."
+                else -> ""
+            }
+            tvProofNotice.visibility = if (tvProofNotice.text.isNotEmpty()) View.VISIBLE else View.GONE
 
             val enRuta = order.isDelivery && statusEnum == OrderStatus.EN_CAMINO && order.deliveryDriverId.isNotBlank()
             layoutDriverTracking.visibility = if (enRuta) View.VISIBLE else View.GONE

@@ -433,6 +433,60 @@
             </LinearLayout>
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/layoutAdminPaymentReview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_tracking_notice_box"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvAdminPaymentReview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Revisión de pago"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAdminViewProof"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Ver comprobante protegido"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/layoutAdminReviewActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdminRejectProof"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="5dp"
+                    android:text="Rechazar" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAdminApproveProof"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="5dp"
+                    android:backgroundTint="@color/admin_kpi_green"
+                    android:text="Validar pago" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- 5. BOTONES DE ACCIÓN (Cambiar Estado / Cerrar) -->
         <LinearLayout
             android:layout_width="match_parent"

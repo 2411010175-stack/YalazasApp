@@ -18,11 +18,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.yalazas.app.databinding.ActivityMainBinding
+import com.yalazas.app.repositorio.RepositorioInsumos
+import com.google.firebase.firestore.ListenerRegistration
 
 /** Aloja la navegación y coordina las barras inferiores según el rol. */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private var alertaInsumos: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         val destinosAdmin = setOf(
             R.id.nav_admin_dashboard,
             R.id.nav_admin_inventory,
+            R.id.nav_admin_insumos,
             R.id.nav_admin_users,
             R.id.nav_admin_sales
         )
@@ -56,7 +60,10 @@ class MainActivity : AppCompatActivity() {
             R.id.nav_register,
             R.id.nav_admin_panel,
             R.id.nav_admin_settings,
-            R.id.nav_cocina
+            R.id.nav_admin_mesas,
+            R.id.nav_cocina,
+            R.id.nav_mesero,
+            R.id.nav_mesero_nueva_comanda
         )
 
         var destinoActualId = R.id.nav_home
@@ -171,7 +178,29 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             destinoActualId = destination.id
             actualizarVisibilidadNavegacion()
+            // La insignia avisa al administrador de insumos bajos o agotados.
+            val enAdministracion = destination.id in destinosAdmin ||
+                destination.id == R.id.nav_admin_settings || destination.id == R.id.nav_admin_panel ||
+                    destination.id == R.id.nav_admin_mesas
+            if (enAdministracion && alertaInsumos == null) {
+                alertaInsumos = RepositorioInsumos.escucharInsumos({ lista ->
+                    val alertas = lista.count { it.stock <= it.lowThreshold || it.stock < it.pauseThreshold }
+                    val badgeInsumos = binding.adminBottomNav.getOrCreateBadge(R.id.nav_admin_insumos)
+                    badgeInsumos.backgroundColor = ContextCompat.getColor(this, R.color.admin_status_cancelled)
+                    badgeInsumos.badgeTextColor = ContextCompat.getColor(this, R.color.white)
+                    badgeInsumos.number = alertas
+                    badgeInsumos.isVisible = alertas > 0
+                }, { /* La pantalla de Insumos mostrará el error de conexión. */ })
+            } else if (!enAdministracion) {
+                alertaInsumos?.remove()
+                alertaInsumos = null
+            }
         }
+    }
+
+    override fun onDestroy() {
+        alertaInsumos?.remove()
+        super.onDestroy()
     }
 
     /**

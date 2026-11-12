@@ -54,19 +54,24 @@ class AdaptadorVentas(
 
         fun bind(order: Order, saleNumber: String) {
             tvNumber.text = saleNumber
+            val codigoPedido = if (order.id.isNotBlank()) "#${order.id.takeLast(5).uppercase(Locale.getDefault())}" else "#ORDEN"
 
             // Formato de Fecha y Hora
             val dateObj = order.timestamp?.toDate()
             if (dateObj != null) {
                 val sdf = SimpleDateFormat("dd/MM/yyyy - HH:mm", Locale.getDefault())
-                tvDateTime.text = sdf.format(dateObj)
+                tvDateTime.text = "$codigoPedido · ${sdf.format(dateObj)}"
             } else {
-                tvDateTime.text = "Fecha no disponible"
+                tvDateTime.text = "$codigoPedido · Fecha no disponible"
             }
 
             // Datos del cliente
             tvCustomer.text = order.customerName.ifBlank { "Cliente Sin Nombre" }
-            tvPhone.text = if (order.phone.isNotBlank()) "📞 ${order.phone}" else "📞 Sin tel."
+            tvPhone.text = when {
+                order.serviceType == "MESA" -> "🍽️ Atención en salón"
+                order.phone.isNotBlank() -> "📞 ${order.phone}"
+                else -> "📞 Sin tel."
+            }
             tvAddress.text = if (order.address.isNotBlank()) {
                 if (order.reference.isNotBlank()) "${order.address} (Ref: ${order.reference})" else order.address
             } else {
@@ -86,10 +91,15 @@ class AdaptadorVentas(
 
             val statusEnum = OrderStatus.desdeTexto(order.status)
             val allowedTransitions = OrderStatus.obtenerTransicionesPermitidas(order.status)
+                .filterNot { order.serviceType == "MESA" && it == OrderStatus.EN_CAMINO }
             val estilo = PaletaEstadosVenta.para(statusEnum)
+            val requiereRevisionPago = PaletaEstadosVenta.requiereRevisionPago(
+                order.paymentMethod, order.paymentStatus, order.paymentProofStatus, order.status
+            )
             tvTotal.setTextColor(color(if (statusEnum == OrderStatus.CANCELADO) R.color.admin_status_cancelled else R.color.admin_ui_amount))
-            cardView.setCardBackgroundColor(color(estilo.tarjeta))
-            cardView.strokeColor = color(estilo.borde)
+            cardView.setCardBackgroundColor(color(if (requiereRevisionPago) R.color.admin_payment_review_card else estilo.tarjeta))
+            cardView.strokeColor = color(if (requiereRevisionPago) R.color.admin_payment_review_border else estilo.borde)
+            cardView.strokeWidth = itemView.resources.displayMetrics.density.times(if (requiereRevisionPago) 2f else 1f).toInt()
             tvStatus.setTextColor(color(estilo.textoEstado))
             tvStatus.background = createPillDrawable(color(estilo.fondoEstado))
             btnStatus.backgroundTintList = ColorStateList.valueOf(color(estilo.boton))
@@ -116,6 +126,12 @@ class AdaptadorVentas(
             }
 
             btnStatus.text = if (allowedTransitions.isEmpty()) "Cerrado" else "Estado"
+            btnDetails.text = if (requiereRevisionPago) "Revisar" else "Detalles"
+            btnDetails.contentDescription = if (requiereRevisionPago)
+                "Revisar comprobante de pago de $saleNumber" else "Ver detalles de $saleNumber"
+            btnDetails.backgroundTintList = ColorStateList.valueOf(color(
+                if (requiereRevisionPago) R.color.admin_payment_review_button else R.color.admin_ui_button_secondary
+            ))
 
             btnDetails.setOnClickListener { onDetailsClick(order, saleNumber) }
             btnStatus.setOnClickListener { onChangeStatusClick(order) }

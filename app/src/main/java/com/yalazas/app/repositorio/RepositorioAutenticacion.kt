@@ -109,7 +109,11 @@ object RepositorioAutenticacion {
                 longitude = longitude
             )
 
-            db.collection("users").document(uid).set(updatedProfile).await()
+            guardarCamposEditables(uid, mapOf(
+                "name" to name, "phone" to phone, "address" to address,
+                "reference" to reference, "latitude" to latitude,
+                "longitude" to longitude, "updatedAt" to updatedProfile.updatedAt
+            ), updatedProfile)
             currentProfile = updatedProfile
             Result.success(Unit)
         } catch (e: Exception) {
@@ -134,11 +138,25 @@ object RepositorioAutenticacion {
                 latitude = lat,
                 longitude = lng
             )
-            db.collection("users").document(uid).set(updated).await()
+            guardarCamposEditables(uid, mapOf(
+                "address" to address, "reference" to reference,
+                "latitude" to lat, "longitude" to lng,
+                "updatedAt" to updated.updatedAt
+            ), updated)
             currentProfile = updated
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    /** En perfiles existentes solo actualiza campos propios para conservar los datos del vehículo. */
+    private suspend fun guardarCamposEditables(uid: String, campos: Map<String, Any>, perfilNuevo: UserProfile) {
+        val referencia = db.collection("users").document(uid)
+        if (referencia.get().await().exists()) {
+            referencia.update(campos).await()
+        } else {
+            referencia.set(perfilNuevo).await()
         }
     }
 

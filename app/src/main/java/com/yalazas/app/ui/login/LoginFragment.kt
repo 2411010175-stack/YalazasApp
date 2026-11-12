@@ -162,6 +162,7 @@ class LoginFragment : Fragment(R.layout.fragment_login) {
             com.yalazas.app.model.Role.ADMIN -> findNavController().navigate(R.id.nav_admin_dashboard)
             com.yalazas.app.model.Role.REPARTIDOR -> findNavController().navigate(R.id.nav_delivery_orders)
             com.yalazas.app.model.Role.COCINERO -> findNavController().navigate(R.id.nav_cocina)
+            com.yalazas.app.model.Role.MESERO -> findNavController().navigate(R.id.nav_mesero)
             else -> findNavController().navigate(R.id.action_login_to_home)
         }
     }

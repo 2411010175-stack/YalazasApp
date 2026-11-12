@@ -184,11 +184,32 @@ class AdminSalesFragment : Fragment(R.layout.fragment_admin_sales) {
                         }
                     }
 
-                    allOrdersWithNumbers = orderList
+                    // Conserva el número de venta asignado por fecha, pero muestra primero lo urgente.
+                    allOrdersWithNumbers = orderList.sortedWith(
+                        compareBy<Pair<Order, String>> { prioridadPedido(it.first) }
+                            .thenByDescending { it.first.timestamp?.seconds ?: Long.MIN_VALUE }
+                            .thenByDescending { it.first.timestamp?.nanoseconds ?: 0 }
+                            .thenBy { it.first.id }
+                    )
                     tvOrdersCount.text = "${allOrdersWithNumbers.size} pedidos"
                     aplicarFiltros()
                 }
             }
+    }
+
+    /** Prioridad del control de pedidos; la revisión del pago precede al estado de cocina o reparto. */
+    private fun prioridadPedido(order: Order): Int {
+        if (PaletaEstadosVenta.requiereRevisionPago(
+                order.paymentMethod, order.paymentStatus, order.paymentProofStatus, order.status
+            )) return 0
+        return when (OrderStatus.desdeTexto(order.status)) {
+            OrderStatus.PENDIENTE -> 1
+            OrderStatus.EN_PROCESO -> 2
+            OrderStatus.LISTO_PARA_ENTREGA -> 3
+            OrderStatus.EN_CAMINO -> 4
+            OrderStatus.ENTREGADO -> 5
+            OrderStatus.CANCELADO -> 6
+        }
     }
 
     /** Combina los filtros seleccionados antes de actualizar la lista. */

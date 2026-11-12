@@ -41,6 +41,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
         val id: String,
         val total: Double,
         val status: String,
+        val paymentStatus: String,
         val customerName: String,
         val phone: String,
         val address: String,
@@ -172,6 +173,7 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                         id = doc.id,
                         total = total,
                         status = status,
+                        paymentStatus = doc.getString("paymentStatus").orEmpty(),
                         customerName = customer,
                         phone = phone,
                         address = address,
@@ -194,12 +196,17 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                             total = total,
                             deliveryFee = (doc.get("deliveryFee") as? Number)?.toDouble() ?: 0.0,
                             isDelivery = doc.getBoolean("isDelivery") == true,
+                            serviceType = doc.getString("serviceType").orEmpty(),
+                            tableNumber = (doc.get("tableNumber") as? Number)?.toInt() ?: 0,
                             customerName = customer,
                             phone = phone,
                             address = address,
                             reference = reference,
                             comment = comment,
                             status = status,
+                            paymentMethod = doc.getString("paymentMethod").orEmpty(),
+                            paymentStatus = doc.getString("paymentStatus").orEmpty(),
+                            paymentProofStatus = doc.getString("paymentProofStatus").orEmpty(),
                             items = orderItems,
                             itemsSummary = itemsSummary
                         )
@@ -207,10 +214,10 @@ class AdminDashboardFragment : Fragment(R.layout.fragment_admin_dashboard) {
                 }
 
                 val indicadores = EstadisticasVentasAdmin.calcular(
-                    parsedOrders.map { PedidoParaResumen(it.status, it.date) }
+                    parsedOrders.map { PedidoParaResumen(it.status, it.date, it.paymentStatus) }
                 )
                 // El gráfico solo representa ingresos de pedidos completados.
-                cachedOrders = parsedOrders.filter { EstadisticasVentasAdmin.esVentaRealizada(it.status) }
+                cachedOrders = parsedOrders.filter { EstadisticasVentasAdmin.esVentaRealizada(it.status, it.paymentStatus) }
                 datosConfirmados = true
 
                 tvTotalSales.text = indicadores.ventasRealizadas.toString()

@@ -25,12 +25,14 @@ class DialogoPedidoRegistrado : DialogFragment() {
     private var orderId: String = ""
     private var totalAmount: Double = 0.0
     private var deliveryAddress: String = ""
+    private var metodoPago: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         orderId = arguments?.getString(ARG_ORDER_ID).orEmpty()
         totalAmount = arguments?.getDouble(ARG_TOTAL) ?: 0.0
         deliveryAddress = arguments?.getString(ARG_ADDRESS).orEmpty()
+        metodoPago = arguments?.getString(ARG_PAYMENT_METHOD).orEmpty()
     }
 
     override fun onCreateView(
@@ -57,6 +59,11 @@ class DialogoPedidoRegistrado : DialogFragment() {
         val layoutCodeBadge = view.findViewById<View>(R.id.layoutSuccessCodeBadge)
         val btnTrackOrder = view.findViewById<MaterialButton>(R.id.btnSuccessTrackOrder)
         val btnBackToMenu = view.findViewById<MaterialButton>(R.id.btnSuccessBackToMenu)
+        val tvProofHint = view.findViewById<TextView>(R.id.tvSuccessPaymentProofHint)
+        if (metodoPago in setOf("YAPE", "PLIN", "TRANSFERENCIA")) {
+            tvProofHint.visibility = View.VISIBLE
+            btnTrackOrder.text = "Ir a Rastreo y adjuntar comprobante"
+        }
 
         // Set Data
         val codeText = if (orderId.length > 4) "#${orderId.takeLast(5).uppercase(Locale.US)}" else "#$orderId"
@@ -147,13 +154,15 @@ class DialogoPedidoRegistrado : DialogFragment() {
         private const val ARG_ORDER_ID = "arg_order_id"
         private const val ARG_TOTAL = "arg_total"
         private const val ARG_ADDRESS = "arg_address"
+        private const val ARG_PAYMENT_METHOD = "arg_payment_method"
 
-        fun crear(orderId: String, total: Double, address: String): DialogoPedidoRegistrado {
+        fun crear(orderId: String, total: Double, address: String, metodoPago: String = ""): DialogoPedidoRegistrado {
             return DialogoPedidoRegistrado().apply {
                 arguments = Bundle().apply {
                     putString(ARG_ORDER_ID, orderId)
                     putDouble(ARG_TOTAL, total)
                     putString(ARG_ADDRESS, address)
+                    putString(ARG_PAYMENT_METHOD, metodoPago)
                 }
             }
         }

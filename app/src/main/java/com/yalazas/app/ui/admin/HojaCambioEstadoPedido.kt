@@ -28,6 +28,7 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
     private var currentStatus: String = "PENDIENTE"
     private var customerName: String = ""
     private var totalAmount: Double = 0.0
+    private var serviceType: String = ""
 
     // La hoja solo selecciona el estado; la escritura en Firestore ocurre en la pantalla llamadora.
     private var selectedStatus: OrderStatus? = null
@@ -42,6 +43,7 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
             currentStatus = it.getString(ARG_CURRENT_STATUS, "PENDIENTE")
             customerName = it.getString(ARG_CUSTOMER_NAME, "")
             totalAmount = it.getDouble(ARG_TOTAL_AMOUNT, 0.0)
+            serviceType = it.getString(ARG_SERVICE_TYPE, "")
         }
     }
 
@@ -95,6 +97,7 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
 
         // Las opciones provienen de la regla local de transición definida en OrderStatus.
         val allowedTransitions = OrderStatus.obtenerTransicionesPermitidas(currentStatus)
+            .filterNot { serviceType == "MESA" && it == OrderStatus.EN_CAMINO }
 
         if (allowedTransitions.isEmpty()) {
             // Orden cerrada (ENTREGADO o CANCELADO)
@@ -366,13 +369,15 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
         private const val ARG_CURRENT_STATUS = "arg_current_status"
         private const val ARG_CUSTOMER_NAME = "arg_customer_name"
         private const val ARG_TOTAL_AMOUNT = "arg_total_amount"
+        private const val ARG_SERVICE_TYPE = "arg_service_type"
 
         fun crear(
             orderId: String,
             saleNumber: String,
             currentStatus: String,
             customerName: String,
-            totalAmount: Double
+            totalAmount: Double,
+            serviceType: String = ""
         ): HojaCambioEstadoPedido {
             return HojaCambioEstadoPedido().apply {
                 arguments = Bundle().apply {
@@ -381,6 +386,7 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
                     putString(ARG_CURRENT_STATUS, currentStatus)
                     putString(ARG_CUSTOMER_NAME, customerName)
                     putDouble(ARG_TOTAL_AMOUNT, totalAmount)
+                    putString(ARG_SERVICE_TYPE, serviceType)
                 }
             }
         }
@@ -391,7 +397,8 @@ class HojaCambioEstadoPedido : BottomSheetDialogFragment() {
                 saleNumber = saleNumber,
                 currentStatus = order.status,
                 customerName = order.customerName,
-                totalAmount = order.total
+                totalAmount = order.total,
+                serviceType = order.serviceType
             )
         }
     }

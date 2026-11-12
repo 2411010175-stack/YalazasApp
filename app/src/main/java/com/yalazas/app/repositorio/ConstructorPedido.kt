@@ -9,6 +9,9 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
     private var entrega: DatosEntrega? = null
     private var pago: DatosPago? = null
     private var comentario: String = ""
+    private var tipoServicio: String = ""
+    private var numeroMesa: Int = 0
+    private var nombreCliente: String = ""
 
     /** Agrega una variante de producto sin depender de cambios posteriores en el carrito. */
     fun agregarArticulo(articulo: ArticuloCarrito) = apply {
@@ -42,6 +45,16 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
         pago = DatosPago(metodo, montoEfectivo)
     }
 
+    /** Una comanda de salón no lleva tarifa de reparto; el pago se verifica al entregarla. */
+    fun configurarMesa(mesa: Int, cliente: String = "") = apply {
+        require(mesa in 1..200) { "Ingresa un número de mesa válido." }
+        tipoServicio = "MESA"
+        numeroMesa = mesa
+        nombreCliente = cliente.trim()
+        entrega = DatosEntrega("Mesa $mesa", "Salón", 0.0, 0.0, false, 0.0, 0.0)
+        pago = DatosPago("POR_DEFINIR", 0.0)
+    }
+
     /** Calcula el total desde los artículos y la tarifa, y entrega una solicitud independiente. */
     fun construir(): SolicitudPedido {
         require(articulos.isNotEmpty()) { "El pedido debe contener al menos un producto." }
@@ -60,10 +73,17 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
             comment = comentario,
             totalAmount = total,
             paymentMethod = datosPago.metodo,
-            paymentAmount = if (datosPago.metodo == "EFECTIVO") datosPago.montoEfectivo else total,
+            paymentAmount = when (datosPago.metodo) {
+                "POR_DEFINIR" -> 0.0
+                "EFECTIVO" -> datosPago.montoEfectivo
+                else -> total
+            },
             isDelivery = datosEntrega.esDelivery,
             deliveryDistanceKm = datosEntrega.distanciaKm,
-            deliveryFee = datosEntrega.tarifa
+            deliveryFee = datosEntrega.tarifa,
+            serviceType = tipoServicio.ifBlank { if (datosEntrega.esDelivery) "DELIVERY" else "RETIRO" },
+            tableNumber = numeroMesa,
+            customerName = nombreCliente
         )
     }
 
@@ -86,5 +106,7 @@ class ConstructorPedido private constructor(private val perfil: UserProfile) {
 
     companion object {
         fun paraCliente(perfil: UserProfile) = ConstructorPedido(perfil)
+        fun paraMesa(perfil: UserProfile, mesa: Int, cliente: String = "") =
+            ConstructorPedido(perfil).configurarMesa(mesa, cliente)
     }
 }

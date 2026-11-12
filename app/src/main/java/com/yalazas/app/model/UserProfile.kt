@@ -13,5 +13,8 @@ data class UserProfile(
     val longitude: Double = 0.0,
     val active: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    val vehicleType: String = "",
+    val vehiclePlate: String = "",
+    val vehicleModel: String = ""
 )

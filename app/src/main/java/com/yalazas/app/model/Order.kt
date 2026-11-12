@@ -23,13 +23,20 @@ data class Order(
     val paymentAmount: Double = 0.0,
     val paymentChange: Double = 0.0,
     val paymentStatus: String = "PENDIENTE",
+    val paymentProofStatus: String = "",
     val deliveryDriverId: String = "",
     val deliveryDriverName: String = "",
     val deliveryDriverPhone: String = "",
     val isDelivery: Boolean = true,
     val deliveryDistanceKm: Double = 0.0,
     val deliveryFee: Double = 0.0,
-    val routeOrderIndex: Int = 0
+    val routeOrderIndex: Int = 0,
+    val serviceType: String = "",
+    val tableNumber: Int = 0,
+    val waiterId: String = "",
+    val waiterName: String = "",
+    val paymentVerifiedBy: String = "",
+    val paymentVerifiedAt: Timestamp? = null
 )
 
 /** Artículo del pedido que también se puede enviar entre pantallas mediante Parcelable. */

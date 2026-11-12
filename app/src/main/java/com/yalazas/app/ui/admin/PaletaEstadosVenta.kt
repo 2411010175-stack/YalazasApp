@@ -14,6 +14,17 @@ data class EstiloEstadoVenta(
 )
 
 object PaletaEstadosVenta {
+    /** El aviso se reserva para comprobantes recibidos que administración aún debe revisar. */
+    fun requiereRevisionPago(
+        metodo: String,
+        estadoPago: String,
+        estadoComprobante: String,
+        estadoPedido: String
+    ): Boolean = metodo in setOf("YAPE", "PLIN", "TRANSFERENCIA")
+        && estadoPago == "PENDIENTE"
+        && estadoComprobante == "EN_REVISION"
+        && OrderStatus.desdeTexto(estadoPedido) != OrderStatus.CANCELADO
+
     fun para(estado: OrderStatus): EstiloEstadoVenta = when (estado) {
         OrderStatus.PENDIENTE -> EstiloEstadoVenta(
             R.color.admin_sale_pending_card, R.color.admin_sale_pending_border,

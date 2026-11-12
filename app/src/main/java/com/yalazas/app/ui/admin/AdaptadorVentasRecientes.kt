@@ -22,12 +22,17 @@ data class AdminSaleItem(
     val total: Double = 0.0,
     val deliveryFee: Double = 0.0,
     val isDelivery: Boolean = false,
+    val serviceType: String = "",
+    val tableNumber: Int = 0,
     val customerName: String = "",
     val phone: String = "",
     val address: String = "",
     val reference: String = "",
     val comment: String = "",
     val status: String = "PENDIENTE",
+    val paymentMethod: String = "",
+    val paymentStatus: String = "",
+    val paymentProofStatus: String = "",
     val items: List<OrderItem> = emptyList(),
     val itemsSummary: String = ""
 )
@@ -68,18 +73,29 @@ class AdaptadorVentasRecientes(
         fun bind(sale: AdminSaleItem) {
             tvNumber.text = sale.saleNumber
             tvDate.text = sale.date
-            tvTime.text = sale.time
+            val codigoPedido = if (sale.id.isNotBlank()) "#${sale.id.takeLast(5).uppercase(Locale.getDefault())}" else "#ORDEN"
+            tvTime.text = "$codigoPedido · ${sale.time}"
             tvTotal.text = "S/ ${String.format(Locale.US, "%.2f", sale.total)}"
 
             val statusEnum = OrderStatus.desdeTexto(sale.status)
             val estilo = PaletaEstadosVenta.para(statusEnum)
+            val requiereRevisionPago = PaletaEstadosVenta.requiereRevisionPago(
+                sale.paymentMethod, sale.paymentStatus, sale.paymentProofStatus, sale.status
+            )
             // El fondo y el botón distinguen el estado; la fecha conserva el mismo contraste.
-            card.setCardBackgroundColor(color(estilo.tarjeta))
-            card.strokeColor = color(estilo.borde)
+            card.setCardBackgroundColor(color(if (requiereRevisionPago) R.color.admin_payment_review_card else estilo.tarjeta))
+            card.strokeColor = color(if (requiereRevisionPago) R.color.admin_payment_review_border else estilo.borde)
+            card.strokeWidth = (itemView.resources.displayMetrics.density * if (requiereRevisionPago) 2f else 1.5f).toInt()
             tvDate.setTextColor(color(R.color.admin_ui_text_secondary))
             tvTime.setTextColor(color(R.color.admin_ui_text_secondary))
             tvTotal.setTextColor(color(if (statusEnum == OrderStatus.CANCELADO) R.color.admin_status_cancelled else R.color.admin_ui_amount))
-            btnDetails.background = createButtonDrawable(color(estilo.boton))
+            btnDetails.background = createButtonDrawable(color(
+                if (requiereRevisionPago) R.color.admin_payment_review_button else estilo.boton
+            ))
+            btnDetails.text = if (requiereRevisionPago) "REVISAR PAGO" else "DETALLES"
+            btnDetails.contentDescription = if (requiereRevisionPago)
+                "Revisar comprobante de pago de la venta ${sale.saleNumber}"
+            else "Ver detalles de la venta ${sale.saleNumber}"
             tvStatus.setTextColor(color(estilo.textoEstado))
             tvStatus.background = createPillDrawable(color(estilo.fondoEstado))
 

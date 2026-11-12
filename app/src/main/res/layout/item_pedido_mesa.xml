@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="14dp"
+    app:cardBackgroundColor="@color/cocina_surface"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/cocina_border"
+    app:strokeWidth="1.2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Encabezado de la mesa: Número de mesa con badge y estado -->
+        <LinearLayout
+            android:id="@+id/contenedorPlatosPedidoMesa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Identificador tipo chip de la Mesa -->
+            <TextView
+                android:id="@+id/tvMesaPedido"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_kds_badge"
+                android:fontFamily="sans-serif-black"
+                android:letterSpacing="0.03"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="7dp"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                tools:text="MESA 04" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Estado de la comanda -->
+            <TextView
+                android:id="@+id/tvEstadoPedidoMesa"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_delivery_address_pill"
+                android:fontFamily="sans-serif-bold"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:textColor="@color/yalaza_yellow"
+                android:textSize="12sp"
+                tools:text="LISTO PARA SERVIR" />
+        </LinearLayout>
+
+        <!-- Subtítulo: Cliente y hora -->
+        <TextView
+            android:id="@+id/tvClientePedidoMesa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/cocina_text_secondary"
+            android:textSize="13sp"
+            tools:text="Juan Pérez · 14:15" />
+
+        <!-- Separador sutil -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="12dp"
+            android:background="@color/cocina_border" />
+
+        <!-- Contenedor con fondo tipo comanda para los platos -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_kds_ticket_items"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-bold"
+                android:letterSpacing="0.04"
+                android:text="CONSUMO DE LA MESA"
+                android:textColor="@color/cocina_text_secondary"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvPlatosPedidoMesa"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="sans-serif"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                tools:text="2 × Alitas Acevichadas (12 unid)\n1 × Porción Papas Yalazas\n2 × Chicha Morada 500ml" />
+        </LinearLayout>
+
+        <!-- Nota de la comanda -->
+        <TextView
+            android:id="@+id/tvNotaPedidoMesa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_admin_note_card"
+            android:fontFamily="sans-serif-medium"
+            android:padding="10dp"
+            android:textColor="@color/yalaza_yellow"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="Nota: Cubiertos extra y salsas aparte" />
+
+        <!-- Fila de Cobro / Total -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvPagoPedidoMesa"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/cocina_text_secondary"
+                android:textSize="13sp"
+                tools:text="Pago pendiente" />
+
+            <TextView
+                android:id="@+id/tvTotalPedidoMesa"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="@color/yalaza_lime_dark"
+                android:textSize="20sp"
+                tools:text="S/ 64.00" />
+        </LinearLayout>
+
+        <!-- Botón para Cobrar y Entregar -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEntregarPedidoMesa"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="14dp"
+            android:fontFamily="sans-serif-bold"
+            android:text="Comprobar pago y entregar"
+            android:textAllCaps="false"
+            android:textSize="15sp"
+            app:backgroundTint="@color/yalaza_pink"
+            android:textColor="@color/white"
+            app:cornerRadius="14dp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVerDetallePedidoMesa"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="4dp"
+            android:text="Ver detalle"
+            android:textAllCaps="false"
+            android:textColor="@color/yalaza_pink"
+            android:visibility="gone" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

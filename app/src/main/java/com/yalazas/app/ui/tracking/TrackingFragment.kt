@@ -1,6 +1,7 @@
 package com.yalazas.app.ui.tracking
 
 import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -22,6 +23,7 @@ import com.yalazas.app.repositorio.RepositorioAutenticacion
 import com.yalazas.app.repositorio.RepositorioUbicacionRepartidor
 import com.yalazas.app.repositorio.ServiciosFirebase
 import com.yalazas.app.repositorio.RepositorioPedidos
+import com.yalazas.app.repositorio.RepositorioImagenes
 import java.util.Date
 
 /** Escucha los pedidos del cliente y permite cancelar los pendientes. */
@@ -48,6 +50,25 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
     private lateinit var btnEmptyGoToMenu: MaterialButton
     private lateinit var tvActiveCountBadge: TextView
     private lateinit var rvOrders: RecyclerView
+    private var pedidoParaComprobante: String? = null
+    private var subiendoComprobante = false
+    private val elegirComprobante = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val pedidoId = pedidoParaComprobante
+        pedidoParaComprobante = null
+        if (uri != null && pedidoId != null && isAdded) {
+            subiendoComprobante = true
+            Toast.makeText(requireContext(), "Subiendo comprobante...", Toast.LENGTH_SHORT).show()
+            RepositorioImagenes.subirComprobante(pedidoId, requireContext().contentResolver, uri) { resultado ->
+                subiendoComprobante = false
+                if (!isAdded || view == null) return@subirComprobante
+                resultado.onSuccess {
+                    Toast.makeText(requireContext(), "Comprobante enviado a administración", Toast.LENGTH_LONG).show()
+                }.onFailure { error ->
+                    Toast.makeText(requireContext(), error.localizedMessage ?: "No se pudo subir el comprobante", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -66,6 +87,14 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             },
             onViewDriverClick = { order ->
                 DialogoUbicacionRepartidor.mostrar(parentFragmentManager, order)
+            },
+            onUploadProofClick = { order ->
+                if (subiendoComprobante) {
+                    Toast.makeText(requireContext(), "Espera a que termine la subida actual", Toast.LENGTH_SHORT).show()
+                } else {
+                    pedidoParaComprobante = order.id
+                    elegirComprobante.launch("image/*")
+                }
             }
         )
 

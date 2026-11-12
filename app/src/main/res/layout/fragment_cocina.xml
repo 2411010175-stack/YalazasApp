@@ -7,156 +7,329 @@
     android:background="@color/yalaza_bg"
     android:orientation="vertical">
 
-    <!-- La misma cabecera con logo y brillo que utiliza administración. -->
-    <LinearLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="12dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <ImageView
-            android:layout_width="120dp"
-            android:layout_height="44dp"
-            android:contentDescription="Yalazas Restaurante"
-            android:scaleType="fitStart"
-            android:src="@drawable/yalaza_logo" />
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/cocina_header_bg"
+            app:elevation="0dp">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+            <!-- La misma cabecera con logo y brillo que utiliza administración. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="12dp"
+                app:layout_scrollFlags="scroll">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSalirCocina"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:contentDescription="Cerrar sesión de cocina"
-            android:text="Salir"
-            android:textColor="@color/yalaza_pink"
-            app:cornerRadius="12dp" />
-    </LinearLayout>
+                <ImageView
+                    android:layout_width="108dp"
+                    android:layout_height="44dp"
+                    android:contentDescription="Yalazas Restaurante"
+                    android:scaleType="fitStart"
+                    android:src="@drawable/yalaza_logo" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:background="@drawable/bg_header_glow" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        app:cardBackgroundColor="@color/yalaza_surface"
-        app:cardCornerRadius="18dp"
-        app:strokeColor="@color/yalaza_pink"
-        app:strokeWidth="1dp">
+                <ImageButton
+                    android:id="@+id/btnSalirCocina"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Cerrar sesión de cocina"
+                    android:padding="10dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_logout_door"
+                    app:tint="@color/yalaza_pink" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@drawable/bg_header_glow"
+                app:layout_scrollFlags="scroll" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical"
+                app:layout_scrollFlags="scroll">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cocina en vivo"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSaludoCocina"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Hola, cocinero"
+                    android:textColor="@color/cocina_text_secondary"
+                    android:textSize="13sp"
+                    tools:text="Hola, Alex · Cocina en vivo" />
+            </LinearLayout>
+
+            <!-- Esta fila permanece visible cuando se desplaza la cabecera. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/cocina_header_bg"
+                android:orientation="horizontal"
+                android:paddingVertical="12dp">
+
+                <Space
+                    android:layout_width="16dp"
+                    android:layout_height="1dp" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/cocina_stat_nuevos_bg"
+                    app:cardCornerRadius="14dp"
+                    app:strokeColor="@color/cocina_stat_nuevos_border"
+                    app:strokeWidth="1dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+                        <TextView
+                            android:id="@+id/tvNuevosCocina"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/yalaza_yellow"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Nuevos"
+                            android:textColor="@color/cocina_text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/cocina_stat_proceso_bg"
+                    app:cardCornerRadius="14dp"
+                    app:strokeColor="@color/cocina_stat_proceso_border"
+                    app:strokeWidth="1dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+                        <TextView
+                            android:id="@+id/tvEnProcesoCocina"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/yalaza_pink"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="En cocina"
+                            android:textColor="@color/cocina_text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/cocina_stat_listos_bg"
+                    app:cardCornerRadius="14dp"
+                    app:strokeColor="@color/cocina_stat_listos_border"
+                    app:strokeWidth="1dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="10dp">
+                        <TextView
+                            android:id="@+id/tvListosCocina"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textColor="@color/yalaza_lime_dark"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Listos"
+                            android:textColor="@color/cocina_text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <Space
+                    android:layout_width="16dp"
+                    android:layout_height="1dp" />
+            </LinearLayout>
+
+        </com.google.android.material.appbar.AppBarLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_gradient_greeting"
+            android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingHorizontal="18dp"
-            android:paddingVertical="16dp">
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="COCINA · PEDIDOS EN VIVO"
-                android:textColor="@color/yalaza_pink"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="18dp"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvTituloListaCocina"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Por preparar"
+                    android:textColor="@color/white"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSubtituloListaCocina"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Los pedidos más antiguos aparecen primero"
+                    android:textColor="@color/cocina_text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progresoCocina"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:indeterminateTint="@color/yalaza_lime" />
 
             <TextView
+                android:id="@+id/tvVacioCocina"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:text="Comandas del restaurante"
-                android:textColor="@color/white"
-                android:textSize="23sp"
-                android:textStyle="bold" />
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="28dp"
+                android:background="@drawable/bg_admin_kpi_card"
+                android:gravity="center"
+                android:minHeight="112dp"
+                android:padding="20dp"
+                android:text="No hay pedidos por preparar 🍗"
+                android:textColor="@color/yalaza_text_secondary"
+                android:textSize="17sp"
+                android:visibility="gone" />
 
-            <TextView
-                android:id="@+id/tvSaludoCocina"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listaCocina"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Pedidos que necesitan preparación"
-                android:textColor="@color/yalaza_yellow"
-                android:textSize="14sp"
-                tools:text="Hola, Alex · Comandas en tiempo real" />
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_marginTop="8dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp"
+                tools:listitem="@layout/item_comanda_cocina" />
+
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <!-- Dos opciones grandes; el color activo se actualiza desde el fragmento. -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cocina_nav_border" />
+
     <LinearLayout
+        android:id="@+id/navCocina"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:orientation="horizontal">
+        android:layout_height="64dp"
+        android:background="@color/cocina_nav_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="5dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnActivosCocina"
+        <LinearLayout
+            android:id="@+id/navNuevosCocina"
             android:layout_width="0dp"
-            android:layout_height="52dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="Por preparar"
-            android:textAllCaps="false"
-            android:textSize="15sp"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/yalaza_pink"
-            app:strokeWidth="1dp" />
+            android:contentDescription="Por preparar"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:foreground="?attr/selectableItemBackground">
+            <ImageView android:id="@+id/iconoNavNuevosCocina" android:layout_width="21dp"
+                android:layout_height="21dp" android:contentDescription="@null"
+                android:src="@drawable/ic_receipt" />
+            <TextView android:id="@+id/textoNavNuevosCocina" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                android:text="Por preparar" android:textSize="10sp" />
+        </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnListosCocina"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        <LinearLayout
+            android:id="@+id/navEnCocina"
             android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:layout_marginStart="8dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="Listos"
-            android:textAllCaps="false"
-            android:textSize="15sp"
-            app:cornerRadius="14dp"
-            app:strokeColor="@color/yalaza_pink"
-            app:strokeWidth="1dp" />
+            android:contentDescription="En cocina"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:foreground="?attr/selectableItemBackground">
+            <ImageView android:id="@+id/iconoNavEnCocina" android:layout_width="21dp"
+                android:layout_height="21dp" android:contentDescription="@null"
+                android:src="@drawable/ic_receipt" />
+            <TextView android:id="@+id/textoNavEnCocina" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                android:text="En cocina" android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/navListosCocina"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:contentDescription="Listos para entrega"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:foreground="?attr/selectableItemBackground">
+            <ImageView android:id="@+id/iconoNavListosCocina" android:layout_width="21dp"
+                android:layout_height="21dp" android:contentDescription="@null"
+                android:src="@drawable/ic_check_circle" />
+            <TextView android:id="@+id/textoNavListosCocina" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:layout_marginTop="2dp"
+                android:text="Listos" android:textSize="10sp" />
+        </LinearLayout>
     </LinearLayout>
-
-    <ProgressBar
-        android:id="@+id/progresoCocina"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="20dp"
-        android:indeterminateTint="@color/yalaza_lime" />
-
-    <TextView
-        android:id="@+id/tvVacioCocina"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="28dp"
-        android:background="@drawable/bg_admin_kpi_card"
-        android:gravity="center"
-        android:minHeight="112dp"
-        android:padding="20dp"
-        android:text="No hay pedidos por preparar 🍗"
-        android:textColor="@color/yalaza_text_secondary"
-        android:textSize="17sp"
-        android:visibility="gone" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/listaCocina"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingHorizontal="10dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="20dp"
-        tools:listitem="@layout/item_comanda_cocina" />
 </LinearLayout>

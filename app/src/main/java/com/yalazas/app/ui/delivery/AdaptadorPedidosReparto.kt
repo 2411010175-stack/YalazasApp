@@ -29,13 +29,16 @@ class AdaptadorPedidosReparto(
 ) : RecyclerView.Adapter<AdaptadorPedidosReparto.DeliveryOrderViewHolder>() {
 
     private val selectedOrderIds = mutableSetOf<String>()
+    private var puedeTomarPedidos = true
 
-    fun updateOrders(newOrders: List<Order>, enableSelection: Boolean = true) {
+    fun updateOrders(newOrders: List<Order>, enableSelection: Boolean = true, disponible: Boolean = true) {
         orders = newOrders
         isSelectionMode = enableSelection
+        puedeTomarPedidos = disponible
         // Limpiar selecciones que ya no existen en la lista
         val currentIds = newOrders.map { it.id }.toSet()
         selectedOrderIds.retainAll(currentIds)
+        if (!disponible) selectedOrderIds.clear()
         notifyDataSetChanged()
         notifySelectionUpdate()
     }
@@ -90,7 +93,7 @@ class AdaptadorPedidosReparto(
             binding.tvDeliveryOrderNumber.text = numStr
 
             // Checkbox para selección múltiple (solo visible en modo selección / pedidos por recoger)
-            if (isSelectionMode && order.status == OrderStatus.LISTO_PARA_ENTREGA.name) {
+            if (isSelectionMode && puedeTomarPedidos && order.status == OrderStatus.LISTO_PARA_ENTREGA.name) {
                 binding.cbSelectOrder.visibility = View.VISIBLE
                 binding.cbSelectOrder.setOnCheckedChangeListener(null)
                 binding.cbSelectOrder.isChecked = isSelected
@@ -119,15 +122,24 @@ class AdaptadorPedidosReparto(
             val status = OrderStatus.desdeTexto(order.status)
             when (status) {
                 OrderStatus.LISTO_PARA_ENTREGA -> {
+                    binding.btnDeliveryMainAction.visibility = View.VISIBLE
                     binding.tvDeliveryStatusBadge.text = "📦 LISTO"
                     binding.tvDeliveryStatusBadge.setBackgroundResource(R.drawable.bg_delivery_tab_selected)
                     binding.tvDeliveryStatusBadge.setTextColor(context.getColor(R.color.yalaza_primary_green))
-                    binding.btnDeliveryMainAction.text = "Tomar Pedido y Salir 🛵"
+                    binding.btnDeliveryMainAction.text = if (puedeTomarPedidos)
+                        "Tomar pedido y salir 🛵" else "Activa tu disponibilidad"
                     binding.btnDeliveryMainAction.setBackgroundColor(context.getColor(R.color.yalaza_primary_green))
-                    binding.btnDeliveryMainAction.setOnClickListener { onTakeOrderClick(order) }
+                    binding.btnDeliveryMainAction.isEnabled = puedeTomarPedidos
+                    binding.btnDeliveryMainAction.alpha = if (puedeTomarPedidos) 1f else 0.55f
+                    binding.btnDeliveryMainAction.setOnClickListener {
+                        if (puedeTomarPedidos) onTakeOrderClick(order)
+                    }
                     binding.tvDeliveryRouteStopBadge.visibility = View.GONE
                 }
                 OrderStatus.EN_CAMINO -> {
+                    binding.btnDeliveryMainAction.visibility = View.VISIBLE
+                    binding.btnDeliveryMainAction.isEnabled = true
+                    binding.btnDeliveryMainAction.alpha = 1f
                     binding.tvDeliveryStatusBadge.text = "🛵 EN RUTA"
                     binding.tvDeliveryStatusBadge.setBackgroundResource(R.drawable.bg_delivery_tab_selected)
                     binding.tvDeliveryStatusBadge.setTextColor(0xFFFFD54F.toInt())
@@ -243,22 +255,22 @@ class AdaptadorPedidosReparto(
                 method.contains("YAPE") -> {
                     binding.tvDeliveryPaymentMethodIcon.text = "📱"
                     binding.tvDeliveryPaymentMethodTitle.text = "Pago por Yape"
-                    val payStatus = if (order.paymentStatus.isNotBlank()) order.paymentStatus else "PENDIENTE"
-                    binding.tvDeliveryPaymentDetail.text = "Estado: $payStatus (Verificar en app)"
+                    binding.tvDeliveryPaymentDetail.text = if (order.paymentStatus == "PAGADO")
+                        "Pago validado por administración" else "Administración revisa el comprobante"
                     binding.tvDeliveryPaymentDetail.visibility = View.VISIBLE
                 }
                 method.contains("PLIN") -> {
                     binding.tvDeliveryPaymentMethodIcon.text = "🔵"
                     binding.tvDeliveryPaymentMethodTitle.text = "Pago por Plin"
-                    val payStatus = if (order.paymentStatus.isNotBlank()) order.paymentStatus else "PENDIENTE"
-                    binding.tvDeliveryPaymentDetail.text = "Estado: $payStatus (Verificar en app)"
+                    binding.tvDeliveryPaymentDetail.text = if (order.paymentStatus == "PAGADO")
+                        "Pago validado por administración" else "Administración revisa el comprobante"
                     binding.tvDeliveryPaymentDetail.visibility = View.VISIBLE
                 }
                 method.contains("TRANSF") -> {
                     binding.tvDeliveryPaymentMethodIcon.text = "🏦"
                     binding.tvDeliveryPaymentMethodTitle.text = "Transferencia Bancaria"
-                    val payStatus = if (order.paymentStatus.isNotBlank()) order.paymentStatus else "PENDIENTE"
-                    binding.tvDeliveryPaymentDetail.text = "Estado: $payStatus"
+                    binding.tvDeliveryPaymentDetail.text = if (order.paymentStatus == "PAGADO")
+                        "Pago validado por administración" else "Administración revisa el comprobante"
                     binding.tvDeliveryPaymentDetail.visibility = View.VISIBLE
                 }
                 else -> {

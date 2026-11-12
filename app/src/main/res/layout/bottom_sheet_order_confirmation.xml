@@ -948,7 +948,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="💡 Yapea el monto total de tu orden. El repartidor confirmará la constancia al momento de la entrega en tu puerta."
+                                android:text="💡 Yapea el monto total. Después de registrar el pedido, adjunta tu comprobante desde Rastreo para que administración valide el pago."
                                 android:textColor="#B2CEC0"
                                 android:textSize="11sp" />
                         </LinearLayout>
@@ -1048,7 +1048,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp"
-                                android:text="💡 Compatible con Interbank, BBVA, Scotiabank y BanBif. Muestra tu constancia al repartidor."
+                                android:text="💡 Después de registrar el pedido, adjunta tu comprobante desde Rastreo. Administración validará el pago."
                                 android:textColor="#B2CEC0"
                                 android:textSize="11sp" />
                         </LinearLayout>

@@ -66,6 +66,29 @@
                 tools:text="🟡 PENDIENTE" />
         </RelativeLayout>
 
+        <TextView
+            android:id="@+id/tvCustomerProofNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCustomerUploadProof"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/yalaza_pink"
+            android:text="Adjuntar comprobante de pago"
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_gallery"
+            app:iconTint="@color/white" />
+
         <!-- Divider Fino -->
         <View
             android:layout_width="match_parent"

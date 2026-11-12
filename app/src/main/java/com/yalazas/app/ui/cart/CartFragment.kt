@@ -158,11 +158,12 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
                 selectedLng = newLng
                 updateDeliveryText(tvDeliveryAddress)
             },
-            onOrderPlaced = { orderId, total, finalAddress ->
+            onOrderPlaced = { orderId, total, finalAddress, metodoPago ->
                 DialogoPedidoRegistrado.crear(
                     orderId = orderId,
                     total = total,
-                    address = finalAddress
+                    address = finalAddress,
+                    metodoPago = metodoPago
                 ).show(parentFragmentManager, DialogoPedidoRegistrado.TAG)
             }
         ).show(parentFragmentManager, HojaConfirmacionPedido.TAG)

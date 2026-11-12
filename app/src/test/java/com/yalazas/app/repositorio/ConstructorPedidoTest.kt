@@ -56,4 +56,23 @@ class ConstructorPedidoTest {
             .configurarPago("YAPE")
             .construir()
     }
+
+    @Test
+    fun comandaMesaUsaCatalogoSinTarifaYDejaCobroPendiente() {
+        val mesero = UserProfile(uid = "mesero-1", role = "MESERO", name = "Ana")
+        val solicitud = ConstructorPedido.paraMesa(mesero, 7, "Cliente de mesa")
+            .agregarArticulo(ArticuloCarrito(Product(id = "alitas", price = 20.0), 2))
+            .agregarComentario("  Sin picante  ")
+            .construir()
+
+        assertEquals("MESA", solicitud.serviceType)
+        assertEquals(7, solicitud.tableNumber)
+        assertEquals("Cliente de mesa", solicitud.customerName)
+        assertEquals("Mesa 7", solicitud.address)
+        assertEquals(40.0, solicitud.totalAmount, 0.001)
+        assertEquals(0.0, solicitud.deliveryFee, 0.001)
+        assertEquals("POR_DEFINIR", solicitud.paymentMethod)
+        assertEquals(0.0, solicitud.paymentAmount, 0.001)
+        assertEquals("Sin picante", solicitud.comment)
+    }
 }

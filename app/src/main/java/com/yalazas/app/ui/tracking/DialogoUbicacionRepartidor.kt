@@ -25,6 +25,7 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import java.text.SimpleDateFormat
@@ -63,11 +64,14 @@ class DialogoUbicacionRepartidor : DialogFragment() {
         binding.mapTrackingDriver.apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
+            zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
             controller.setZoom(16.0)
         }
         binding.tvMapDriverName.text = "Repartidor: ${requireArguments().getString(ARG_NOMBRE).orEmpty()}"
         binding.tvMapDestination.text = "📍 ${requireArguments().getString(ARG_DIRECCION).orEmpty()}"
         binding.btnCenterTrackingMap.setOnClickListener { centrarMapa() }
+        binding.btnZoomInTrackingMap.setOnClickListener { binding.mapTrackingDriver.controller.zoomIn() }
+        binding.btnZoomOutTrackingMap.setOnClickListener { binding.mapTrackingDriver.controller.zoomOut() }
         mostrarPosicion()
 
         return MaterialAlertDialogBuilder(requireContext())

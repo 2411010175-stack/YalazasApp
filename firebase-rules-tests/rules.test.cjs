@@ -9,6 +9,7 @@ const {
 } = require('@firebase/rules-unit-testing');
 const {
   collection,
+  Bytes,
   deleteDoc,
   doc,
   getDoc,
@@ -18,6 +19,7 @@ const {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
   where
 } = require('firebase/firestore');
 const { getMetadata, ref, uploadBytes } = require('firebase/storage');
@@ -69,6 +71,7 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
         ['driver', 'REPARTIDOR', true],
         ['driver2', 'REPARTIDOR', true],
         ['cook', 'COCINERO', true],
+        ['waiter', 'MESERO', true],
         ['blocked', 'CLIENTE', false]
       ]) {
         await setDoc(doc(db, 'users', uid), { uid, role, active, name: uid });
@@ -88,12 +91,34 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     const driver = env.authenticatedContext('driver').firestore();
     const driver2 = env.authenticatedContext('driver2').firestore();
     const cook = env.authenticatedContext('cook').firestore();
+    const waiter = env.authenticatedContext('waiter').firestore();
     const blocked = env.authenticatedContext('blocked').firestore();
     const anonymous = env.unauthenticatedContext().firestore();
 
     await assertSucceeds(getDoc(doc(anonymous, 'products', 'p1')));
     await assertFails(setDoc(doc(customer, 'products', 'p2'), { name: 'Falso' }));
     await assertSucceeds(setDoc(doc(admin, 'products', 'p2'), { name: 'Oferta' }));
+
+    // Solo administración cambia las mesas; el mesero conserva las cinco iniciales hasta configurarlas.
+    const salon = (db) => doc(db, 'settings', 'salon');
+    const comanda = (numero) => ({
+      ...order('waiter', false), serviceType: 'MESA', tableNumber: numero,
+      paymentMethod: 'POR_DEFINIR', paymentAmount: 0, paymentChange: 0,
+      waiterId: 'waiter', waiterName: 'Mesero', paymentVerifiedBy: ''
+    });
+    await assertSucceeds(getDoc(salon(waiter)));
+    await assertFails(getDoc(salon(customer)));
+    await assertSucceeds(setDoc(doc(waiter, 'orders', 'mesa-inicial'), comanda(1)));
+    await assertFails(setDoc(doc(waiter, 'orders', 'mesa-inexistente'), comanda(6)));
+    await assertSucceeds(setDoc(salon(admin), {
+      tableNumbers: [1, 2, 6], updatedAt: serverTimestamp()
+    }));
+    await assertFails(updateDoc(salon(waiter), { tableNumbers: [1, 2, 3] }));
+    await assertFails(updateDoc(salon(customer), { tableNumbers: [1, 2, 3] }));
+    await assertSucceeds(getDoc(salon(waiter)));
+    await assertFails(setDoc(doc(waiter, 'orders', 'mesa-retirada'), comanda(3)));
+    await assertSucceeds(setDoc(doc(waiter, 'orders', 'mesa-nueva'), comanda(6)));
+    await assertFails(deleteDoc(salon(admin)));
 
     const promocion = { productId: 'p1', offerPrice: 17, offerTag: 'Oferta del día', active: true };
     await assertSucceeds(setDoc(doc(admin, 'promotions', 'p1'), promocion));
@@ -103,9 +128,42 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     assert.equal((await getDoc(doc(admin, 'products', 'p1'))).data().price, 20);
     await assertSucceeds(deleteDoc(doc(admin, 'promotions', 'p1')));
 
+    const insumo = {
+      id: 'salsa_bbq', name: 'Salsa BBQ', unit: 'ml', stock: 1000,
+      lowThreshold: 1000, pauseThreshold: 200
+    };
+    await assertSucceeds(setDoc(doc(admin, 'ingredients', 'salsa_bbq'), insumo));
+    await assertSucceeds(getDoc(doc(customer, 'ingredients', 'salsa_bbq')));
+    await assertFails(getDoc(doc(anonymous, 'ingredients', 'salsa_bbq')));
+    await assertFails(updateDoc(doc(customer, 'ingredients', 'salsa_bbq'), { stock: 500 }));
+    await assertFails(setDoc(doc(admin, 'ingredients', 'falso'), { ...insumo, stock: -1 }));
+    const receta = { productId: 'p1', ingredients: [{ ingredientId: 'salsa_bbq', quantity: 50 }] };
+    await assertSucceeds(setDoc(doc(admin, 'recipes', 'p1'), receta));
+    await assertSucceeds(setDoc(doc(admin, 'recipes', 'p1'), {
+      productId: 'p1',
+      ingredients: [{ ingredientId: 'salsa_bbq', quantity: 25 }],
+      sauceSlotsMl: [25, 25],
+      sauceIngredients: { 'BBQ Clásica': 'salsa_bbq' }
+    }));
+    await assertSucceeds(getDoc(doc(customer, 'recipes', 'p1')));
+    await assertFails(getDoc(doc(anonymous, 'recipes', 'p1')));
+    await assertFails(setDoc(doc(customer, 'recipes', 'p1'), receta));
+
     await assertSucceeds(getDocs(collection(admin, 'users')));
     await assertFails(getDocs(collection(customer, 'users')));
     await assertFails(updateDoc(doc(customer, 'users', 'customer'), { role: 'ADMINISTRADOR' }));
+    // El vehículo pertenece al perfil del repartidor, pero solo administración lo modifica.
+    await assertSucceeds(updateDoc(doc(admin, 'users', 'driver'), {
+      vehicleType: 'Moto', vehiclePlate: 'ABC-123', vehicleModel: 'Honda 150', updatedAt: Date.now()
+    }));
+    await assertFails(updateDoc(doc(driver, 'users', 'driver'), { vehiclePlate: 'FALSA-1' }));
+    await assertSucceeds(updateDoc(doc(driver, 'users', 'driver'), { name: 'Repartidor actualizado' }));
+    await assertFails(updateDoc(doc(admin, 'users', 'customer'), {
+      vehicleType: 'Moto', vehiclePlate: 'ABC-123', vehicleModel: ''
+    }));
+    await assertFails(updateDoc(doc(admin, 'users', 'driver'), {
+      vehicleType: '', vehiclePlate: '', vehicleModel: 'Sin placa'
+    }));
     const guest = env.authenticatedContext('guest').firestore();
     const guestProfile = {
       uid: 'guest', email: '', role: 'CLIENTE', active: true,
@@ -118,6 +176,10 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     }));
     await assertFails(setDoc(doc(env.authenticatedContext('intruder').firestore(), 'users', 'intruder'), {
       uid: 'intruder', role: 'ADMINISTRADOR', active: true
+    }));
+    await assertFails(setDoc(doc(env.authenticatedContext('fake-driver').firestore(), 'users', 'fake-driver'), {
+      uid: 'fake-driver', role: 'CLIENTE', active: true,
+      vehicleType: 'Moto', vehiclePlate: 'FALSA-1', vehicleModel: ''
     }));
 
     await assertSucceeds(getDoc(doc(customer, 'orders', 'existing')));
@@ -134,6 +196,20 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     }));
 
     await assertSucceeds(setDoc(doc(customer, 'orders', 'new'), order('customer')));
+    const ventaPOS = {
+      ...order('admin', false), serviceType: 'RETIRO', paymentMethod: 'TARJETA',
+      paymentStatus: 'PAGADO', paymentVerifiedBy: 'admin', paymentVerifiedAt: serverTimestamp()
+    };
+    await assertSucceeds(setDoc(doc(admin, 'orders', 'pos-web'), ventaPOS));
+    await assertFails(setDoc(doc(customer, 'orders', 'pos-falso'), {
+      ...ventaPOS, userId: 'customer', paymentVerifiedBy: 'customer'
+    }));
+    await assertFails(setDoc(doc(admin, 'orders', 'pos-sin-validacion'), {
+      ...ventaPOS, paymentVerifiedAt: new Date(0)
+    }));
+    await assertFails(setDoc(doc(admin, 'orders', 'pos-monto-falso'), {
+      ...ventaPOS, paymentAmount: 5
+    }));
     await assertFails(setDoc(doc(customer, 'orders', 'forged'), {
       ...order('other'), status: 'ENTREGADO'
     }));
@@ -201,11 +277,57 @@ test('permisos de perfiles, productos, promociones y pedidos', async () => {
     await assertFails(setDoc(rutaDriver, { ...ubicacion(), latitude: 91 }));
     await assertFails(setDoc(rutaDriver, { ...ubicacion(), extra: 'no permitido' }));
 
-    await assertSucceeds(updateDoc(doc(driver, 'orders', 'existing'), {
+    await assertFails(updateDoc(doc(driver, 'orders', 'existing'), {
       status: 'ENTREGADO', paymentStatus: 'PAGADO'
+    }));
+    await assertSucceeds(updateDoc(doc(driver, 'orders', 'existing'), {
+      status: 'ENTREGADO', paymentStatus: 'PAGADO',
+      paymentVerifiedBy: 'driver', paymentVerifiedAt: serverTimestamp()
     }));
     await assertFails(getDoc(doc(customer, 'orders', 'existing', 'tracking', 'actual')));
     await assertFails(setDoc(rutaDriver, ubicacion()));
+
+    // El comprobante es legible solo por dueño y administración. Ni el repartidor puede aprobarse un pago digital.
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, 'orders', 'digital'), {
+        ...order('customer'), paymentMethod: 'YAPE', status: 'EN_CAMINO',
+        deliveryDriverId: 'driver', timestamp: new Date()
+      });
+    });
+    const comprobante = (db) => doc(db, 'orders', 'digital', 'privado', 'comprobante');
+    const imagen = Bytes.fromUint8Array(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
+    const datosComprobante = () => ({
+      imagen, mime: 'image/jpeg', subidoPor: 'customer', subidoEn: serverTimestamp()
+    });
+    await assertFails(setDoc(comprobante(customer), datosComprobante()));
+    await assertFails(updateDoc(doc(customer, 'orders', 'digital'), { paymentProofStatus: 'EN_REVISION' }));
+    async function enviarComprobante() {
+      const lote = writeBatch(customer);
+      lote.set(comprobante(customer), datosComprobante());
+      lote.update(doc(customer, 'orders', 'digital'), { paymentProofStatus: 'EN_REVISION' });
+      return lote.commit();
+    }
+    await assertSucceeds(enviarComprobante());
+    await assertSucceeds(getDoc(comprobante(customer)));
+    await assertSucceeds(getDoc(comprobante(admin)));
+    await assertFails(getDoc(comprobante(driver)));
+    await assertFails(getDoc(comprobante(other)));
+    await assertFails(updateDoc(comprobante(customer), { subidoPor: 'other' }));
+    await assertFails(enviarComprobante());
+    await assertFails(updateDoc(doc(admin, 'orders', 'digital'), { paymentStatus: 'PAGADO' }));
+    await assertFails(updateDoc(doc(customer, 'orders', 'digital'), { paymentProofStatus: 'APROBADO' }));
+    await assertFails(updateDoc(doc(driver, 'orders', 'digital'), {
+      status: 'ENTREGADO', paymentStatus: 'PAGADO'
+    }));
+    await assertSucceeds(updateDoc(doc(admin, 'orders', 'digital'), { paymentProofStatus: 'RECHAZADO' }));
+    await assertSucceeds(enviarComprobante());
+    await assertSucceeds(updateDoc(doc(admin, 'orders', 'digital'), {
+      paymentProofStatus: 'APROBADO', paymentStatus: 'PAGADO',
+      paymentVerifiedBy: 'admin', paymentVerifiedAt: serverTimestamp()
+    }));
+    await assertFails(enviarComprobante());
+    await assertSucceeds(updateDoc(doc(driver, 'orders', 'digital'), { status: 'ENTREGADO' }));
 
     // Una ruta múltiple no debe tomar parcialmente pedidos si uno dejó de estar listo.
     await env.withSecurityRulesDisabled(async (context) => {

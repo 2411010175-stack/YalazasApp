@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="6dp"
+    android:background="@drawable/bg_kds_badge"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp">
+
+    <TextView
+        android:id="@+id/tvDetalleBorradorMesa"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        tools:text="2 × Alitas BBQ (Salsa BBQ)" />
+
+    <TextView
+        android:id="@+id/tvSubtotalBorradorMesa"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:fontFamily="sans-serif-black"
+        android:textColor="@color/yalaza_lime_dark"
+        android:textSize="14sp"
+        tools:text="S/ 52.00" />
+
+    <ImageButton
+        android:id="@+id/btnQuitarBorradorMesa"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="6dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Quitar plato"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:tint="@color/yalaza_pink" />
+</LinearLayout>

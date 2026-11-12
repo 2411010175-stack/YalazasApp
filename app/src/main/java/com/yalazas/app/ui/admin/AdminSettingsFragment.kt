@@ -27,6 +27,10 @@ class AdminSettingsFragment : Fragment(R.layout.fragment_admin_settings) {
         val adminEmail = RepositorioAutenticacion.currentUser?.email ?: RepositorioAutenticacion.currentProfile?.email ?: "admin@yalaza.com"
         view.findViewById<TextView>(R.id.tvAdminEmail).text = adminEmail
 
+        view.findViewById<View>(R.id.btnGestionarMesas).setOnClickListener {
+            findNavController().navigate(R.id.nav_admin_mesas)
+        }
+
         // Cerrar sesión
         view.findViewById<MaterialButton>(R.id.btnAdminLogout).setOnClickListener {
             DialogoCerrarSesion.crear("¿Deseas salir del panel de administración?")

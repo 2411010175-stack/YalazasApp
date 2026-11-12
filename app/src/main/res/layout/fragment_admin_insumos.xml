@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scrollInsumos"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/insumos_fondo"
+    android:clipToPadding="false"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="18dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="36dp">
+
+        <!-- CABECERA DE LA SECCIÓN -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:text="Almacén e Insumos"
+                    android:textColor="@color/white"
+                    android:textSize="25sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Control de stock y materia prima en tiempo real"
+                    android:textColor="@color/insumos_texto_secundario"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_kds_badge"
+                android:contentDescription="Icono de almacén"
+                android:padding="9dp"
+                android:src="@drawable/ic_admin_insumos"
+                app:tint="@color/insumos_rosa" />
+        </LinearLayout>
+
+        <!-- FILA DE KPIS SUPERIORES (TOTAL, STOCK BAJO, AGOTADOS) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <!-- KPI 1: Total Registrados -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/insumos_kpi_total"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/insumos_borde_verde"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/tvKpiTotalInsumos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="—"
+                        android:textColor="@color/insumos_verde"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Total insumos"
+                        android:textColor="@color/insumos_texto_secundario"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- KPI 2: Stock Bajo -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/insumos_kpi_bajo"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/insumos_borde_amarillo"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/tvKpiBajosInsumos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="—"
+                        android:textColor="@color/insumos_amarillo"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Stock bajo"
+                        android:textColor="@color/insumos_texto_secundario"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- KPI 3: Críticos / Agotados -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/insumos_kpi_critico"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/insumos_borde_rojo"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/tvKpiAgotadosInsumos"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-black"
+                        android:text="—"
+                        android:textColor="@color/insumos_rojo"
+                        android:textSize="22sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Críticos"
+                        android:textColor="@color/insumos_texto_secundario"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- FILA DE ACCIONES PRINCIPALES (REGISTRAR ENTRADA + NUEVO INSUMO) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRegistrarEntrada"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-black"
+                android:text="Registrar entrada"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:paddingHorizontal="8dp"
+                app:backgroundTint="@color/insumos_rosa"
+                app:cornerRadius="15dp"
+                android:maxLines="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNuevoInsumo"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-bold"
+                android:text="+ Nuevo insumo"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:paddingHorizontal="8dp"
+                android:maxLines="1"
+                app:cornerRadius="15dp"
+                app:strokeColor="@color/insumos_borde"
+                app:strokeWidth="1.2dp" />
+        </LinearLayout>
+
+        <!-- SECCIÓN DE LISTADO Y FILTROS -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:fontFamily="sans-serif-black"
+            android:text="Materia Prima y Existencias"
+            android:textColor="@color/white"
+            android:textSize="17sp" />
+
+        <!-- Los tres filtros comparten el ancho disponible; las cifras ya están en los KPI. -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/grupoFiltrosInsumos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filtroTodosInsumos"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:fontFamily="sans-serif-bold"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="4dp"
+                    android:text="Todos"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    app:backgroundTint="@color/insumos_filtro_fondo"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/insumos_borde" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filtroBajosInsumos"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-bold"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="4dp"
+                    android:text="Bajos"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    app:backgroundTint="@color/insumos_filtro_fondo"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/insumos_borde" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filtroAgotadosInsumos"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-bold"
+                    android:minWidth="0dp"
+                    android:paddingHorizontal="4dp"
+                    android:text="Críticos"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    app:backgroundTint="@color/insumos_filtro_fondo"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="@color/insumos_borde" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <TextView
+            android:id="@+id/tvResumenInsumos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="6dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Cargando insumos…"
+            android:textColor="@color/insumos_texto_secundario"
+            android:textSize="12.5sp" />
+
+        <!-- CONTENEDOR DE TARJETAS DE INSUMOS -->
+        <LinearLayout
+            android:id="@+id/contenedorInsumos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <!-- SECCIÓN DE DISPONIBILIDAD POR RECETA -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="22dp"
+            android:background="@color/insumos_borde" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:text="Disponibilidad por Receta"
+                android:textColor="@color/white"
+                android:textSize="20sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Calcula porciones disponibles y pausa platos automáticamente según el inventario"
+                android:textColor="@color/insumos_texto_secundario"
+                android:textSize="13sp" />
+
+            <!-- BOTONES DE CONFIGURACIÓN DE RECETAS -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReceta"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-bold"
+                    android:text="Configurar receta"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/insumos_rosa"
+                    app:cornerRadius="14dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEjemploBbq"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Ejemplo: Alitas BBQ"
+                    android:textAllCaps="false"
+                    android:textColor="@color/insumos_rosa_claro"
+                    app:cornerRadius="14dp"
+                    app:strokeColor="@color/insumos_borde" />
+            </LinearLayout>
+
+            <!-- CONTENEDOR DE TARJETAS DE RECETAS -->
+            <LinearLayout
+                android:id="@+id/contenedorRecetas"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="sans-serif"
+                android:text="ℹ️ Los platos sin receta configurada conservan su disponibilidad manual. Las recetas vinculadas alertan y calculan automáticamente el stock en carta."
+                android:textColor="@color/insumos_texto_suave"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

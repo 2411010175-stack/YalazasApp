@@ -1,6 +1,7 @@
 package com.yalazas.app.ui.delivery
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -35,8 +36,22 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     private var firestoreListener: ListenerRegistration? = null
 
     private var allOrders: List<Order> = emptyList()
+    private var pedidosCargados = false
     private var currentTab: Int = 0 // 0 = Por Recoger, 1 = En Ruta
     private var permisoSolicitado = false
+    private val prefs by lazy {
+        requireContext().getSharedPreferences("delivery_prefs", Context.MODE_PRIVATE)
+    }
+
+    private fun disponible(): Boolean = prefs.getBoolean("driver_available", true)
+
+    override fun onResume() {
+        super.onResume()
+        if (_binding != null && ::adapter.isInitialized) {
+            actualizarEstadoCabecera()
+            if (pedidosCargados) filtrarYMostrarPedidos()
+        }
+    }
 
     private val solicitarUbicacion = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -62,7 +77,24 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     private fun setupUI() {
         val driverName = RepositorioAutenticacion.currentProfile?.name?.ifBlank { "Repartidor" } ?: "Repartidor"
         binding.tvDeliveryDriverGreeting.text = "¡Hola $driverName! 👋"
-        binding.tvDeliveryDriverStatus.text = "🟢 En Turno • Repartidor Oficial"
+        actualizarEstadoCabecera()
+    }
+
+    private fun actualizarEstadoCabecera() {
+        if (_binding == null) return
+        val uid = ServiciosFirebase.auth.currentUser?.uid.orEmpty()
+        val enRuta = allOrders.any {
+            it.status == OrderStatus.EN_CAMINO.name && it.deliveryDriverId == uid
+        }
+        binding.tvDeliveryDriverStatus.text = when {
+            enRuta -> "🛵 En ruta · Entregas en curso"
+            disponible() -> "🟢 Disponible para entregas"
+            else -> "🟠 En descanso · No tomas pedidos"
+        }
+        binding.tvDeliveryDriverStatus.setTextColor(
+            ContextCompat.getColor(requireContext(), if (disponible() || enRuta)
+                R.color.whatsapp_green else R.color.yalaza_orange)
+        )
     }
 
     private fun configurarLista() {
@@ -171,6 +203,14 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
                     }.filter { it.isDelivery } // Solo pedidos para delivery a domicilio
                      .sortedByDescending { it.timestamp?.toDate()?.time ?: 0L }
 
+                    val uid = ServiciosFirebase.auth.currentUser?.uid.orEmpty()
+                    if (!disponible() && allOrders.any {
+                            it.status == OrderStatus.EN_CAMINO.name && it.deliveryDriverId == uid
+                        }) {
+                        prefs.edit().putBoolean("driver_available", true).apply()
+                    }
+                    pedidosCargados = true
+
                     actualizarMetricasYPestanas()
                     filtrarYMostrarPedidos()
                     verificarSeguimientoUbicacion()
@@ -186,9 +226,10 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
         }
         if (!hayEntrega) {
             requireContext().stopService(Intent(requireContext(), ServicioUbicacionRepartidor::class.java))
-            binding.tvDeliveryDriverStatus.text = "🟢 En Turno • Repartidor Oficial"
+            actualizarEstadoCabecera()
             return
         }
+        actualizarEstadoCabecera()
         solicitarOIniciarSeguimiento()
     }
 
@@ -267,7 +308,10 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
             )
         }
 
-        adapter.updateOrders(filteredList, enableSelection = (currentTab == 0))
+        val estaDisponible = disponible()
+        adapter.updateOrders(filteredList, enableSelection = (currentTab == 0), disponible = estaDisponible)
+        if (!estaDisponible) binding.cardBatchAction.visibility = View.GONE
+        actualizarEstadoCabecera()
 
         if (filteredList.isEmpty()) {
             binding.layoutDeliveryEmptyState.visibility = View.VISIBLE
@@ -289,6 +333,7 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     }
 
     private fun confirmTakeOrder(order: Order) {
+        if (!comprobarDisponibilidad()) return
         DialogoTomarPedido.crear(order) {
             takeSingleOrder(order)
         }.show(parentFragmentManager, DialogoTomarPedido.TAG)
@@ -296,6 +341,7 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
     /** Asigna el pedido al repartidor actual y lo pasa a EN_CAMINO. */
     private fun takeSingleOrder(order: Order) {
+        if (!comprobarDisponibilidad()) return
         RepositorioEstadosPedido.tomarParaReparto(listOf(ParadaPedido(order.id, 1))) { resultado ->
             if (!isAdded || _binding == null) return@tomarParaReparto
             resultado.onSuccess {
@@ -309,6 +355,7 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
     }
 
     private fun confirmBatchTakeOrders(ordersToTake: List<Order>) {
+        if (!comprobarDisponibilidad()) return
         DialogoTomarVariosPedidos.crear(ordersToTake) {
             executeBatchRouteOptimization(ordersToTake)
         }.show(parentFragmentManager, DialogoTomarVariosPedidos.TAG)
@@ -316,6 +363,7 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
 
     /** Calcula la secuencia y asigna los pedidos en una sola operación de Firestore. */
     private fun executeBatchRouteOptimization(ordersToTake: List<Order>) {
+        if (!comprobarDisponibilidad()) return
         binding.progressDelivery.visibility = View.VISIBLE
         // La optimización solo decide la secuencia; State valida todos los pedidos antes de asignarlos.
         val sequencedOrders = OptimizadorRutasEntrega.optimizarSecuenciaEntregas(ordersToTake)
@@ -339,6 +387,13 @@ class DeliveryOrdersFragment : Fragment(R.layout.fragment_delivery_orders) {
                 ).show()
             }
         }
+    }
+
+    private fun comprobarDisponibilidad(): Boolean {
+        if (disponible()) return true
+        Toast.makeText(requireContext(), "Activa tu disponibilidad en Perfil para tomar pedidos", Toast.LENGTH_LONG).show()
+        actualizarEstadoCabecera()
+        return false
     }
 
     private fun confirmMarkDelivered(order: Order) {

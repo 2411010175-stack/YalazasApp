@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="22dp">
+        <TextView android:id="@+id/tvTituloCobroMesa" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textColor="@color/white"
+            android:textSize="21sp" android:textStyle="bold" />
+        <TextView android:id="@+id/tvResumenCobroMesa" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textColor="@color/cocina_text_secondary" android:textSize="14sp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" android:text="Método de pago comprobado"
+            android:textColor="@color/white" android:textSize="14sp" android:textStyle="bold" />
+        <RadioGroup android:id="@+id/grupoMetodoMesa" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:orientation="vertical">
+            <RadioButton android:id="@+id/opcionEfectivoMesa" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:buttonTint="@color/yalaza_lime_dark"
+                android:text="Efectivo" android:textColor="@color/white" />
+            <RadioButton android:id="@+id/opcionYapeMesa" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:buttonTint="@color/yalaza_lime_dark"
+                android:text="Yape" android:textColor="@color/white" />
+            <RadioButton android:id="@+id/opcionPlinMesa" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:buttonTint="@color/yalaza_lime_dark"
+                android:text="Plin" android:textColor="@color/white" />
+            <RadioButton android:id="@+id/opcionTransferenciaMesa" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:buttonTint="@color/yalaza_lime_dark"
+                android:text="Transferencia" android:textColor="@color/white" />
+            <RadioButton android:id="@+id/opcionTarjetaMesa" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:buttonTint="@color/yalaza_lime_dark"
+                android:text="Tarjeta" android:textColor="@color/white" />
+        </RadioGroup>
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutMontoCobroMesa"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:hint="Efectivo recibido (S/)">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputMontoCobroMesa" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <TextView android:id="@+id/tvVueltoCobroMesa" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="6dp"
+            android:textColor="@color/yalaza_lime_dark" android:textSize="14sp" />
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/checkConfirmarCobroMesa" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginTop="14dp"
+            android:text="He comprobado el pago y entregaré este pedido ahora."
+            android:textColor="@color/white" />
+    </LinearLayout>
+</ScrollView>

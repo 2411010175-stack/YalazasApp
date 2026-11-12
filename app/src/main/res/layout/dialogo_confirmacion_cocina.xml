@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/iconoConfirmacionCocina"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_cocina_icono_dialogo"
+        android:contentDescription="Acción de cocina"
+        android:padding="13dp"
+        android:src="@drawable/ic_receipt"
+        android:tint="@color/cocina_nav_active" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:text="CONFIRMAR ACCIÓN"
+        android:textColor="@color/cocina_nav_active"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tituloConfirmacionCocina"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/mensajeConfirmacionCocina"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:lineSpacingExtra="3dp"
+        android:textColor="@color/cocina_text_secondary"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/detalleConfirmacionCocina"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_cocina_detalle_dialogo"
+        android:padding="12dp"
+        android:textColor="@color/cocina_nav_active"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</LinearLayout>

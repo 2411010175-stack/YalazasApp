@@ -126,13 +126,16 @@ class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
         }
 
         val sheet = HojaCambioRolAdministrador.crear(user)
-        sheet.onRoleSaved = { newRole, isActive ->
-            saveUserRoleAndStatus(user, newRole, isActive, currentAdminId)
+        sheet.onRoleSaved = { newRole, isActive, type, plate, model ->
+            saveUserRoleAndStatus(user, newRole, isActive, type, plate, model, currentAdminId)
         }
         sheet.show(parentFragmentManager, HojaCambioRolAdministrador.TAG)
     }
 
-    private fun saveUserRoleAndStatus(user: UserProfile, newRole: String, isActive: Boolean, adminId: String) {
+    private fun saveUserRoleAndStatus(
+        user: UserProfile, newRole: String, isActive: Boolean,
+        type: String, plate: String, model: String, adminId: String
+    ) {
         val targetUid = user.uid.trim()
         if (targetUid.isBlank()) {
             Toast.makeText(requireContext(), "Error: El usuario no tiene un identificador UID válido.", Toast.LENGTH_SHORT).show()
@@ -141,19 +144,26 @@ class AdminUsersFragment : Fragment(R.layout.fragment_admin_users) {
 
         val roleChanged = user.role != newRole
         val statusChanged = user.active != isActive
+        val vehicleChanged = newRole == "REPARTIDOR" &&
+            (user.vehicleType != type || user.vehiclePlate != plate || user.vehicleModel != model)
 
-        if (!roleChanged && !statusChanged) {
+        if (!roleChanged && !statusChanged && !vehicleChanged) {
             return
         }
 
         progressBar.visibility = View.VISIBLE
 
-        val updates = mapOf(
+        val updates = mutableMapOf<String, Any>(
             "uid" to targetUid,
             "role" to newRole,
             "active" to isActive,
             "updatedAt" to System.currentTimeMillis()
         )
+        if (vehicleChanged) {
+            updates["vehicleType"] = type
+            updates["vehiclePlate"] = plate
+            updates["vehicleModel"] = model
+        }
 
         // Usamos set con merge para que cree o actualice sin fallar con NOT_FOUND
         db.collection("users").document(targetUid)

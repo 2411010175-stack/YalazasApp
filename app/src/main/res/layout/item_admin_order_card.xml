@@ -28,6 +28,8 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
+                android:layout_toStartOf="@id/tvOrderStatus"
+                android:layout_marginEnd="8dp"
                 android:orientation="vertical">
 
                 <TextView
@@ -44,6 +46,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:singleLine="true"
                     android:text="20/04/2026 - 20:15"
                     android:textColor="@color/admin_ui_text_secondary"
                     android:textSize="12sp" />

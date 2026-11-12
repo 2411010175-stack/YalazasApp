@@ -37,4 +37,11 @@ class EstadoPedidoTest {
         assertEquals(emptyList<OrderStatus>(), EstadoPedido.opciones("ENTREGADO", Role.ADMIN))
         assertEquals(emptyList<OrderStatus>(), EstadoPedido.opciones("CANCELADO", Role.REPARTIDOR))
     }
+
+    @Test fun meseroSoloPuedeEntregarUnPedidoListo() {
+        assertFalse(EstadoPedido.permite("PENDIENTE", OrderStatus.ENTREGADO, Role.MESERO))
+        assertFalse(EstadoPedido.permite("EN_PROCESO", OrderStatus.ENTREGADO, Role.MESERO))
+        assertTrue(EstadoPedido.permite("LISTO_PARA_ENTREGA", OrderStatus.ENTREGADO, Role.MESERO))
+        assertFalse(EstadoPedido.permite("ENTREGADO", OrderStatus.EN_PROCESO, Role.MESERO))
+    }
 }

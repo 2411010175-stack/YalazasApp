@@ -19,6 +19,15 @@ storage-debug.log
 *.local.json
 settings.local.json
 .env
+/functions/node_modules/
+/functions/.env*
+!/functions/.env.example
+/functions/.secret.local
+/AppWebAdmin/node_modules/
+/AppWebAdmin/dist/
+/AppWebAdmin/*.tsbuildinfo
+/AppWebAdmin/.env*
+!/AppWebAdmin/.env.example
 memory/
 .claude/
 

@@ -53,7 +53,7 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
     private var paymentAmount: Double = 0.0
     private var paymentChange: Double = 0.0
 
-    private var onOrderPlacedSuccess: ((orderId: String, total: Double, address: String) -> Unit)? = null
+    private var onOrderPlacedSuccess: ((orderId: String, total: Double, address: String, metodoPago: String) -> Unit)? = null
     private var onAddressUpdated: ((address: String, reference: String, lat: Double, lng: Double) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -479,7 +479,7 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
                 result.onSuccess { orderId ->
                     pbLoading.visibility = View.GONE
                     dismissAllowingStateLoss()
-                    onOrderPlacedSuccess?.invoke(orderId, solicitud.totalAmount, effectiveAddress)
+                    onOrderPlacedSuccess?.invoke(orderId, solicitud.totalAmount, effectiveAddress, selectedPaymentMethod)
                 }.onFailure { error ->
                     btnSubmit.isEnabled = true
                     btnSubmit.text = "Enviar Pedido a Cocina 🚀"
@@ -520,7 +520,7 @@ class HojaConfirmacionPedido : BottomSheetDialogFragment() {
             lat: Double,
             lng: Double,
             onAddressUpdated: ((address: String, reference: String, lat: Double, lng: Double) -> Unit)? = null,
-            onOrderPlaced: (orderId: String, total: Double, address: String) -> Unit
+            onOrderPlaced: (orderId: String, total: Double, address: String, metodoPago: String) -> Unit
         ): HojaConfirmacionPedido {
             return HojaConfirmacionPedido().apply {
                 this.onAddressUpdated = onAddressUpdated

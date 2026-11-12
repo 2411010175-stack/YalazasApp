@@ -18,6 +18,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.yalazas.app.MainActivity
 import com.yalazas.app.R
+import com.yalazas.app.model.Role
 import com.yalazas.app.repositorio.RepositorioAutenticacion
 import java.util.Locale
 
@@ -81,11 +82,14 @@ class DialogoCerrarSesion : DialogFragment() {
             else -> "Cuenta activa en Yalazas"
         }
 
-        val role = profile?.role?.uppercase(Locale.getDefault()) ?: "CLIENTE"
-        val (roleText, roleColor) = when (role) {
-            "ADMIN" -> Pair("🛡️ Administrador", Color.parseColor("#FFD54F"))
-            "DELIVERY", "REPARTIDOR" -> Pair("🛵 Repartidor", Color.parseColor("#69F0AE"))
-            else -> Pair("👤 Cliente", Color.parseColor("#40C4FF"))
+        val rol = if (profile?.role.equals("DELIVERY", ignoreCase = true)) Role.REPARTIDOR
+            else Role.desdeTexto(profile?.role.orEmpty())
+        val (roleText, roleColor) = when (rol) {
+            Role.ADMIN -> Pair("🛡️ Administrador", Color.parseColor("#FFD54F"))
+            Role.COCINERO -> Pair("👨‍🍳 Cocinero", Color.parseColor("#E81B62"))
+            Role.MESERO -> Pair("🍽️ Mesero", Color.parseColor("#FFD54F"))
+            Role.REPARTIDOR -> Pair("🛵 Repartidor", Color.parseColor("#69F0AE"))
+            Role.CLIENTE -> Pair("👤 Cliente", Color.parseColor("#40C4FF"))
         }
 
         tvUserName.text = displayName

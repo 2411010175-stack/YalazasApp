@@ -436,6 +436,61 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
+        <!-- El vehículo se edita únicamente al revisar una cuenta de repartidor. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSheetVehicle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#131C17"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/admin_ui_divider"
+            app:strokeWidth="1dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Vehículo del repartidor" android:textColor="@color/white"
+                    android:textSize="15sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp" android:text="Estos datos se mostrarán en su perfil."
+                    android:textColor="@color/admin_ui_text_secondary" android:textSize="11sp" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetVehicleType"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp" android:hint="Tipo de vehículo">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputSheetVehicleType"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:inputType="textCapWords" android:maxLength="40" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetVehiclePlate"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:hint="Placa">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputSheetVehiclePlate"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:inputType="textCapCharacters" android:maxLength="20" />
+                </com.google.android.material.textfield.TextInputLayout>
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/layoutSheetVehicleModel"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:hint="Modelo o color (opcional)">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputSheetVehicleModel"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:inputType="textCapWords" android:maxLength="60" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Tarjeta de Estado de la Cuenta (Activar / Desactivar) -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"

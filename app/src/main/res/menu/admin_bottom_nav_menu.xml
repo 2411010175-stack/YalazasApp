@@ -11,6 +11,11 @@
         android:title="Productos" />
 
     <item
+        android:id="@+id/nav_admin_insumos"
+        android:icon="@drawable/ic_admin_insumos"
+        android:title="Insumos" />
+
+    <item
         android:id="@+id/nav_admin_users"
         android:icon="@drawable/ic_admin_users"
         android:title="Usuarios" />

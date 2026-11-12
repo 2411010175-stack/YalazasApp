@@ -13,6 +13,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.yalazas.app.R
 import com.yalazas.app.model.UserProfile
 import java.util.Locale
@@ -25,11 +27,14 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
     private var userEmail: String = ""
     private var initialRole: String = "CLIENTE"
     private var isUserActive: Boolean = true
+    private var vehicleType: String = ""
+    private var vehiclePlate: String = ""
+    private var vehicleModel: String = ""
 
     private var selectedRole: String = "CLIENTE"
     private var isAccountActive: Boolean = true
 
-    var onRoleSaved: ((newRole: String, isActive: Boolean) -> Unit)? = null
+    var onRoleSaved: ((newRole: String, isActive: Boolean, type: String, plate: String, model: String) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,6 +44,9 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
             userEmail = it.getString(ARG_USER_EMAIL, "")
             initialRole = it.getString(ARG_INITIAL_ROLE, "CLIENTE")
             isUserActive = it.getBoolean(ARG_IS_ACTIVE, true)
+            vehicleType = it.getString(ARG_VEHICLE_TYPE, "")
+            vehiclePlate = it.getString(ARG_VEHICLE_PLATE, "")
+            vehicleModel = it.getString(ARG_VEHICLE_MODEL, "")
         }
         selectedRole = normalizarRol(initialRole)
         isAccountActive = isUserActive
@@ -77,6 +85,15 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
         // Switch de Estado
         val tvStatusDesc = view.findViewById<TextView>(R.id.tvSheetAccountStatusDesc)
         val switchActive = view.findViewById<SwitchMaterial>(R.id.switchSheetUserActive)
+        val vehicleCard = view.findViewById<View>(R.id.cardSheetVehicle)
+        val typeLayout = view.findViewById<TextInputLayout>(R.id.layoutSheetVehicleType)
+        val plateLayout = view.findViewById<TextInputLayout>(R.id.layoutSheetVehiclePlate)
+        val typeInput = view.findViewById<TextInputEditText>(R.id.inputSheetVehicleType)
+        val plateInput = view.findViewById<TextInputEditText>(R.id.inputSheetVehiclePlate)
+        val modelInput = view.findViewById<TextInputEditText>(R.id.inputSheetVehicleModel)
+        typeInput.setText(vehicleType)
+        plateInput.setText(vehiclePlate)
+        modelInput.setText(vehicleModel)
 
         // Botones
         val btnCancel = view.findViewById<MaterialButton>(R.id.btnSheetCancelRole)
@@ -102,6 +119,7 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
 
         // 3. Selección de Roles Visual
         fun actualizarInterfazRol() {
+            vehicleCard.visibility = if (selectedRole == "REPARTIDOR") View.VISIBLE else View.GONE
             // Reset Admin
             val isAdmin = selectedRole == "ADMINISTRADOR"
             rbAdmin.isChecked = isAdmin
@@ -167,7 +185,23 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
         }
 
         btnSave.setOnClickListener {
-            onRoleSaved?.invoke(selectedRole, isAccountActive)
+            val type = typeInput.text?.toString()?.trim().orEmpty()
+            val plate = plateInput.text?.toString()?.trim()?.uppercase(Locale.ROOT).orEmpty()
+            val model = modelInput.text?.toString()?.trim().orEmpty()
+            typeLayout.error = null
+            plateLayout.error = null
+            if (selectedRole == "REPARTIDOR" &&
+                (type.isNotBlank() || plate.isNotBlank() || model.isNotBlank())) {
+                if (type.isBlank()) {
+                    typeLayout.error = "Indica el tipo de vehículo"
+                    return@setOnClickListener
+                }
+                if (plate.isBlank()) {
+                    plateLayout.error = "Indica la placa"
+                    return@setOnClickListener
+                }
+            }
+            onRoleSaved?.invoke(selectedRole, isAccountActive, type, plate, model)
             dismiss()
         }
     }
@@ -225,6 +259,9 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
         private const val ARG_USER_EMAIL = "arg_user_email"
         private const val ARG_INITIAL_ROLE = "arg_initial_role"
         private const val ARG_IS_ACTIVE = "arg_is_active"
+        private const val ARG_VEHICLE_TYPE = "arg_vehicle_type"
+        private const val ARG_VEHICLE_PLATE = "arg_vehicle_plate"
+        private const val ARG_VEHICLE_MODEL = "arg_vehicle_model"
 
         fun crear(user: UserProfile): HojaCambioRolAdministrador {
             return HojaCambioRolAdministrador().apply {
@@ -234,6 +271,9 @@ class HojaCambioRolAdministrador : BottomSheetDialogFragment() {
                     putString(ARG_USER_EMAIL, user.email)
                     putString(ARG_INITIAL_ROLE, user.role)
                     putBoolean(ARG_IS_ACTIVE, user.active)
+                    putString(ARG_VEHICLE_TYPE, user.vehicleType)
+                    putString(ARG_VEHICLE_PLATE, user.vehiclePlate)
+                    putString(ARG_VEHICLE_MODEL, user.vehicleModel)
                 }
             }
         }

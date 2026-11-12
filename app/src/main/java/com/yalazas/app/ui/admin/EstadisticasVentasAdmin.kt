@@ -5,7 +5,7 @@ import java.util.Calendar
 import java.util.Date
 
 /** Datos mínimos para contar pedidos sin confundirlos con ventas completadas. */
-data class PedidoParaResumen(val estado: String, val fechaPedido: Date)
+data class PedidoParaResumen(val estado: String, val fechaPedido: Date, val estadoPago: String = "PAGADO")
 
 data class IndicadoresVentasAdmin(
     val ventasRealizadas: Int,
@@ -14,7 +14,8 @@ data class IndicadoresVentasAdmin(
 )
 
 object EstadisticasVentasAdmin {
-    fun esVentaRealizada(estado: String): Boolean = estado == OrderStatus.ENTREGADO.key
+    fun esVentaRealizada(estado: String, estadoPago: String = "PAGADO"): Boolean =
+        estado == OrderStatus.ENTREGADO.key && estadoPago == "PAGADO"
 
     fun calcular(pedidos: List<PedidoParaResumen>, hoy: Date = Date()): IndicadoresVentasAdmin {
         val diaActual = Calendar.getInstance().apply { time = hoy }
@@ -25,7 +26,7 @@ object EstadisticasVentasAdmin {
 
         pedidos.forEach { pedido ->
             when (pedido.estado) {
-                OrderStatus.ENTREGADO.key -> {
+                OrderStatus.ENTREGADO.key -> if (pedido.estadoPago == "PAGADO") {
                     ventasRealizadas++
                     diaPedido.time = pedido.fechaPedido
                     if (diaPedido.get(Calendar.YEAR) == diaActual.get(Calendar.YEAR) &&

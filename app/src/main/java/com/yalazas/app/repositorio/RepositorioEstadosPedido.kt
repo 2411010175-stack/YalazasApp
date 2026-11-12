@@ -2,6 +2,7 @@ package com.yalazas.app.repositorio
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Transaction
+import com.google.firebase.firestore.FieldValue
 import com.yalazas.app.model.AuditLog
 import com.yalazas.app.model.EstadoPedido
 import com.yalazas.app.model.OrderStatus
@@ -85,6 +86,9 @@ object RepositorioEstadosPedido {
             exigirRol(tx, perfilRef, Role.ADMIN)
             val pedido = tx.get(pedidoRef)
             val anterior = exigirTransicion(pedido, destino, Role.ADMIN)
+            if (pedido.getString("serviceType") == "MESA" && destino != OrderStatus.CANCELADO) {
+                throw IllegalStateException("La entrega de mesa debe confirmarla un mesero con el pago.")
+            }
             val registro = AuditLog(
                 id = auditoriaRef.id,
                 usuarioAfectadoId = pedido.getString("userId").orEmpty().ifBlank { pedidoId },
@@ -137,7 +141,7 @@ object RepositorioEstadosPedido {
             .addOnFailureListener { onResult(Result.failure(it)) }
     }
 
-    /** Reparto: solo el conductor asignado puede finalizar y marcar el pago. */
+    /** Reparto: el conductor acredita efectivo recibido; el pago digital lo revisa administración. */
     fun marcarEntregado(pedidoId: String, onResult: (Result<Unit>) -> Unit) {
         val uid = uidActual
         if (uid.isNullOrBlank() || pedidoId.isBlank()) {
@@ -153,9 +157,61 @@ object RepositorioEstadosPedido {
             if (pedido.getBoolean("isDelivery") != true || pedido.getString("deliveryDriverId") != uid) {
                 throw IllegalStateException("Este pedido no está asignado a tu cuenta.")
             }
+            if (pedido.getString("paymentMethod") == "EFECTIVO") {
+                if (pedido.getString("paymentStatus") != "PENDIENTE") {
+                    throw IllegalStateException("El cobro en efectivo ya fue registrado.")
+                }
+                tx.update(pedidoRef, mapOf(
+                    "status" to OrderStatus.ENTREGADO.key,
+                    "paymentStatus" to "PAGADO",
+                    "paymentVerifiedBy" to uid,
+                    "paymentVerifiedAt" to FieldValue.serverTimestamp()
+                ))
+            } else {
+                tx.update(pedidoRef, "status", OrderStatus.ENTREGADO.key)
+            }
+        }.addOnSuccessListener { onResult(Result.success(Unit)) }
+            .addOnFailureListener { onResult(Result.failure(it)) }
+    }
+
+    /** Salón: confirma manualmente el dinero recibido y cierra solo pedidos de mesa listos. */
+    fun marcarEntregadoMesa(
+        pedidoId: String,
+        metodo: String,
+        montoRecibido: Double,
+        onResult: (Result<Unit>) -> Unit
+    ) {
+        val uid = uidActual
+        val metodos = setOf("EFECTIVO", "YAPE", "PLIN", "TRANSFERENCIA", "TARJETA")
+        if (uid.isNullOrBlank() || pedidoId.isBlank() || metodo !in metodos ||
+            !montoRecibido.isFinite() || montoRecibido < 0.0
+        ) {
+            onResult(Result.failure(IllegalArgumentException("Datos de cobro inválidos.")))
+            return
+        }
+        val perfilRef = db.collection("users").document(uid)
+        val pedidoRef = db.collection("orders").document(pedidoId)
+        db.runTransaction { tx ->
+            exigirRol(tx, perfilRef, Role.MESERO)
+            val pedido = tx.get(pedidoRef)
+            exigirTransicion(pedido, OrderStatus.ENTREGADO, Role.MESERO)
+            if (pedido.getString("serviceType") != "MESA" || pedido.getBoolean("isDelivery") != false ||
+                pedido.getString("paymentStatus") != "PENDIENTE"
+            ) throw IllegalStateException("Esta comanda no está disponible para entrega en mesa.")
+            val total = pedido.getDouble("total") ?: throw IllegalStateException("Falta el total del pedido.")
+            if (metodo == "EFECTIVO" && montoRecibido + 0.001 < total) {
+                throw IllegalArgumentException("El efectivo recibido no cubre el total.")
+            }
+            val recibido = if (metodo == "EFECTIVO") montoRecibido else total
             tx.update(pedidoRef, mapOf(
                 "status" to OrderStatus.ENTREGADO.key,
-                "paymentStatus" to "PAGADO"
+                "paymentStatus" to "PAGADO",
+                "paymentMethod" to metodo,
+                "paymentAmount" to recibido,
+                "paymentChange" to (if (metodo == "EFECTIVO") recibido - total else 0.0),
+                "paymentVerifiedBy" to uid,
+                "paymentVerifiedAt" to FieldValue.serverTimestamp(),
+                "updatedAt" to System.currentTimeMillis()
             ))
         }.addOnSuccessListener { onResult(Result.success(Unit)) }
             .addOnFailureListener { onResult(Result.failure(it)) }

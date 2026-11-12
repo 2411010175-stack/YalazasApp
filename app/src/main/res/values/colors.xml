@@ -64,7 +64,49 @@
     <color name="admin_ui_button">#B82157</color>
     <color name="admin_ui_button_secondary">#2B3B32</color>
     <color name="admin_ui_chart_line">#F26B92</color>
+    <!-- Almacén: Paleta oficial Yalazas (Carbón #101411, Tarjeta #1A211D, Borde #2D3D33, Acentos Rosa #E81B62, Lima #9FD600, Oro #FFD54F) -->
+    <color name="insumos_fondo">#101411</color>
+    <color name="insumos_tarjeta">#1A221E</color>
+    <color name="insumos_borde">#2D3D33</color>
+    <color name="insumos_filtro_activo">#2C3E33</color>
+    <color name="insumos_rosa">#E81B62</color>
+    <color name="insumos_rosa_claro">#F28EB0</color>
+    <color name="insumos_texto_secundario">#B8C9BF</color>
+    <color name="insumos_texto_suave">#8E9F95</color>
+    <color name="insumos_verde">#9FD600</color>
+    <color name="insumos_verde_fondo">#1E381C</color>
+    <color name="insumos_amarillo">#FFD54F</color>
+    <color name="insumos_amarillo_fondo">#403314</color>
+    <color name="insumos_rojo">#FF8080</color>
+    <color name="insumos_rojo_fondo">#481E22</color>
+    <color name="insumos_kpi_total">#1B2C23</color>
+    <color name="insumos_kpi_bajo">#302815</color>
+    <color name="insumos_kpi_critico">#341D27</color>
+    <color name="insumos_borde_verde">#4D7131</color>
+    <color name="insumos_borde_amarillo">#806B36</color>
+    <color name="insumos_borde_rojo">#874457</color>
+    <color name="insumos_detalle">#151C19</color>
     <color name="admin_filter_all_selected">#745326</color>
+
+    <!-- Cocina y Mesero: Paleta Yalazas oficial (Carbón #141414, Neón Rosa #E81B62, Lima #9FD600, Oro #FFD54F) -->
+    <color name="cocina_surface">#1A1A1A</color>
+    <color name="cocina_header_bg">#121212</color>
+    <color name="cocina_nav_bg">#161616</color>
+    <color name="cocina_nav_border">#2E2E2E</color>
+    <color name="cocina_nav_active">#E81B62</color>
+    <color name="cocina_nav_indicator">#3D1422</color>
+    <color name="cocina_aviso_error">#5C1927</color>
+    <color name="cocina_border">#2C2C2C</color>
+    <color name="cocina_text_secondary">#A0A0A0</color>
+    <color name="cocina_stat_nuevos_bg">#302918</color>
+    <color name="cocina_stat_nuevos_border">#756028</color>
+    <color name="cocina_stat_proceso_bg">#351A28</color>
+    <color name="cocina_stat_proceso_border">#76324F</color>
+    <color name="cocina_stat_listos_bg">#1D3323</color>
+    <color name="cocina_stat_listos_border">#47744B</color>
+    <color name="cocina_nav_rosa_bg">#361521</color>
+    <color name="cocina_nav_lima_bg">#23351B</color>
+    <color name="mesero_ready_surface">#311722</color>
 
     <!-- Cada estado conserva su color en la tarjeta, la insignia y la acción. -->
     <color name="admin_status_pending">#F0D57C</color>
@@ -98,4 +140,8 @@
     <color name="admin_sale_cancelled_card">#2D2022</color>
     <color name="admin_sale_cancelled_border">#83535A</color>
     <color name="admin_sale_cancelled_button">#7F3942</color>
+    <!-- Aviso adicional para comprobantes digitales pendientes de revisión. -->
+    <color name="admin_payment_review_card">#172D2C</color>
+    <color name="admin_payment_review_border">#51D7C3</color>
+    <color name="admin_payment_review_button">#176E63</color>
 </resources>

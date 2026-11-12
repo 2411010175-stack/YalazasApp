@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardMesaAdmin"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    app:cardBackgroundColor="@color/admin_ui_surface"
+    app:cardCornerRadius="17dp"
+    app:strokeColor="@color/admin_ui_border"
+    app:strokeWidth="1.5dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="174dp"
+        android:orientation="vertical"
+        android:padding="13dp">
+
+        <ImageView
+            android:id="@+id/iconoMesaAdmin"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_restaurant_table" />
+
+        <TextView
+            android:id="@+id/tvNumeroMesaAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="sans-serif-black"
+            android:text="Mesa 1"
+            android:textColor="@color/white"
+            android:textSize="17sp" />
+
+        <TextView
+            android:id="@+id/tvEstadoMesaAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Libre"
+            android:textColor="@color/insumos_verde"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvDetalleMesaAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:text="Sin comandas activas"
+            android:textColor="@color/admin_ui_text_secondary"
+            android:textSize="11sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnQuitarMesaAdmin"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginTop="8dp"
+            android:text="Quitar"
+            android:textAllCaps="false"
+            android:textColor="@color/admin_status_cancelled"
+            android:textSize="12sp"
+            app:cornerRadius="10dp"
+            app:strokeColor="@color/admin_sale_cancelled_border" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

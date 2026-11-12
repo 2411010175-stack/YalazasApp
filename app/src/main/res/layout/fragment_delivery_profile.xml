@@ -157,14 +157,12 @@
                         android:textSize="15sp"
                         android:textStyle="bold" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEditVehicle"
-                        style="@style/Widget.Material3.Button.TextButton"
+                    <TextView
                         android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:text="Editar"
-                        android:textColor="#00E676"
-                        android:textSize="13sp" />
+                        android:layout_height="wrap_content"
+                        android:text="Solo administración"
+                        android:textColor="#8AA394"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <View
@@ -429,17 +427,18 @@
                         android:id="@+id/btnWhatsAppCentral"
                         style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="44dp"
+                        android:layout_height="48dp"
                         android:layout_marginStart="6dp"
                         android:layout_weight="1"
-                        android:backgroundTint="#1B4D2E"
-                        android:text="WhatsApp Admin"
-                        android:textColor="#25D366"
-                        android:textSize="13sp"
+                        android:backgroundTint="#187A42"
+                        android:text="WhatsApp"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
                         app:cornerRadius="10dp"
                         app:icon="@drawable/ic_admin_whatsapp"
-                        app:iconSize="16dp"
-                        app:iconTint="#25D366" />
+                        app:iconPadding="4dp"
+                        app:iconSize="20dp"
+                        app:iconTint="@color/white" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardBackgroundColor="@color/yalaza_surface"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/yalaza_border"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Imagen / Portada del plato con Coil -->
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivProductoMesa"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/img_featured_acvichadas"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvNombreProductoMesa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    tools:text="Alitas Acevichadas (12 unid)" />
+
+                <TextView
+                    android:id="@+id/tvPrecioProductoMesa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="sans-serif-black"
+                    android:textColor="@color/yalaza_lime_dark"
+                    android:textSize="15sp"
+                    tools:text="S/ 26.00" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAgregarProductoMesa"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans-serif-bold"
+                android:text="+ Pedir"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/yalaza_pink"
+                app:cornerRadius="14dp" />
+        </LinearLayout>
+
+        <!-- Descripción visible para que el mesero asesore al comensal -->
+        <TextView
+            android:id="@+id/tvDescripcionProductoMesa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_kds_ticket_items"
+            android:fontFamily="sans-serif"
+            android:lineSpacingExtra="2dp"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="8dp"
+            android:textColor="@color/cocina_text_secondary"
+            android:textSize="12.5sp"
+            tools:text="Crujientes alitas bañadas en nuestra salsa acevichada de la casa con un toque de ají limo y cilantro fresco." />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

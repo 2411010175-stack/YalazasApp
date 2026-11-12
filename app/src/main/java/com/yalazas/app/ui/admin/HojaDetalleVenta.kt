@@ -4,12 +4,15 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.ImageView
+import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -22,6 +25,9 @@ import com.yalazas.app.model.Order
 import com.yalazas.app.model.OrderItem
 import com.yalazas.app.model.OrderStatus
 import com.yalazas.app.repositorio.RepositorioEstadosPedido
+import com.yalazas.app.repositorio.RepositorioImagenes
+import com.yalazas.app.repositorio.ServiciosFirebase
+import com.google.firebase.firestore.ListenerRegistration
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -41,11 +47,14 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
     private var total: Double = 0.0
     private var deliveryFee: Double = 0.0
     private var isDelivery: Boolean = false
+    private var serviceType: String = ""
+    private var tableNumber: Int = 0
     private var items: ArrayList<OrderItem> = arrayListOf()
 
     var onStatusUpdated: ((String) -> Unit)? = null
 
     private lateinit var tvStatusBadge: TextView
+    private var escuchaPago: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +72,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
             total = it.getDouble(ARG_TOTAL, 0.0)
             deliveryFee = it.getDouble(ARG_DELIVERY_FEE, 0.0)
             isDelivery = it.getBoolean(ARG_IS_DELIVERY, false)
+            serviceType = it.getString(ARG_SERVICE_TYPE, "")
+            tableNumber = it.getInt(ARG_TABLE_NUMBER, 0)
             @Suppress("DEPRECATION")
             val parcelableList = it.getParcelableArrayList<OrderItem>(ARG_ITEMS)
             if (parcelableList != null) {
@@ -101,10 +112,13 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         val tvDeliveryLabel = view.findViewById<TextView>(R.id.tvSheetDeliveryLabel)
         val btnChangeStatus = view.findViewById<MaterialButton>(R.id.btnSheetChangeStatus)
         val btnClose = view.findViewById<MaterialButton>(R.id.btnSheetClose)
+        configurarRevisionPago(view)
 
         // 1. Datos de Cabecera
         tvSaleNumber.text = if (saleNumber.startsWith("Venta")) saleNumber else "Venta N° $saleNumber"
-        tvDateTime.text = if (time.isNotBlank()) "📅 $date a las $time hrs" else "📅 $date"
+        val codigoPedido = if (orderId.isNotBlank()) "#${orderId.takeLast(5).uppercase(Locale.getDefault())}" else "#ORDEN"
+        tvDateTime.text = if (time.isNotBlank()) "Pedido $codigoPedido · 📅 $date a las $time hrs"
+            else "Pedido $codigoPedido · 📅 $date"
         updateStatusBadge(status)
         btnChangeStatus.backgroundTintList = ColorStateList.valueOf(
             color(PaletaEstadosVenta.para(OrderStatus.desdeTexto(status)).boton)
@@ -142,7 +156,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
             tvAddress.text = address
             tvAddress.visibility = View.VISIBLE
         } else {
-            tvAddress.text = "Recojo en local / Sin dirección registrada"
+            tvAddress.text = if (serviceType == "MESA") "Mesa $tableNumber"
+                else "Recojo en local / Sin dirección registrada"
         }
 
         if (reference.isNotBlank()) {
@@ -207,7 +222,11 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
 
         // 4. El total guardado ya incluye envío; solo se desglosa para explicarlo.
         tvProductsAmount.text = "S/ ${String.format(Locale.US, "%.2f", (total - deliveryFee).coerceAtLeast(0.0))}"
-        tvDeliveryLabel.text = if (isDelivery) "Delivery" else "Envío (recojo en local)"
+        tvDeliveryLabel.text = when {
+            serviceType == "MESA" -> "Servicio en mesa"
+            isDelivery -> "Delivery"
+            else -> "Envío (recojo en local)"
+        }
         tvDeliveryFee.text = "S/ ${String.format(Locale.US, "%.2f", deliveryFee)}"
         tvTotalAmount.text = "S/ ${String.format(Locale.US, "%.2f", total)}"
 
@@ -219,6 +238,91 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         btnClose.setOnClickListener {
             dismiss()
         }
+    }
+
+    /** Solo administración ve esta sección; el cliente conserva el estado visible del pedido. */
+    private fun configurarRevisionPago(raiz: View) {
+        val contenedor = raiz.findViewById<View>(R.id.layoutAdminPaymentReview)
+        val texto = raiz.findViewById<TextView>(R.id.tvAdminPaymentReview)
+        val ver = raiz.findViewById<MaterialButton>(R.id.btnAdminViewProof)
+        val acciones = raiz.findViewById<View>(R.id.layoutAdminReviewActions)
+        val aprobar = raiz.findViewById<MaterialButton>(R.id.btnAdminApproveProof)
+        val rechazar = raiz.findViewById<MaterialButton>(R.id.btnAdminRejectProof)
+        if (orderId.isBlank()) return
+        escuchaPago = ServiciosFirebase.firestore.collection("orders").document(orderId)
+            .addSnapshotListener { pedido, error ->
+                if (!isAdded || view !== raiz) return@addSnapshotListener
+                if (error != null || pedido == null || !pedido.exists()) {
+                    contenedor.visibility = View.GONE
+                    return@addSnapshotListener
+                }
+                val metodo = pedido.getString("paymentMethod").orEmpty()
+                val digital = metodo in setOf("YAPE", "PLIN", "TRANSFERENCIA") &&
+                    pedido.getString("serviceType") != "MESA"
+                contenedor.visibility = if (digital) View.VISIBLE else View.GONE
+                if (!digital) return@addSnapshotListener
+                val estado = pedido.getString("paymentProofStatus").orEmpty()
+                val pagado = pedido.getString("paymentStatus") == "PAGADO"
+                texto.text = when {
+                    pagado -> "$metodo · Pago validado por administración"
+                    estado == "EN_REVISION" -> "$metodo · Comprobante pendiente de revisión"
+                    estado == "RECHAZADO" -> "$metodo · Comprobante rechazado; espera uno nuevo"
+                    else -> "$metodo · Esperando comprobante del cliente"
+                }
+                ver.visibility = if (estado.isNotBlank()) View.VISIBLE else View.GONE
+                acciones.visibility = if (estado == "EN_REVISION" && !pagado) View.VISIBLE else View.GONE
+            }
+        ver.setOnClickListener {
+            RepositorioImagenes.obtenerComprobante(orderId) { resultado ->
+                if (!isAdded || view !== raiz) return@obtenerComprobante
+                resultado.onSuccess { bytes ->
+                    val imagen = ImageView(requireContext()).apply {
+                        adjustViewBounds = true
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        setPadding(16, 16, 16, 16)
+                        setImageBitmap(BitmapFactory.decodeByteArray(bytes, 0, bytes.size))
+                    }
+                    val dialogo = MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Comprobante de pago")
+                        .setView(imagen)
+                        .setPositiveButton("Cerrar", null)
+                        .show()
+                    dialogo.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }.onFailure { error ->
+                    Toast.makeText(requireContext(), error.localizedMessage ?: "No se pudo abrir el comprobante", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        fun revisar(aprobado: Boolean) {
+            aprobar.isEnabled = false
+            rechazar.isEnabled = false
+            RepositorioImagenes.revisarComprobante(orderId, aprobado) { resultado ->
+                if (!isAdded || view !== raiz) return@revisarComprobante
+                aprobar.isEnabled = true
+                rechazar.isEnabled = true
+                resultado.onSuccess {
+                    Toast.makeText(requireContext(), if (aprobado) "Pago validado" else "Comprobante rechazado", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(requireContext(), error.localizedMessage ?: "No se pudo revisar el pago", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        aprobar.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext()).setTitle("Validar pago")
+                .setMessage("Confirma que el dinero llegó a la cuenta del restaurante.")
+                .setNegativeButton("Volver", null).setPositiveButton("Validar") { _, _ -> revisar(true) }.show()
+        }
+        rechazar.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext()).setTitle("Rechazar comprobante")
+                .setMessage("El cliente podrá enviar una nueva imagen.")
+                .setNegativeButton("Volver", null).setPositiveButton("Rechazar") { _, _ -> revisar(false) }.show()
+        }
+    }
+
+    override fun onDestroyView() {
+        escuchaPago?.remove()
+        escuchaPago = null
+        super.onDestroyView()
     }
 
     private fun updateStatusBadge(currentStatus: String) {
@@ -295,7 +399,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
             saleNumber = saleNumber,
             currentStatus = status,
             customerName = customerName,
-            totalAmount = total
+            totalAmount = total,
+            serviceType = serviceType
         )
         sheet.onStatusSelected = { newStatus ->
             applyStatusUpdate(newStatus)
@@ -340,6 +445,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
         private const val ARG_TOTAL = "arg_total"
         private const val ARG_DELIVERY_FEE = "arg_delivery_fee"
         private const val ARG_IS_DELIVERY = "arg_is_delivery"
+        private const val ARG_SERVICE_TYPE = "arg_service_type"
+        private const val ARG_TABLE_NUMBER = "arg_table_number"
         private const val ARG_ITEMS = "arg_items"
 
         fun crear(
@@ -356,7 +463,9 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
             total: Double,
             deliveryFee: Double,
             isDelivery: Boolean,
-            items: List<OrderItem>
+            items: List<OrderItem>,
+            serviceType: String = "",
+            tableNumber: Int = 0
         ): HojaDetalleVenta {
             val fragment = HojaDetalleVenta()
             val args = Bundle().apply {
@@ -373,6 +482,8 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
                 putDouble(ARG_TOTAL, total)
                 putDouble(ARG_DELIVERY_FEE, deliveryFee)
                 putBoolean(ARG_IS_DELIVERY, isDelivery)
+                putString(ARG_SERVICE_TYPE, serviceType)
+                putInt(ARG_TABLE_NUMBER, tableNumber)
                 putParcelableArrayList(ARG_ITEMS, ArrayList(items))
             }
             fragment.arguments = args
@@ -398,7 +509,9 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
                 total = order.total,
                 deliveryFee = order.deliveryFee,
                 isDelivery = order.isDelivery,
-                items = order.items
+                items = order.items,
+                serviceType = order.serviceType,
+                tableNumber = order.tableNumber
             )
         }
 
@@ -417,7 +530,9 @@ class HojaDetalleVenta : BottomSheetDialogFragment() {
                 total = saleItem.total,
                 deliveryFee = saleItem.deliveryFee,
                 isDelivery = saleItem.isDelivery,
-                items = saleItem.items
+                items = saleItem.items,
+                serviceType = saleItem.serviceType,
+                tableNumber = saleItem.tableNumber
             )
         }
     }

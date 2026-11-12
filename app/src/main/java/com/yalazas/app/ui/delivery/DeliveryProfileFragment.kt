@@ -4,16 +4,15 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Source
 import com.yalazas.app.ui.dialogos.DialogoCerrarSesion
 import com.yalazas.app.R
-import com.yalazas.app.databinding.DialogEditVehicleBinding
 import com.yalazas.app.databinding.FragmentDeliveryProfileBinding
 import com.yalazas.app.model.OrderStatus
 import com.yalazas.app.repositorio.RepositorioAutenticacion
@@ -24,6 +23,11 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
 
     private var _binding: FragmentDeliveryProfileBinding? = null
     private val binding get() = _binding!!
+    private var escuchaEntregas: ListenerRegistration? = null
+    private var escuchaVehiculo: ListenerRegistration? = null
+    private var hayEntregaActiva = false
+    private var actualizandoSwitch = false
+    private var verificandoDescanso = false
 
     private val prefs by lazy {
         requireContext().getSharedPreferences("delivery_prefs", Context.MODE_PRIVATE)
@@ -32,11 +36,24 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentDeliveryProfileBinding.bind(view)
+        hayEntregaActiva = false
+        verificandoDescanso = false
+        actualizandoSwitch = false
 
         loadProfileData()
-        loadVehicleData()
+        escucharVehiculo()
         loadDeliveredCountStat()
         configurarEventos()
+        escucharEntregasActivas()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (_binding != null) {
+            val disponible = prefs.getBoolean("driver_available", true)
+            fijarSwitch(disponible || hayEntregaActiva)
+            updateAvailabilityUI(disponible)
+        }
     }
 
     private fun loadProfileData() {
@@ -45,7 +62,7 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
 
         val name = profile?.name?.ifBlank { "Repartidor Yalazas" } ?: (user?.displayName ?: "Repartidor Yalazas")
         val email = profile?.email?.ifBlank { user?.email ?: "repartidor@yalazas.pe" } ?: (user?.email ?: "repartidor@yalazas.pe")
-        val phone = if (!profile?.phone.isNullOrBlank()) profile?.phone!! else "921 456 789"
+        val phone = profile?.phone?.ifBlank { "No registrado" } ?: "No registrado"
 
         binding.tvDriverProfileName.text = name
         binding.tvDriverProfileEmail.text = email
@@ -54,11 +71,16 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
         // Estado de disponibilidad
         val isAvailable = prefs.getBoolean("driver_available", true)
         binding.switchDriverAvailability.isChecked = isAvailable
+        binding.switchDriverAvailability.isEnabled = false
         updateAvailabilityUI(isAvailable)
     }
 
     private fun updateAvailabilityUI(isAvailable: Boolean) {
-        if (isAvailable) {
+        if (hayEntregaActiva) {
+            binding.tvDriverStatusTitle.text = "Entrega en curso"
+            binding.tvDriverStatusTitle.setTextColor(0xFF00E676.toInt())
+            binding.tvDriverStatusSubtitle.text = "Termina tus entregas antes de pasar a descanso"
+        } else if (isAvailable) {
             binding.tvDriverStatusTitle.text = "Disponible para Entregas"
             binding.tvDriverStatusTitle.setTextColor(0xFF00E676.toInt())
             binding.tvDriverStatusSubtitle.text = "Recibiendo asignaciones y pedidos en tiempo real"
@@ -69,14 +91,55 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
         }
     }
 
-    private fun loadVehicleData() {
-        val vType = prefs.getString("vehicle_type", "Moto Lineal") ?: "Moto Lineal"
-        val vPlate = prefs.getString("vehicle_plate", "7842-1F") ?: "7842-1F"
-        val vModel = prefs.getString("vehicle_model", "Honda GL 150") ?: "Honda GL 150"
+    /** El vehículo se consulta del perfil común, que solo administración puede modificar. */
+    private fun escucharVehiculo() {
+        val uid = ServiciosFirebase.auth.currentUser?.uid ?: return
+        escuchaVehiculo?.remove()
+        escuchaVehiculo = ServiciosFirebase.firestore.collection("users").document(uid)
+            .addSnapshotListener { documento, error ->
+                if (_binding == null) return@addSnapshotListener
+                if (error != null) {
+                    binding.tvVehicleType.text = "Sin conexión"
+                    binding.tvVehiclePlate.text = "—"
+                    binding.tvVehicleModel.text = "—"
+                    return@addSnapshotListener
+                }
+                binding.tvVehicleType.text = documento?.getString("vehicleType")?.ifBlank { "Por registrar" } ?: "Por registrar"
+                binding.tvVehiclePlate.text = documento?.getString("vehiclePlate")?.ifBlank { "Por registrar" } ?: "Por registrar"
+                binding.tvVehicleModel.text = documento?.getString("vehicleModel")?.ifBlank { "—" } ?: "—"
+            }
+    }
 
-        binding.tvVehicleType.text = vType
-        binding.tvVehiclePlate.text = vPlate
-        binding.tvVehicleModel.text = vModel
+    /** Bloquea descanso mientras exista alguna entrega EN_CAMINO asignada a esta cuenta. */
+    private fun escucharEntregasActivas() {
+        val uid = ServiciosFirebase.auth.currentUser?.uid ?: return
+        escuchaEntregas?.remove()
+        escuchaEntregas = ServiciosFirebase.firestore.collection("orders")
+            .whereEqualTo("isDelivery", true)
+            .addSnapshotListener { snapshot, error ->
+                if (_binding == null) return@addSnapshotListener
+                if (error != null) {
+                    binding.switchDriverAvailability.isEnabled = false
+                    binding.tvDriverStatusSubtitle.text = "No se pudo verificar tus entregas. Revisa la conexión."
+                    return@addSnapshotListener
+                }
+                hayEntregaActiva = snapshot?.documents?.any {
+                    it.getString("status") == OrderStatus.EN_CAMINO.name &&
+                        it.getString("deliveryDriverId") == uid
+                } == true
+                if (hayEntregaActiva) {
+                    prefs.edit().putBoolean("driver_available", true).apply()
+                    fijarSwitch(true)
+                }
+                binding.switchDriverAvailability.isEnabled = !hayEntregaActiva && !verificandoDescanso
+                updateAvailabilityUI(prefs.getBoolean("driver_available", true))
+            }
+    }
+
+    private fun fijarSwitch(disponible: Boolean) {
+        actualizandoSwitch = true
+        binding.switchDriverAvailability.isChecked = disponible
+        actualizandoSwitch = false
     }
 
     private fun loadDeliveredCountStat() {
@@ -99,14 +162,52 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
 
     private fun configurarEventos() {
         binding.switchDriverAvailability.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("driver_available", isChecked).apply()
-            updateAvailabilityUI(isChecked)
-            val msg = if (isChecked) "🟢 Ahora estás disponible para recibir pedidos" else "⏸️ Turno pausado. Que descanses."
-            Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
-        }
-
-        binding.btnEditVehicle.setOnClickListener {
-            showEditVehicleDialog()
+            if (actualizandoSwitch) return@setOnCheckedChangeListener
+            if (isChecked) {
+                prefs.edit().putBoolean("driver_available", true).apply()
+                updateAvailabilityUI(true)
+                Toast.makeText(requireContext(), "Disponible para recibir pedidos", Toast.LENGTH_SHORT).show()
+                return@setOnCheckedChangeListener
+            }
+            if (hayEntregaActiva) {
+                fijarSwitch(true)
+                Toast.makeText(requireContext(), "Termina tus entregas antes de descansar", Toast.LENGTH_LONG).show()
+                return@setOnCheckedChangeListener
+            }
+            verificandoDescanso = true
+            binding.switchDriverAvailability.isEnabled = false
+            val vistaOrigen = _binding
+            ServiciosFirebase.firestore.collection("orders").whereEqualTo("isDelivery", true)
+                .get(Source.SERVER)
+                .addOnSuccessListener { snapshot ->
+                    if (_binding !== vistaOrigen) return@addOnSuccessListener
+                    val uid = ServiciosFirebase.auth.currentUser?.uid
+                    val enRuta = snapshot.documents.any {
+                        it.getString("status") == OrderStatus.EN_CAMINO.name &&
+                            it.getString("deliveryDriverId") == uid
+                    }
+                    verificandoDescanso = false
+                    if (enRuta || hayEntregaActiva) {
+                        hayEntregaActiva = true
+                        prefs.edit().putBoolean("driver_available", true).apply()
+                        fijarSwitch(true)
+                        Toast.makeText(requireContext(), "Tienes entregas en curso; no puedes descansar", Toast.LENGTH_LONG).show()
+                    } else {
+                        prefs.edit().putBoolean("driver_available", false).apply()
+                        Toast.makeText(requireContext(), "Ahora estás en descanso", Toast.LENGTH_SHORT).show()
+                    }
+                    binding.switchDriverAvailability.isEnabled = !hayEntregaActiva
+                    updateAvailabilityUI(prefs.getBoolean("driver_available", true))
+                }
+                .addOnFailureListener {
+                    if (_binding !== vistaOrigen) return@addOnFailureListener
+                    verificandoDescanso = false
+                    prefs.edit().putBoolean("driver_available", true).apply()
+                    fijarSwitch(true)
+                    binding.switchDriverAvailability.isEnabled = !hayEntregaActiva
+                    updateAvailabilityUI(true)
+                    Toast.makeText(requireContext(), "No se pudo verificar tus entregas", Toast.LENGTH_LONG).show()
+                }
         }
 
         binding.btnCallCentral.setOnClickListener {
@@ -128,49 +229,6 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
         binding.btnDriverLogout.setOnClickListener {
             confirmLogout()
         }
-    }
-
-    private fun showEditVehicleDialog() {
-        val dialogBinding = DialogEditVehicleBinding.inflate(LayoutInflater.from(requireContext()))
-
-        val currentType = binding.tvVehicleType.text.toString()
-        val currentPlate = binding.tvVehiclePlate.text.toString()
-        val currentModel = binding.tvVehicleModel.text.toString()
-
-        dialogBinding.etVehicleType.setText(currentType)
-        dialogBinding.etVehiclePlate.setText(currentPlate)
-        dialogBinding.etVehicleModel.setText(currentModel)
-
-        val dialog = AlertDialog.Builder(requireContext(), com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-            .setView(dialogBinding.root)
-            .create()
-
-        dialogBinding.btnCancelVehicle.setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialogBinding.btnSaveVehicle.setOnClickListener {
-            val newType = dialogBinding.etVehicleType.text?.toString()?.trim() ?: ""
-            val newPlate = dialogBinding.etVehiclePlate.text?.toString()?.trim() ?: ""
-            val newModel = dialogBinding.etVehicleModel.text?.toString()?.trim() ?: ""
-
-            if (newType.isEmpty() || newPlate.isEmpty()) {
-                Toast.makeText(requireContext(), "Por favor completa el tipo y la placa", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            prefs.edit()
-                .putString("vehicle_type", newType)
-                .putString("vehicle_plate", newPlate)
-                .putString("vehicle_model", newModel.ifBlank { "-" })
-                .apply()
-
-            loadVehicleData()
-            dialog.dismiss()
-            Toast.makeText(requireContext(), "✅ Datos del vehículo actualizados", Toast.LENGTH_SHORT).show()
-        }
-
-        dialog.show()
     }
 
     private fun confirmLogout() {
@@ -197,6 +255,10 @@ class DeliveryProfileFragment : Fragment(R.layout.fragment_delivery_profile) {
     }
 
     override fun onDestroyView() {
+        escuchaEntregas?.remove()
+        escuchaEntregas = null
+        escuchaVehiculo?.remove()
+        escuchaVehiculo = null
         super.onDestroyView()
         _binding = null
     }

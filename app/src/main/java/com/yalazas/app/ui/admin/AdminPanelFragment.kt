@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -27,6 +28,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.yalazas.app.R
 import com.yalazas.app.model.Product
 import com.yalazas.app.repositorio.RepositorioPromociones
+import com.yalazas.app.repositorio.RepositorioImagenes
 import com.yalazas.app.repositorio.ServiciosFirebase
 import java.util.Locale
 
@@ -58,6 +60,11 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
     private lateinit var progresoGuardado: ProgressBar
     private lateinit var btnSave: MaterialButton
     private lateinit var btnDelete: MaterialButton
+    private lateinit var btnUploadProductImage: MaterialButton
+    private var subiendoImagen = false
+    private val seleccionarImagen = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null && isAdded) subirImagenProducto(uri)
+    }
 
     // Vistas de Oferta
     private lateinit var switchProductOffer: SwitchMaterial
@@ -112,6 +119,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         configurarOfertas()
         configurarSalsas()
         configurarUrlManual()
+        btnUploadProductImage.setOnClickListener { seleccionarImagen.launch("image/*") }
         configurarImagenPredeterminada(view)
         configurarModoFormulario()
 
@@ -145,6 +153,7 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         progresoGuardado = view.findViewById(R.id.progressGuardadoProducto)
         btnSave = view.findViewById(R.id.btnSaveProduct)
         btnDelete = view.findViewById(R.id.btnDeleteProduct)
+        btnUploadProductImage = view.findViewById(R.id.btnUploadProductImage)
 
         // Vistas de Ofertas
         switchProductOffer = view.findViewById(R.id.switchProductOffer)
@@ -162,6 +171,28 @@ class AdminPanelFragment : Fragment(R.layout.fragment_admin_panel) {
         chipGroupMaxSauces = view.findViewById(R.id.chipGroupMaxSauces)
         etMaxSauces = view.findViewById(R.id.etMaxSauces)
         chipGroupAvailableSauces = view.findViewById(R.id.chipGroupAvailableSauces)
+    }
+
+    /** Deja la URL de Cloudinary en el formulario para guardar el producto con la lógica existente. */
+    private fun subirImagenProducto(uri: Uri) {
+        if (subiendoImagen) return
+        subiendoImagen = true
+        btnUploadProductImage.isEnabled = false
+        btnSave.isEnabled = false
+        tvImageStatus.text = "Subiendo foto de producto..."
+        RepositorioImagenes.subirProducto(requireContext().contentResolver, uri) { resultado ->
+            if (!isAdded || view == null) return@subirProducto
+            subiendoImagen = false
+            btnUploadProductImage.isEnabled = true
+            btnSave.isEnabled = true
+            resultado.onSuccess { url ->
+                etProductImageUrl.setText(url)
+                tvImageStatus.text = "Foto subida. Guarda el producto para publicarla."
+            }.onFailure { error ->
+                tvImageStatus.text = "No se pudo subir la foto."
+                Toast.makeText(requireContext(), error.localizedMessage ?: "Error de subida", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun configurarCategorias() {

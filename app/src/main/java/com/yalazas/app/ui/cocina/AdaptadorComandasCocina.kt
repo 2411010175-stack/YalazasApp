@@ -25,9 +25,11 @@ class AdaptadorComandasCocina(
     private val alCambiarEstado: (Order, OrderStatus) -> Unit
 ) : RecyclerView.Adapter<AdaptadorComandasCocina.ComandaViewHolder>() {
     private var pedidos: List<Order> = emptyList()
+    private var tiemposDeEstado: Map<String, Long> = emptyMap()
 
-    fun mostrar(nuevos: List<Order>) {
+    fun mostrar(nuevos: List<Order>, tiempos: Map<String, Long>) {
         pedidos = nuevos
+        tiemposDeEstado = tiempos
         notifyDataSetChanged()
     }
 
@@ -52,8 +54,17 @@ class AdaptadorComandasCocina(
                 SimpleDateFormat("HH:mm", Locale.getDefault()).format(it)
             } ?: "recién recibido"
             binding.tvServicioComanda.text =
-                "${if (pedido.isDelivery) "🛵 Delivery" else "🛍️ Retiro en local"} · $hora"
-            binding.tvEstadoComanda.text = "${estado.emoji} ${estado.label}"
+                "${when {
+                    pedido.serviceType == "MESA" -> "🍽️ Mesa ${pedido.tableNumber}"
+                    pedido.isDelivery -> "🛵 Delivery"
+                    else -> "🛍️ Retiro en local"
+                }} · $hora"
+            binding.tvEstadoComanda.text = when (estado) {
+                OrderStatus.PENDIENTE -> "NUEVO"
+                OrderStatus.EN_PROCESO -> "EN COCINA"
+                OrderStatus.LISTO_PARA_ENTREGA -> "LISTO"
+                else -> estado.label.uppercase(Locale.getDefault())
+            }
             // La cantidad resalta como en una comanda física; nombres y notas siguen legibles.
             val platos = SpannableStringBuilder()
             pedido.items.forEachIndexed { indice, item ->
@@ -77,6 +88,11 @@ class AdaptadorComandasCocina(
             binding.tvProductosComanda.text = if (platos.isEmpty()) "Sin productos detallados" else platos
             binding.tvNotaComanda.text = if (pedido.comment.isBlank()) "" else "📝 Nota: ${pedido.comment}"
             binding.tvNotaComanda.visibility = if (pedido.comment.isBlank()) View.GONE else View.VISIBLE
+            binding.tvEsperaComanda.visibility = if (estado == OrderStatus.LISTO_PARA_ENTREGA)
+                View.VISIBLE else View.GONE
+            binding.tvEsperaComanda.text = if (pedido.serviceType == "MESA")
+                "En espera del mesero · Listo para servir" else
+                "En espera de recojo · Listo para despacho"
             val acento = when (estado) {
                 OrderStatus.PENDIENTE -> R.color.yalaza_yellow
                 OrderStatus.EN_PROCESO -> R.color.yalaza_pink
@@ -95,7 +111,7 @@ class AdaptadorComandasCocina(
             }
             binding.btnAccionComanda.visibility = if (siguiente == null) View.GONE else View.VISIBLE
             binding.btnAccionComanda.text = when (estado) {
-                OrderStatus.PENDIENTE -> "Iniciar preparación"
+                OrderStatus.PENDIENTE -> "Empezar a preparar"
                 OrderStatus.EN_PROCESO -> "¡Pedido listo! ✅"
                 OrderStatus.LISTO_PARA_ENTREGA -> "Reabrir por error"
                 else -> ""
@@ -122,13 +138,24 @@ class AdaptadorComandasCocina(
         }
 
         fun actualizarTiempo(pedido: Order) {
-            val inicio = pedido.timestamp?.toDate()?.time
+            val estado = OrderStatus.desdeTexto(pedido.status)
+            // Cocina guarda updatedAt al iniciar, terminar o reabrir; los pedidos antiguos usan la creación.
+            val inicio = if (estado == OrderStatus.PENDIENTE) pedido.timestamp?.toDate()?.time
+                else tiemposDeEstado[pedido.id]?.takeIf { it > 0L } ?: pedido.timestamp?.toDate()?.time
             if (inicio == null) {
-                binding.tvTiempoComanda.text = "Ahora"
+                binding.tvTiempoComanda.text = "Tiempo no disponible"
                 return
             }
             val minutos = TimeUnit.MILLISECONDS.toMinutes((System.currentTimeMillis() - inicio).coerceAtLeast(0))
-            binding.tvTiempoComanda.text = "⏱ ${minutos} min"
+            val duracion = if (minutos >= 60)
+                "${minutos / 60} h ${String.format(Locale.getDefault(), "%02d", minutos % 60)} min"
+                else "$minutos min"
+            binding.tvTiempoComanda.text = when (estado) {
+                OrderStatus.PENDIENTE -> "Hace $duracion"
+                OrderStatus.EN_PROCESO -> "En preparación\nhace $duracion"
+                OrderStatus.LISTO_PARA_ENTREGA -> "Listo hace\n$duracion"
+                else -> "Hace $duracion"
+            }
             val color = when {
                 minutos < 10 -> R.color.yalaza_lime_dark
                 minutos < 20 -> R.color.yalaza_orange
